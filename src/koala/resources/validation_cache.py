@@ -1,0 +1,1 @@
+"""Cached validation result resources."""
