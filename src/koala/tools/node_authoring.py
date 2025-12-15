@@ -64,32 +64,47 @@ def new_claim(
             to_label, from_label, target_premise_idx, arg_map, tc
         )
 
-        # Maybe get existing ref proposition
-        existing_ref_proposition_node = utils.maybe_get_ref_proposition_from_relation_args(
-            to_label, from_label, target_premise_idx, arg_map, tc
-        )
+        grounding_strategy: utils.GroundingStrategy | None = None
+        if to_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_premise"
+        elif from_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_conclusion"
 
-        # Fix proposition_node to use in new argument
-        proposition_node = utils.get_claim_proposition_from_relation_args(
-            label, proposition, existing_ref_proposition_node, relation_type, arg_map, tc
-        )
 
-        # Create the claim node
-        claim_node = ClaimNode(
-            label=label,
-            proposition_id=proposition_node.id,
-            issues=tc.issues.copy(),
-            needs_review_flag=bool(tc.issues),
-            tags=tags or [],
-            metadata=metadata or {},
-        )
-
+        # # Maybe get existing ref proposition
+        # existing_ref_proposition_node = utils.maybe_get_ref_proposition_from_relation_args(
+        #     to_label, from_label, target_premise_idx, arg_map, tc
+        # )
+        # # Fix proposition_node to use in new argument
+        # proposition_node = utils.get_claim_proposition_from_relation_args(
+        #     label, proposition, existing_ref_proposition_node, relation_type, arg_map, tc
+        # )
         try:
+
+            # Maybe create new proposition node
+            proposition_node = utils.maybe_create_proposition_from_content(label, proposition_content=proposition, arg_map=arg_map, tc=tc)
+
+            # Create the claim node
+            claim_node = ClaimNode(
+                label=label,
+                proposition_id=proposition_node.id,
+                issues=tc.issues.copy(),
+                needs_review_flag=bool(tc.issues),
+                tags=tags or [],
+                metadata=metadata or {},
+            )
+
             # Add claim node to argument map
             arg_map.add_claim(claim_node)
-            msg = f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`."
+            tc.note(f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.")
 
-            # Create relations if specified
+            # Create dialectical relation if specified
             relation_creation_fn = (
                 arg_map.add_support_relation
                 if relation_type == "support"
@@ -99,12 +114,22 @@ def new_claim(
                 relation_creation_fn(
                     from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
                 )
-                msg += f"\n  Linked new claim to `{to_label}` via a `{relation_type}` relation."
+                tc.note(f"\n  Linked new claim to `{to_label}` via a `{relation_type}` relation.")
+                utils.maybe_ground_relation(
+                    label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+                )
             if from_label:
                 relation_creation_fn(from_label=from_label, to_label=label)
-                msg += f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation."
+                tc.note(f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation.")
+                utils.maybe_ground_relation(
+                    from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+                )
 
-            tc.note(msg)
+            # Refresh claim_node after possible grounding updates
+            refreshed_claim_node = arg_map.get_claim(label) 
+            if refreshed_claim_node is None:
+                raise RuntimeError(f"Failed to retrieve claim node `[{label}]` after creation.")
+            claim_node = refreshed_claim_node
             tc.success(
                 f"✓ Created new claim node `[{label}]`.",
                 result=arg_map.get_info_claim_node(claim_node, verbose=False),
@@ -114,6 +139,15 @@ def new_claim(
             return tc.failure(
                 f"✗ Failed to create claim `[{label}]`: {str(e)}", error=str(e)
             ).build()
+
+        # Add suggestions to replace dummy proposition if needed
+        if not proposition and grounding_strategy is None:
+            tc.suggest_update_field(
+                label,
+                "proposition",
+                f"Replace dummy proposition in claim `[{label}]`.",
+                tool="update_claim",
+            )
 
         # Add suggestions if no critical issues
         if not tc.issues:
@@ -348,51 +382,57 @@ def new_argument(
             to_label, from_label, target_premise_idx, arg_map, tc
         )
 
-        # Maybe get existing ref proposition to be used as conclusion (to_label) or premise (from_label)
-        existing_ref_proposition_node = utils.maybe_get_ref_proposition_from_relation_args(
-            to_label, from_label, target_premise_idx, arg_map, tc
-        )
-
-        # Fix conclusion node to use in new argument
-        conclusion_node = utils.get_conclusion_proposition_from_relation_args(
-            label,
-            conclusion,
-            existing_ref_proposition_node if to_label else None,
-            relation_type,
-            arg_map,
-            tc,
-        )
-
-        # Fix premise nodes to use in new argument
-        premise_nodes = utils.get_premise_propositions_from_relation_args(
-            label,
-            premises,
-            existing_ref_proposition_node if from_label else None,
-            target_premise_idx,
-            relation_type,
-            arg_map,
-            tc,
-        )
-
-        # Create the argument node
-        argument_node = ArgumentNode(
-            label=label,
-            gist=gist or "",
-            premises=[p.id for p in premise_nodes or []],
-            conclusion=conclusion_node.id if conclusion_node else "",
-            issues=tc.issues.copy(),
-            needs_review_flag=bool(tc.issues),
-            tags=tags or [],
-            metadata=metadata or {},
-        )
+        # Infer grounding strategy from context
+        grounding_strategy: utils.GroundingStrategy | None = None
+        if to_label:
+            # New argument supports/attacks existing node via its conclusion
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if conclusion else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if conclusion else "negate_premise"
+        elif from_label:
+            # Existing node supports/attacks new argument via one of our premises
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if premises else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if premises else "negate_conclusion"
 
         try:
+            # Create conclusion proposition if provided
+            conclusion_node: Proposition | None = None
+            if conclusion:
+                conclusion_node = utils.maybe_create_proposition_from_content(
+                    label, proposition_content=conclusion, arg_map=arg_map, tc=tc
+                )
+
+            # Create premise propositions if provided
+            premise_nodes: list[Proposition] = []
+            if premises:
+                for premise_content in premises:
+                    premise_node = utils.maybe_create_proposition_from_content(
+                        label, proposition_content=premise_content, arg_map=arg_map, tc=tc
+                    )
+                    premise_nodes.append(premise_node)
+
+            # Create the argument node
+            argument_node = ArgumentNode(
+                label=label,
+                gist=gist or "",
+                premises=[p.id for p in premise_nodes],
+                conclusion=conclusion_node.id if conclusion_node else "",
+                issues=tc.issues.copy(),
+                needs_review_flag=bool(tc.issues),
+                tags=tags or [],
+                metadata=metadata or {},
+            )
+
             # Add argument node to argument map
             arg_map.add_argument(argument_node)
             msg = f"✓ Created new argument node `<{label}>`"
             msg += f" with gist `{textwrap.shorten(gist or '', width=50)}`." if gist else "."
+            tc.note(msg)
 
-            # Create relations if specified
+            # Create dialectical relation if specified
             relation_creation_fn = (
                 arg_map.add_support_relation
                 if relation_type == "support"
@@ -402,14 +442,22 @@ def new_argument(
                 relation_creation_fn(
                     from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
                 )
-                msg += f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation."
+                tc.note(f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
+                utils.maybe_ground_relation(
+                    label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+                )
             if from_label:
                 relation_creation_fn(from_label=from_label, to_label=label)
-                msg += (
-                    f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation."
+                tc.note(f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
+                utils.maybe_ground_relation(
+                    from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
                 )
 
-            tc.note(msg)
+            # Refresh argument_node after possible grounding updates
+            refreshed_argument_node = arg_map.get_argument(label)
+            if refreshed_argument_node is None:
+                raise RuntimeError(f"Failed to retrieve argument node `<{label}>` after creation.")
+            argument_node = refreshed_argument_node
             tc.success(
                 f"✓ Created new argument node `<{label}>`.",
                 result=arg_map.get_info_argument_node(argument_node, verbose=False),
@@ -417,7 +465,7 @@ def new_argument(
 
         except Exception as e:
             return tc.failure(
-                f"✗ Failed to create argument `<{label}]`: {str(e)}", error=str(e)
+                f"✗ Failed to create argument `<{label}>`: {str(e)}", error=str(e)
             ).build()
 
         # Add suggestions if no critical issues

@@ -85,7 +85,7 @@ def new_attack_relation(
     to_label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     target_premise_idx: int | None = None,
-    grounding_strategy: Literal["define_negation", "copy_premise", "copy_conclusion"] | None = None,
+    grounding_strategy: Literal["define_negation", "negate_premise", "negate_conclusion"] | None = None,
 ) -> CallToolResult:
     """Create a new attack relation.
     
@@ -190,7 +190,7 @@ def ground_attack_relation(
     from_label: NodeLabel,
     to_label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
-    strategy: Literal["define_negation", "copy_premise", "copy_conclusion"],
+    strategy: Literal["define_negation", "negate_premise", "negate_conclusion"],
 ) -> CallToolResult:
     """Ground an existing attack relation.
     
