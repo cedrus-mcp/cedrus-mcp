@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import AsyncIterator, Literal
 import json
 
+from koala.config.settings import settings
 from koala.graph.argument_map import ArgumentMap
 from koala.graph.persistence import load_graph, save_graph
-from koala.config.settings import settings
-
+from koala.models.base import Mode
 
 configure_logging(level="INFO")
 logger = get_logger("koala")  # Creates 'FastMCP.koala' logger
@@ -24,6 +24,7 @@ logger = get_logger("koala")  # Creates 'FastMCP.koala' logger
 class AppContext:
     """Application state containing the argument map."""
     arg_map: ArgumentMap
+    mode: Mode
 
 
 @asynccontextmanager
@@ -40,7 +41,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         print("Created new argument map")
     
     try:
-        yield AppContext(arg_map=arg_map)
+        yield AppContext(arg_map=arg_map, mode="sketch")
     finally:
         # Save on shutdown
         save_graph(arg_map, data_file)
@@ -63,7 +64,7 @@ def main() -> None:
     import sys
     
     # Import tools/resources/prompts to register them
-    from koala.tools import authoring  # noqa: F401
+    import koala.tools  # noqa: F401
     from koala.resources import graph_views  # noqa: F401
     from koala.prompts import analysis  # noqa: F401
     

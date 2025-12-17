@@ -6,11 +6,12 @@ from datetime import datetime
 
 PropositionID = str
 NodeLabel = str
-
+Mode = Literal["sketch", "author", "review"]
 
 class Issue(BaseModel):
     """Validation issue found in result."""
     field: str
+    label: NodeLabel
     issue: str
     severity: Literal["error", "warning", "info"] = "warning"
 

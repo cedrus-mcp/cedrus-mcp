@@ -7,7 +7,7 @@ from typing import Any, Literal, TYPE_CHECKING, Iterator
 
 from mcp.types import CallToolResult, TextContent, Annotations, ContentBlock, Role
 
-from koala.models.base import Issue
+from koala.models.base import Issue, NodeLabel, Mode
 from koala.models.results import NextAction
 
 if TYPE_CHECKING:
@@ -26,6 +26,7 @@ class ToolContext:
     """
     
     arg_map: ArgumentMap
+    mode: Mode = "sketch"
     
     # Collections
     content: list[ContentBlock] = field(default_factory=list)
@@ -68,6 +69,7 @@ class ToolContext:
         severity: Literal["info", "warning", "error"],
         message: str,
         field: str | None = None,
+        label: NodeLabel | None = None,
         **kwargs: Any
     ) -> ToolContext:
         """Add an issue.
@@ -82,7 +84,7 @@ class ToolContext:
             Self for method chaining
         """
         self.issues.append(
-            Issue(severity=severity, issue=message, field=field or "", **kwargs)
+            Issue(severity=severity, issue=message, field=field or "", label=label or "", **kwargs)
         )
         if severity in ("error", "critical"):
             if self._status == "success":
@@ -230,6 +232,7 @@ class ToolContext:
         """
         params: dict[str, Any] = {
             "label": "NEW_ARGUMENT_LABEL",
+            "node_type": "argument",
             "gist": "KEY_IDEA",
             "to_label": label,
             "relation_type": "support",
@@ -238,7 +241,7 @@ class ToolContext:
             params["target_premise_idx"] = target_premise_idx
             
         return self.suggest(
-            "new_argument",
+            "add",
             params,
             reason,
             action_type="expand"
@@ -259,9 +262,10 @@ class ToolContext:
             Self for method chaining
         """
         return self.suggest(
-            "new_argument",
+            "add",
             {
                 "label": "NEW_ARGUMENT_LABEL",
+                "node_type": "argument",
                 "gist": "KEY_IDEA",
                 "to_label": label,
                 "relation_type": "attack",
@@ -275,7 +279,6 @@ class ToolContext:
         label: str,
         field: str,
         reason: str,
-        tool: ToolName = "update_argument"
     ) -> ToolContext:
         """Shorthand for suggesting a field update.
         
@@ -283,13 +286,12 @@ class ToolContext:
             label: Label of node to update
             field: Field name to update
             reason: Reason for the suggestion
-            tool: Tool to use (update_argument, update_claim, etc.)
             
         Returns:
             Self for method chaining
         """
         return self.suggest(
-            tool,
+            "edit",
             {
                 "label": label,
                 "field": field,
@@ -304,7 +306,6 @@ class ToolContext:
         from_label: str,
         to_label: str,
         relation_type: Literal["support", "attack"],
-        tool: ToolName | None = None
     ) -> ToolContext:
         """Shorthand for suggesting a relation connection.
         
@@ -312,12 +313,11 @@ class ToolContext:
             from_label: Source node label
             to_label: Target node label (may be placeholder)
             relation_type: Type of relation
-            tool: Tool to use (auto-determined if None)
             
         Returns:
             Self for method chaining
         """
-        actual_tool: ToolName = tool if tool is not None else f"new_{relation_type}_relation"  # type: ignore[assignment]
+        actual_tool: ToolName = "connect"
         
         return self.suggest(
             actual_tool,
@@ -332,22 +332,26 @@ class ToolContext:
 
 
 @contextmanager
-def tool_context(arg_map: ArgumentMap) -> Iterator[ToolContext]:
+def tool_context(
+    arg_map: ArgumentMap,
+    mode: Mode = "sketch"
+) -> Iterator[ToolContext]:
     """Context manager for tool execution.
     
     Usage:
-        with tool_context(arg_map) as tc:
+        with tool_context(arg_map, mode) as tc:
             tc.note("Processing...")
             tc.success("Done!", result=data)
             return tc.build()
     
     Args:
         arg_map: ArgumentMap instance
+        mode: Current mode (sketch or detail)
         
     Yields:
         ToolContext instance
     """
-    tc = ToolContext(arg_map=arg_map)
+    tc = ToolContext(arg_map=arg_map, mode=mode)
     try:
         yield tc
     except Exception as e:

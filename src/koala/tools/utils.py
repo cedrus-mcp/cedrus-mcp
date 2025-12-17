@@ -133,7 +133,10 @@ def update_proposition(
         logger.error(f"Proposition with id '{prop_id}' does not exist.")
         return
 
+    if "content" in updates:
+        updates["is_dummy"] = False
     arg_map.update_proposition(prop_id, updates)
+        
     flag_nodes_as_needing_review(
         ref_prop_id=prop_id,
         exempt_nodes_flagging=exempt_nodes_flagging,
@@ -165,12 +168,6 @@ def ensure_label_is_unique(
 
     msg = f"Label '{label}' has been created automatically to ensure uniqueness and may need revision."
     tc.issue(severity="warning", message=msg, field="label")
-    tc.suggest(
-        tool="update_claim",
-        params={"label": label, "field": "label", "new_value": "REVISED_LABEL_HERE"},
-        reason="Revisit and revise the automatically generated unique label if needed.",
-        action_type="improve",
-    )
     return label
 
 
@@ -191,11 +188,11 @@ def sanitize_relation_args_new_node(
 
     # Check if to_label / from_label exist
     if to_label is not None and arg_map.is_node(to_label) is False:
-        msg = f"Target node `{to_label}` does not exist in the argument map. Will create claim without relation."
+        msg = f"Target node `{to_label}` does not exist in the argument map. Will create node without relation."
         tc.note(f"Warning: {msg}", priority=1.0)
         to_label = None
     if from_label is not None and arg_map.is_node(from_label) is False:
-        msg = f"Source node `{from_label}` does not exist in the argument map. Will create claim without relation."
+        msg = f"Source node `{from_label}` does not exist in the argument map. Will create node without relation."
         tc.note(f"Warning: {msg}", priority=1.0)
         from_label = None
 
@@ -483,13 +480,15 @@ def maybe_create_proposition_from_content(
     if proposition_node:
         return proposition_node
 
+    is_dummy = False
     if not proposition_content:
         # fix proposition_content
         proposition_content = (
             f"Content of proposition in `{ref_node_label}` ... (to be filled in later)"
         )
+        is_dummy = True
 
-    proposition_node = Proposition(content=proposition_content)
+    proposition_node = Proposition(content=proposition_content, is_dummy=is_dummy)
     arg_map.add_proposition(proposition_node)
 
     return proposition_node

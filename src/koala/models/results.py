@@ -1,7 +1,7 @@
 # src/koala/models/results.py
 """Result models with next actions and validation issues."""
 
-from typing import Any, Dict, TypeVar, Generic, Literal
+from typing import Any, Dict, Literal
 from pydantic import BaseModel, Field
 
 from .base import Issue
