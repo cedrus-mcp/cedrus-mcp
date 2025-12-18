@@ -163,7 +163,7 @@ def ground_support_relation(
             error="InvalidRelationType",
         ).build()
 
-    success = utils.maybe_ground_relation(
+    success = maybe_ground_relation(
         from_label, to_label, "support", rel.target_premise_idx, strategy, arg_map, tc
     )
     if success:
@@ -202,7 +202,7 @@ def ground_attack_relation(
             error="InvalidRelationType",
         ).build()
 
-    success = utils.maybe_ground_relation(
+    success = maybe_ground_relation(
         from_label, to_label, "attack", rel.target_premise_idx, strategy, arg_map, tc
     )
     if success:
