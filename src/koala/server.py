@@ -1,26 +1,21 @@
-"""KOALA MCP server main entry point."""
+"""KOALA MCP server instance with lifecycle management."""
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.utilities.logging import get_logger, configure_logging
-
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal
+
+from mcp.server.fastmcp import FastMCP
 
 from koala.config.settings import settings
 from koala.graph.argument_map import ArgumentMap
 from koala.graph.persistence import load_graph, save_graph
 from koala.models.base import Mode
 
-configure_logging(level="INFO")
-logger = get_logger("koala")  # Creates 'FastMCP.koala' logger
-
-
-# === Application Context ===
 
 @dataclass
 class AppContext:
     """Application state containing the argument map."""
+
     arg_map: ArgumentMap
     mode: Mode
 
@@ -29,7 +24,7 @@ class AppContext:
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """Manage application lifecycle - load and save argument map."""
     data_file = settings.data_file
-    
+
     # Load argument map on startup
     try:
         arg_map = load_graph(data_file)
@@ -37,7 +32,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     except FileNotFoundError:
         arg_map = ArgumentMap()
         print("Created new argument map")
-    
+
     try:
         yield AppContext(arg_map=arg_map, mode="sketch")
     finally:
@@ -46,35 +41,9 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         print(f"Saved argument map to {data_file}")
 
 
-# === Server Initialization ===
-
+# Create the MCP server instance
 mcp = FastMCP(
     "KOALA Argument Mapper",
     lifespan=app_lifespan,
-    stateless_http=False  # Stateful server with persistent graph
+    stateless_http=False,
 )
-
-
-# === Entry Point ===
-
-def main() -> None:
-    """Run the KOALA MCP server."""
-    import sys
-    
-    # Import tools/resources/prompts to register them
-    import koala.tools  # noqa: F401
-    from koala.resources import graph_views  # noqa: F401
-    from koala.prompts import analysis  # noqa: F401
-    
-    # Determine transport from command line or default to stdio
-    transport: Literal["stdio", "sse", "streamable-http"] = "stdio"
-    if len(sys.argv) > 1 and sys.argv[1] == "--http":
-        transport = "streamable-http"
-    
-    print(f"Starting KOALA MCP server with {transport} transport...")
-    mcp.run(transport=transport)
-
-
-if __name__ == "__main__":
-    main()
-
