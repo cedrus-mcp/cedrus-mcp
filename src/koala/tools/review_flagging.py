@@ -60,8 +60,12 @@ def flag_nodes_as_needing_review(
     """
     nodes_requiring_review: list[NodeLabel] = [
         node.label
-        for node in arg_map.all_nodes()
-        if ref_prop_id in node.get_proposition_ids() and node.label not in exempt_nodes_flagging
+        for node in arg_map.list_claims()
+        if ref_prop_id == node.proposition_id and node.label not in exempt_nodes_flagging
+    ] + [
+        node.label
+        for node in arg_map.list_arguments()
+        if ref_prop_id in node.premises + [node.conclusion] and node.label not in exempt_nodes_flagging
     ]
 
     for node_label in nodes_requiring_review:
