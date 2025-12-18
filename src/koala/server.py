@@ -1,13 +1,11 @@
 """KOALA MCP server main entry point."""
 
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger, configure_logging
 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import AsyncIterator, Literal
-import json
 
 from koala.config.settings import settings
 from koala.graph.argument_map import ArgumentMap

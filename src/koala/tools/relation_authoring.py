@@ -3,16 +3,14 @@
 from typing import Literal
 
 from mcp.types import CallToolResult
-from mcp.server.fastmcp import Context
-from mcp.server.session import ServerSession
 
 from koala.graph.argument_map import ArgumentMap
 from koala.models import (
     NodeLabel,
 )
-from koala.server import mcp, AppContext
-from koala.tools.tool_context import ToolContext, tool_context
-import koala.tools.utils as utils
+from koala.tools.tool_context import ToolContext
+from koala.tools import utils
+from koala.tools.grounding import maybe_ground_relation
 
 
 def new_support_relation(
@@ -67,7 +65,7 @@ def new_support_relation(
 
     success = True
     if grounding_strategy is not None:
-        success = utils.maybe_ground_relation(
+        success = maybe_ground_relation(
             from_label, to_label, "support", target_premise_idx, grounding_strategy, arg_map, tc
         )
     if success:
@@ -127,7 +125,7 @@ def new_attack_relation(
 
     success = True
     if grounding_strategy is not None:
-        success = utils.maybe_ground_relation(
+        success = maybe_ground_relation(
             from_label, to_label, "attack", target_premise_idx, grounding_strategy, arg_map, tc
         )
     if success:

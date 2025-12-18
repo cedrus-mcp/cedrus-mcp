@@ -1,13 +1,16 @@
 # src/koala/models/results.py
 """Result models with next actions and validation issues."""
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from .base import Issue
 
 # Type-safe tool name - this creates a Literal type from actual tool names
-from koala.tools import ToolName
+if TYPE_CHECKING:
+    from koala.tools import ToolName
+else:
+    ToolName = str  # Runtime fallback
 
 
 class NextAction(BaseModel):
