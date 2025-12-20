@@ -6,6 +6,7 @@ from typing import Any
 from mcp.types import CallToolResult
 
 from koala.graph.argument_map import ArgumentMap
+from koala.graph.rendering import render_argdown_node
 from koala.models import (
     NodeLabel,
     ClaimNode,
@@ -107,7 +108,7 @@ def update_claim(
         flag_relations_as_needing_review(claim_node.label, arg_map, tc)
         return tc.success(
             f"✓ Updated proposition of claim node `[{label}]` from `{textwrap.shorten(old_content, width=40)}` to `{textwrap.shorten(new_value, width=40)}`.",
-            result=arg_map.get_info_claim_node(claim_node, verbose=False),
+            result=render_argdown_node(arg_map, label, details=False),
         ).build()
     elif field == "label":
         if not isinstance(new_value, str) or not new_value.strip():
@@ -135,7 +136,7 @@ def update_claim(
             ).build()
         return tc.success(
             f"✓ Updated label of claim node from `[{old_label}]` to `[{new_value}]`.",
-            result=arg_map.get_info_claim_node(claim_node, verbose=False),
+            result=render_argdown_node(arg_map, new_value, details=False),
         ).build()
     elif field in [
         "needs_review_flag",
@@ -155,7 +156,7 @@ def update_claim(
 
         return tc.success(
             f"✓ Updated `{field}` of claim node `[{label}]` from `{old_value}` to `{new_value}`.",
-            result=arg_map.get_info_claim_node(claim_node, verbose=False),
+            result=render_argdown_node(arg_map, label, details=False),
         ).build()
 
     else:
@@ -216,7 +217,7 @@ def update_argument(
                 ).build()
             return tc.success(
                 f"✓ Updated label of argument node from `<{old_label}>` to `<{new_value}>`.",
-                result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                result=render_argdown_node(arg_map, argument_node.label, details=False),
             ).build()
 
         elif field in ["conclusion"]:
@@ -235,7 +236,7 @@ def update_argument(
                     flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                     return tc.success(
                         f"✓ Removed conclusion of argument node `<{label}>` which was `{textwrap.shorten(str(old_value), width=40)}`.",
-                        result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                        result=render_argdown_node(arg_map, argument_node.label, details=True),
                     ).build()
                 except Exception as e:
                     return tc.failure(
@@ -277,7 +278,7 @@ def update_argument(
             flag_relations_as_needing_review(argument_node.label, arg_map, tc)
             return tc.success(
                 f"✓ Updated conclusion of argument node `<{label}>` {('from `' +textwrap.shorten(old_value, width=40) + '`') if old_value else ''} to `{textwrap.shorten(new_value or '', width=40)}`.",
-                result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
 
 
@@ -298,7 +299,7 @@ def update_argument(
             
             return tc.success(
                 f"✓ Updated {field} of argument node `<{label}>` from `{textwrap.shorten(str(old_value), width=40)}` to `{textwrap.shorten(new_value or '', width=40)}`.",
-                result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                result=render_argdown_node(arg_map, argument_node.label, details=False),
             ).build()
 
         elif field in [
@@ -319,7 +320,7 @@ def update_argument(
 
             return tc.success(
                 f"✓ Updated `{field}` of argument node `<{label}>` from `{old_value}` to `{new_value}`.",
-                result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
 
         else:
@@ -382,9 +383,7 @@ def update_metadata(
 
         return tc.success(
             f"✓ Updated metadata key `{key}` of node `[{label}]`.",
-            result=arg_map.get_info_claim_node(node, verbose=False)
-            if isinstance(node, ClaimNode)
-            else arg_map.get_info_argument_node(node, verbose=False),
+            result=render_argdown_node(arg_map, node.label, details=True)
         ).build()
 
     except Exception as e:
@@ -454,9 +453,7 @@ def update_tags(
 
         return tc.success(
             f"✓ Updated tags for node `[{label}]`.",
-            result=arg_map.get_info_claim_node(node, verbose=False)
-            if isinstance(node, ClaimNode)
-            else arg_map.get_info_argument_node(node, verbose=False),
+            result=render_argdown_node(arg_map, node.label, details=True)
         ).build()
 
     except Exception as e:
@@ -529,7 +526,7 @@ def update_premises(
             )
             return tc.success(
                 f"✓ Added new premise '({len(premise_nodes)}) {textwrap.shorten(new_value, 30)}' to argument `<{label}>`.",
-                result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
         else:
             if new_value is not None and new_value.strip() == "":
@@ -554,7 +551,7 @@ def update_premises(
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                 return tc.success(
                     f"✓ Removed premise '({premise_idx}) {textwrap.shorten(premise_node.content, 30)}' from argument `<{label}>`.",
-                    result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                    result=render_argdown_node(arg_map, argument_node.label, details=True),
                 ).build()
 
             if new_value is not None:
@@ -562,7 +559,7 @@ def update_premises(
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                 return tc.success(
                     f"✓ Updated premise '({premise_idx}) {textwrap.shorten(premise_node.content, 30)}' of argument `<{label}>` to '{textwrap.shorten(new_value, 30)}'.",
-                    result=arg_map.get_info_argument_node(argument_node, verbose=False),
+                    result=render_argdown_node(arg_map, argument_node.label, details=True),
                 ).build()
     except Exception as e:
         return tc.failure(

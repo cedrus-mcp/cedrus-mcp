@@ -28,11 +28,15 @@ class NextAction(BaseModel):
         if not hasattr(tools, self.tool):
             raise ValueError(f"Suggested tool '{self.tool}' is not defined in koala.tools.")
         # check function signature matches params
-        from inspect import signature
+        from inspect import signature, Parameter
         sig = signature(getattr(tools, self.tool))
-        for param in self.params:
-            if param not in sig.parameters:
-                raise ValueError(f"Parameter '{param}' is not valid for tool '{self.tool}'.")
+        # Check if function accepts **kwargs
+        has_var_keyword = any(p.kind == Parameter.VAR_KEYWORD for p in sig.parameters.values())
+        # Only validate params if function doesn't accept **kwargs
+        if not has_var_keyword:
+            for param in self.params:
+                if param not in sig.parameters:
+                    raise ValueError(f"Parameter '{param}' is not valid for tool '{self.tool}'.")
 
 
 class ActionableResult(BaseModel):

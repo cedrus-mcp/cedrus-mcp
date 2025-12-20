@@ -32,8 +32,8 @@ logger = get_logger("koala")  # Creates 'FastMCP.koala' logger
 # === Register Tools/Resources/Prompts ===
 # Import at module level to ensure decorators execute before mcp.run()
 import koala.tools  # noqa: F401
-from koala.prompts import analysis  # noqa: F401
-from koala.resources import graph_views  # noqa: F401
+import koala.prompts  # noqa: F401
+import koala.resources  # noqa: F401
 
 
 # === Entry Point ===

@@ -311,68 +311,6 @@ class ArgumentMap:
                     if self.proposition_graph.edges[q1, q2]["_type"] == "negation":
                         self.proposition_graph.remove_edge(q1, q2)
 
-    # === Format Operations ===
-
-    def get_info_claim_node(self, node: ClaimNode, verbose: bool = False) -> Dict[str, Any]:
-        """Format claim node for output."""
-        proposition = self.get_proposition(node.proposition_id)
-        proposition_content = proposition.content if proposition else "Missing proposition content"
-        data: Dict[str, Any] = {
-            "node_type": node.node_type,
-            "label": node.label,
-            "proposition": textwrap.shorten(proposition_content, width=40)
-            if not verbose
-            else proposition_content,
-            "supports": self.get_supported(node.label) or "None",
-            "attacks": self.get_attacked(node.label) or "None",
-            "is_supported_by": self.get_supporters(node.label) or "None",
-            "is_attacked_by": self.get_attackers(node.label) or "None",
-        }
-        if verbose:
-            data = {**node.model_dump(), **data}
-            data.pop("proposition_id", None)
-        return data
-
-    def get_info_argument_node(self, node: ArgumentNode, verbose: bool = False) -> Dict[str, Any]:
-        """Format argument node for output."""
-        premises_contents = []
-        for pid in node.premises:
-            proposition = self.get_proposition(pid)
-            content = proposition.content if proposition else "Missing premise content"
-            premises_contents.append(
-                textwrap.shorten(content, width=30) if not verbose else content
-            )
-        conclusion_proposition = self.get_proposition(node.conclusion)
-        conclusion_content = (
-            conclusion_proposition.content
-            if conclusion_proposition
-            else "Missing conclusion content"
-        )
-        data: Dict[str, Any] = {
-            "node_type": node.node_type,
-            "label": node.label,
-            "gist": textwrap.shorten(node.gist, width=40) if not verbose else node.gist,
-            "premises": premises_contents or "None",
-            "conclusion": textwrap.shorten(conclusion_content, width=40)
-            if not verbose
-            else conclusion_content,
-            "supports": self.get_supported(node.label) or "None",
-            "attacks": self.get_attacked(node.label) or "None",
-            "is_supported_by": self.get_supporters(node.label) or "None",
-            "is_attacked_by": self.get_attackers(node.label) or "None",
-        }
-        if verbose:
-            data = {**node.model_dump(), **data}
-        return data
-
-    def get_info_node(self, label: NodeLabel, verbose: bool = False) -> Dict[str, Any]:
-        """Format any node for output."""
-        node = self.get_node(label)
-        if isinstance(node, ClaimNode):
-            return self.get_info_claim_node(node, verbose=verbose)
-        else:
-            return self.get_info_argument_node(node, verbose=verbose)
-
     # === Query Operations ===
 
     def is_node(self, label: NodeLabel) -> bool:
@@ -398,7 +336,7 @@ class ArgumentMap:
             for n in self.argument_graph.nodes()
             if self.argument_graph.nodes[n]["_type"] == "argument"
         ]
-
+    
     def get_supporters(self, label: NodeLabel) -> List[NodeLabel]:
         """Get nodes that support this node."""
         return [
@@ -430,6 +368,12 @@ class ArgumentMap:
             for v in self.argument_graph.successors(label)
             if self.argument_graph.edges[label, v]["_type"] == "attack"
         ]
+    
+    def get_k_neighborhood(self, label: NodeLabel, k: int) -> List[NodeLabel]:
+        """Get k-neighborhood of a node (all nodes within distance k, including the node itself)."""
+        return list(nx.single_source_shortest_path_length(
+            self.argument_graph.to_undirected(), label, cutoff=k
+        ).keys())
 
     def get_negation_of(self, prop_id: PropositionID) -> Iterator[Proposition]:
         """Get propositions that are negations of the given proposition."""

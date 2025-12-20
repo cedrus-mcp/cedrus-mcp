@@ -3,6 +3,7 @@
 import textwrap
 
 from koala.graph.argument_map import ArgumentMap
+from koala.graph.rendering import render_argdown_node
 from koala.models import (
     NodeLabel,
     ClaimNode,
@@ -104,7 +105,7 @@ def new_claim(
     claim_node = refreshed_claim_node
     tc.success(
         f"✓ Created new claim node `[{label}]`.",
-        result=arg_map.get_info_claim_node(claim_node, verbose=False),
+        result=render_argdown_node(arg_map, label, details=False),
     )
 
 
@@ -221,5 +222,5 @@ def new_argument(
     argument_node = refreshed_argument_node
     tc.success(
         f"✓ Created new argument node `<{label}>`.",
-        result=arg_map.get_info_argument_node(argument_node, verbose=False),
+        result=render_argdown_node(arg_map, label, details=False),
     )
