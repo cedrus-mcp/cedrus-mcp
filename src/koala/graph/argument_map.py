@@ -31,13 +31,13 @@ class ArgumentMap:
         """Add a claim node to the graph."""
         if not self.is_unique_label(node.label):
             raise ValueError(f"Label '{node.label}' already exists.")
-        self.argument_graph.add_node(node.label, **node.model_dump())
+        self.argument_graph.add_node(node.label, **node.model_dump(by_alias=True))
 
     def add_argument(self, node: ArgumentNode) -> None:
         """Add an argument node to the graph."""
         if not self.is_unique_label(node.label):
             raise ValueError(f"Label '{node.label}' already exists.")
-        self.argument_graph.add_node(node.label, **node.model_dump())
+        self.argument_graph.add_node(node.label, **node.model_dump(by_alias=True))
 
     def get_node(self, label: NodeLabel) -> ClaimNode | ArgumentNode:
         """Get a node by label."""
@@ -77,7 +77,7 @@ class ArgumentMap:
         for key, value in updates.items():
             setattr(node, key, value)
             setattr(node, "_last_modified", datetime.now())
-        self.argument_graph.nodes[label].update(node.model_dump())
+        self.argument_graph.nodes[label].update(node.model_dump(by_alias=True))
 
     def delete_node(self, label: NodeLabel) -> None:
         """Delete a node and its relations."""
@@ -126,7 +126,7 @@ class ArgumentMap:
 
         # Add relation
         support = DialecticalRelation(_type="support", target_premise_idx=target_premise_idx)
-        self.argument_graph.add_edge(from_label, to_label, **support.model_dump())
+        self.argument_graph.add_edge(from_label, to_label, **support.model_dump(by_alias=True))
 
     def add_attack_relation(
         self, from_label: str, to_label: str, target_premise_idx: int | None = None
@@ -160,7 +160,7 @@ class ArgumentMap:
 
         # Add relation
         attack = DialecticalRelation(_type="attack", target_premise_idx=target_premise_idx)
-        self.argument_graph.add_edge(from_label, to_label, **attack.model_dump())
+        self.argument_graph.add_edge(from_label, to_label, **attack.model_dump(by_alias=True))
 
     def update_relation(
         self, from_label: str,
@@ -174,7 +174,7 @@ class ArgumentMap:
         for key, value in updates.items():
             setattr(relation, key, value)
             setattr(relation, "_last_modified", datetime.now())
-        self.argument_graph.edges[from_label, to_label].update(relation.model_dump())
+        self.argument_graph.edges[from_label, to_label].update(relation.model_dump(by_alias=True))
 
     def delete_relation(self, from_label: str, to_label: str) -> None:
         """Delete a relation."""
@@ -189,7 +189,7 @@ class ArgumentMap:
 
     def add_proposition(self, prop: Proposition) -> None:
         """Add a proposition."""
-        self.proposition_graph.add_node(prop.id, **prop.model_dump())
+        self.proposition_graph.add_node(prop.id, **prop.model_dump(by_alias=True))
 
     def get_proposition(self, prop_id: PropositionID) -> Optional[Proposition]:
         """Get a proposition by ID."""
@@ -206,7 +206,7 @@ class ArgumentMap:
         for key, value in updates.items():
             setattr(prop, key, value)
             setattr(prop, "_last_modified", datetime.now())
-        self.proposition_graph.nodes[prop_id].update(prop.model_dump())
+        self.proposition_graph.nodes[prop_id].update(prop.model_dump(by_alias=True))
 
     def delete_proposition(self, prop_id: PropositionID) -> None:
         """Delete a proposition."""
@@ -269,7 +269,7 @@ class ArgumentMap:
             )
 
         relation = LogicalRelation(_type="equivalence")
-        self.proposition_graph.add_edge(prop1, prop2, **relation.model_dump())
+        self.proposition_graph.add_edge(prop1, prop2, **relation.model_dump(by_alias=True))
 
     def add_negation(self, prop1: PropositionID, prop2: PropositionID) -> None:
         """Add a negation relation."""
@@ -287,7 +287,7 @@ class ArgumentMap:
             )
 
         relation = LogicalRelation(_type="negation")
-        self.proposition_graph.add_edge(prop1, prop2, **relation.model_dump())
+        self.proposition_graph.add_edge(prop1, prop2, **relation.model_dump(by_alias=True))
 
     def remove_equivalence(self, prop1: PropositionID, prop2: PropositionID) -> None:
         """Removes all equivalence relations between prop1 and any proposition q that is equivalent to prop2."""

@@ -44,7 +44,11 @@ def add(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: Any
         # Ensure label is unique
         label = utils.ensure_label_is_unique(label, arg_map, tc)
 
-        args = parse_tool_args("add", tc, arg_map, label=label, **kwargs)
+        # Handle MCP Inspector format where kwargs might be nested
+        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
+            kwargs = kwargs["kwargs"]
+
+        args = parse_tool_args("add", tc, arg_map, **kwargs)
 
         try:
             if args.node_type == "claim":
@@ -107,6 +111,10 @@ def edit(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: An
                 f"Node '{label}' does not exist.",
                 error="NonExistentNode",
             ).build()
+
+        # Handle MCP Inspector format where kwargs might be nested
+        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
+            kwargs = kwargs["kwargs"]
 
         node_type = "claim" if isinstance(node, ClaimNode) else "argument"
         args = parse_tool_args("edit", tc, arg_map, node_type=node_type, **kwargs)
@@ -184,6 +192,10 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
+
+        # Handle MCP Inspector format where kwargs might be nested
+        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
+            kwargs = kwargs["kwargs"]
 
         if mode == "sketch":
             if kwargs.get("grounding_strategy") is not None:
@@ -302,6 +314,10 @@ def remove(ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolRe
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
+
+        # Handle MCP Inspector format where kwargs might be nested
+        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
+            kwargs = kwargs["kwargs"]
 
         # validate kwargs
         label = kwargs.get("label")
