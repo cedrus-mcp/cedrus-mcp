@@ -46,7 +46,11 @@ def main() -> None:
         transport = "streamable-http"
 
     print(f"Starting KOALA MCP server with {transport} transport...")
-    mcp.run(transport=transport)
+    try:
+        mcp.run(transport=transport)
+    except KeyboardInterrupt:
+        print("\nServer stopped by user.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
