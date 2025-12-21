@@ -1,12 +1,14 @@
 """Authoring tools: new_claim, new_argument, new_support, new_attack."""
 
+import base64
 from typing import Any
 
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
-from mcp.types import CallToolResult
+from mcp.types import CallToolResult, ImageContent
 
+from koala.graph.svg_export import export_svg
 from koala.models import (
     NodeLabel,
     ClaimNode,
@@ -439,6 +441,68 @@ def remove(
             )
 
         raise ValueError("Internal Error: Unhandled case in remove tool.")
+
+
+@mcp.tool()
+async def export(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
+    """
+    Generate SVG visualization of the argument map.
+    
+    Creates a visual representation of the current argument map using GraphViz.
+    Returns the SVG as an image that can be displayed directly by visual clients.
+        
+    Returns:
+        CallToolResult with ImageContent containing the SVG visualization and
+        structured metadata about the graph (node counts, edge counts).
+        
+    Example:
+        Call this tool to generate and visualize the current argument map.
+        The result will be displayed as an image in compatible clients.
+    """
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+    
+        try:
+            svg_string = export_svg(arg_map)
+            
+            # Encode SVG as base64 for ImageContent
+            svg_base64 = base64.b64encode(svg_string.encode('utf-8')).decode('ascii')
+            
+            # Count nodes by type
+            claim_nodes = arg_map.list_claims()
+            argument_nodes = arg_map.list_arguments()
+            
+            return CallToolResult(
+                content=[
+                    ImageContent(
+                        type="image",
+                        data=svg_base64,
+                        mimeType="image/svg+xml"
+                    )
+                ],
+                structuredContent={
+                    "format": "svg",
+                    "total_nodes": len(claim_nodes + argument_nodes),
+                    "claim_count": len(claim_nodes),
+                    "argument_count": len(argument_nodes),
+                },
+                isError=False
+            )
+        
+        except RuntimeError as e:
+            # GraphViz not installed
+            return tc.failure(
+                f"Error: {str(e)}", error="GraphVizNotInstalled"
+            ).build()        
+        except Exception as e:
+            # Other errors
+            return tc.failure(
+                f"Error generating SVG: {str(e)}", error="SVGGenerationError"
+            ).build()
+
+
 
 @mcp.tool()
 def mode(
