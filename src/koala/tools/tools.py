@@ -7,7 +7,6 @@ from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
-from koala.graph.argument_map import ArgumentMap
 from koala.models import (
     NodeLabel,
     ClaimNode,
@@ -18,7 +17,7 @@ from koala.server import AppContext, mcp
 from koala.tools import relation_authoring, suggestions, utils
 from koala.tools import node_creation, node_updates, node_deletion
 from koala.tools.tool_args import parse_tool_args
-from koala.tools.tool_context import ToolContext, tool_context
+from koala.tools.tool_context import tool_context
 
 logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 

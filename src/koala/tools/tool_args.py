@@ -37,7 +37,7 @@ def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwa
         # Check for unexpected arguments and collect keys to remove
         keys_to_remove = [key for key in kwargs if key not in ToolArgClass.model_fields]
         if keys_to_remove:
-            tc.issue("info", f"Ignoring unexpected argument(s) {', '.join(keys_to_remove)} for tool '{tool_name}'.")        
+            tc.issue("info", f"Ignoring unexpected argument(s) {', '.join(keys_to_remove)} for tool '{tool_name}'. Valid arguments are: {', '.join(ToolArgClass.model_fields.keys())}.", priority=1.0)        
         # Remove unexpected arguments
         for key in keys_to_remove:
             kwargs.pop(key)
