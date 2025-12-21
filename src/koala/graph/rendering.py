@@ -19,10 +19,10 @@ def _render_node_recursive(
     extra_tags: bool,
 ) -> None:
     """Recursively render a node and its successors."""
-    line = "  " * indent_level
+    line = "    " * indent_level
     if relation_to_successor is not None:
         line += "<+ " if relation_to_successor == "support" else "<- "
-    line += f"[{NodeLabel}]" if isinstance(node, ClaimNode) else f"<{node.label}>"
+    line += f"[{node.label}]" if isinstance(node, ClaimNode) else f"<{node.label}>"
     if not label_only:
         if isinstance(node, ClaimNode):
             proposition = arg_map.get_proposition(node.proposition_id)
@@ -89,14 +89,7 @@ def render_argdown(
     lines: list[str] = []
 
     # get root nodes
-    roots = [
-        node
-        for node in arg_map.list_claims() + arg_map.list_arguments()
-        if (
-            (subset is None or node.label in subset)
-            and not (arg_map.get_supported(node.label) + arg_map.get_attacked(node.label))
-        )
-    ]
+    roots = [arg_map.get_node(label) for label in arg_map.list_roots()]
 
     for root in roots:
         # Render this node and all its descendants recursively
