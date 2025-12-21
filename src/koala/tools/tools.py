@@ -494,7 +494,7 @@ async def export(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
         except RuntimeError as e:
             # GraphViz not installed
             return tc.failure(
-                f"Error: {str(e)}", error="GraphVizNotInstalled"
+                f"Cannot generate SVG because `graphviz` is not installed. (Original error message: {str(e)})", error="GraphVizNotInstalled"
             ).build()        
         except Exception as e:
             # Other errors
