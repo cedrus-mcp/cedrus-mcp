@@ -233,13 +233,17 @@ class ToolContext:
         """
         params: dict[str, Any] = {
             "label": "NEW_ARGUMENT_LABEL",
-            "node_type": "argument",
-            "gist": "KEY_IDEA",
-            "to_label": label,
-            "relation_type": "support",
+            "node_options": {
+                "node_type": "argument",
+                "gist": "KEY_IDEA",
+            },
+            "relation_options": {
+                "to_label": label,
+                "relation_type": "support",
+            }
         }
         if target_premise_idx is not None:
-            params["target_premise_idx"] = target_premise_idx
+            params["relation_options"]["target_premise_idx"] = target_premise_idx
             
         return self.suggest(
             "add",
@@ -266,10 +270,14 @@ class ToolContext:
             "add",
             {
                 "label": "NEW_ARGUMENT_LABEL",
-                "node_type": "argument",
-                "gist": "KEY_IDEA",
-                "to_label": label,
-                "relation_type": "attack",
+                "node_options": {
+                    "node_type": "argument",
+                    "gist": "KEY_IDEA",
+                },
+                "relation_options": {
+                    "to_label": label,
+                    "relation_type": "attack",
+                }
             },
             reason,
             action_type="expand"
@@ -296,7 +304,9 @@ class ToolContext:
             {
                 "label": label,
                 "field": field,
-                "new_value": f"{field.upper()}_VALUE"
+                "edit_options": {
+                    "new_value": f"{field.upper()}_VALUE"
+                }
             },
             reason,
             action_type="improve"
@@ -325,7 +335,9 @@ class ToolContext:
             {
                 "from_label": from_label,
                 "to_label": to_label,
-                "relation_type": relation_type,
+                "relation_options": {
+                    "relation_type": relation_type,
+                }
             },
             f"Connect `{from_label}` to existing node via {relation_type}.",
             action_type="connect"

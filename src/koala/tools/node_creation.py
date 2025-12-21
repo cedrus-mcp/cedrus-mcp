@@ -49,16 +49,17 @@ def new_claim(
     """
 
     grounding_strategy: GroundingStrategy | None = None
-    if to_label:
-        if relation_type == "support":
-            grounding_strategy = "define_equivalence" if proposition else "copy_premise"
-        elif relation_type == "attack":
-            grounding_strategy = "define_negation" if proposition else "negate_premise"
-    elif from_label:
-        if relation_type == "support":
-            grounding_strategy = "define_equivalence" if proposition else "copy_conclusion"
-        elif relation_type == "attack":
-            grounding_strategy = "define_negation" if proposition else "negate_conclusion"
+    if tc.mode != "sketch":
+        if to_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_premise"
+        elif from_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_conclusion"
 
     # Maybe create new proposition node
     proposition_node = utils.maybe_create_proposition_from_content(label, proposition_content=proposition, arg_map=arg_map, tc=tc)
@@ -146,18 +147,19 @@ def new_argument(
 
     # Infer grounding strategy from context
     grounding_strategy: GroundingStrategy | None = None
-    if to_label:
-        # New argument supports/attacks existing node via its conclusion
-        if relation_type == "support":
-            grounding_strategy = "define_equivalence" if conclusion else "copy_premise"
-        elif relation_type == "attack":
-            grounding_strategy = "define_negation" if conclusion else "negate_premise"
-    elif from_label:
-        # Existing node supports/attacks new argument via one of our premises
-        if relation_type == "support":
-            grounding_strategy = "define_equivalence" if premises else "copy_conclusion"
-        elif relation_type == "attack":
-            grounding_strategy = "define_negation" if premises else "negate_conclusion"
+    if tc.mode != "sketch":
+        if to_label:
+            # New argument supports/attacks existing node via its conclusion
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if conclusion else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if conclusion else "negate_premise"
+        elif from_label:
+            # Existing node supports/attacks new argument via one of our premises
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if premises else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if premises else "negate_conclusion"
 
     # Create conclusion proposition if provided
     conclusion_node: Proposition | None = None

@@ -31,13 +31,13 @@ def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwa
     elif tool_name == "connect":
         ToolArgClass = ConnectToolArgs
     else:
-        raise ValueError(f"Internal Error: Unknown tool name '{tool_name}' for argument parsing.")
+        raise RuntimeError(f"Internal Error: Unknown tool name '{tool_name}' for argument parsing.")
 
     try:
         # Check for unexpected arguments and collect keys to remove
         keys_to_remove = [key for key in kwargs if key not in ToolArgClass.model_fields]
         if keys_to_remove:
-            tc.issue("info", f"Ignoring unexpected argument(s) {', '.join(keys_to_remove)} for tool '{tool_name}'. Valid arguments are: {', '.join(ToolArgClass.model_fields.keys())}.", priority=1.0)        
+            tc.issue("warning", f"Ignoring unexpected argument(s) {', '.join(keys_to_remove)} for tool '{tool_name}'. Valid arguments are: {', '.join(ToolArgClass.model_fields.keys())}.", priority=1.0)        
         # Remove unexpected arguments
         for key in keys_to_remove:
             kwargs.pop(key)
@@ -123,7 +123,7 @@ class EditToolArgs(BaseModel):
         if self.field not in valid_fields:
             tc.suggest(
                 "edit",
-                {"label": self.node_type.upper(), "field": valid_fields[2], "new_value": "NEW_VALUE"},
+                {"label": self.node_type.upper(), "field": valid_fields[2], "edit_options": {"new_value": "NEW_VALUE"}},
                 f"Edit the '{valid_fields[2]}' field of {self.node_type.upper()}.",
             )
             raise ValueError(f"For node_type '{self.node_type}', field to edit must be one of {', '.join(valid_fields)}.")
@@ -176,28 +176,28 @@ class ConnectToolArgs(BaseModel):
                 "Assuming 'support' relation type as default.", priority=.2
             ).suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_type": "attack"},
+                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "attack"}},
                 "Create an 'attack' relation instead.",
             )
             self.relation_type = "support"
         elif self.relation_type not in ["support", "attack"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_type": "RELATION_TYPE"},
+                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "RELATION_TYPE"}},
                 "Create a relation of type RELATION_TYPE ('support' or 'attack').",
             )
             raise ValueError("relation_type must be either 'support' or 'attack'.")
         if self.relation_type == "support" and self.grounding_strategy not in [None, "define_equivalence", "copy_premise", "copy_conclusion"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_type": "support", "grounding_strategy": "GROUNDING_STRATEGY"},
+                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "support", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
             raise ValueError(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `{self.relation_type}`. Must be one of 'define_equivalence', 'copy_premise', 'copy_conclusion', or None.")
         if self.relation_type == "attack" and self.grounding_strategy not in [None, "define_negation", "negate_premise", "negate_conclusion"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_type": "attack", "grounding_strategy": "GROUNDING_STRATEGY"},
+                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "attack", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
             raise ValueError(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `{self.relation_type}`. Must be one of 'define_negation', 'negate_premise', 'negate_conclusion', or None.")

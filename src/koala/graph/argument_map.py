@@ -337,6 +337,10 @@ class ArgumentMap:
             if self.argument_graph.nodes[n]["_type"] == "argument"
         ]
     
+    def list_roots(self) -> List[NodeLabel]:
+        """Get all root nodes (nodes with no incoming edges)."""
+        return [n for n in self.argument_graph.nodes() if self.argument_graph.out_degree(n) == 0]
+
     def get_supporters(self, label: NodeLabel) -> List[NodeLabel]:
         """Get nodes that support this node."""
         return [
@@ -382,6 +386,10 @@ class ArgumentMap:
                 data = dict(self.proposition_graph.nodes[prop_id])
                 yield Proposition(**data)
 
+    def connected_components(self) -> List[List[NodeLabel]]:
+        """Get weakly connected components of the argument graph."""
+        return [list(c) for c in nx.weakly_connected_components(self.argument_graph)]
+
     def find_proposition_by_content(self, content: str) -> Iterator[Proposition]:
         """Get propositions by content."""
         for node in self.proposition_graph.nodes:
@@ -389,6 +397,44 @@ class ArgumentMap:
             proposition = Proposition(**data)
             if proposition.content == content:
                 yield proposition
+
+    def is_acyclic(self) -> bool:
+        """Check if the argument graph is acyclic."""
+        return nx.is_directed_acyclic_graph(self.argument_graph)
+
+    def longest_path(self) -> List[NodeLabel]:
+        """Get the longest simple path in the argument graph.
+        
+        A simple path is a path with no repeated nodes. For directed acyclic graphs,
+        this uses an efficient algorithm. For graphs with cycles, this enumerates
+        all simple paths between all node pairs, which may be slow for large graphs.
+        
+        Returns:
+            The longest simple path as a list of node labels, or an empty list if
+            the graph has no nodes.
+        """
+        if not self.argument_graph.nodes():
+            return []
+        
+        # For DAGs, use the efficient algorithm
+        if self.is_acyclic():
+            return nx.dag_longest_path(self.argument_graph)
+        
+        # For graphs with cycles, find longest simple path by checking all pairs
+        longest_path: List[NodeLabel] = []
+        nodes = list(self.argument_graph.nodes())
+        
+        for source in nodes:
+            for target in nodes:
+                # Find all simple paths from source to target
+                try:
+                    for path in nx.all_simple_paths(self.argument_graph, source, target):
+                        if len(path) > len(longest_path):
+                            longest_path = path
+                except nx.NetworkXNoPath:
+                    continue
+        
+        return longest_path
 
     # === Analytics ===
 

@@ -35,10 +35,14 @@ def add_suggestions_after_adding_node(
                 "add",
                 {
                     "label": "NEW_ARGUMENT_LABEL",
-                    "node_type": "argument",
-                    "gist": "KEY_POINT_OF_NEW_ARGUMENT",
-                    "to_label": label,
-                    "relation_type": "support",
+                    "node_options": {
+                        "node_type": "argument",
+                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
+                    },
+                    "relation_options": {
+                        "to_label": label,
+                        "relation_type": "support",
+                    }
                 },
                 f"Explore pros and cons by adding a new supporting argument for claim `[{label}]`.",
                 action_type="expand",
@@ -47,10 +51,14 @@ def add_suggestions_after_adding_node(
                 "add",
                 {
                     "label": "NEW_ARGUMENT_LABEL",
-                    "node_type": "argument",
-                    "gist": "KEY_POINT_OF_NEW_ARGUMENT",
-                    "to_label": label,
-                    "relation_type": "attack",
+                    "node_options": {
+                        "node_type": "argument",
+                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
+                    },
+                    "relation_options": {
+                        "to_label": label,
+                        "relation_type": "attack",
+                    }
                 },
                 f"Explore pros and cons by adding a new argument attacking claim `[{label}]`.",
                 action_type="expand",
@@ -59,10 +67,14 @@ def add_suggestions_after_adding_node(
                 "add",
                 {
                     "label": "NEW_ARGUMENT_LABEL",
-                    "node_type": "argument",
-                    "gist": "KEY_POINT_OF_NEW_ARGUMENT",
-                    "from_label": label,
-                    "relation_type": "support",
+                    "node_options": {
+                        "node_type": "argument",
+                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
+                    },
+                    "relation_options": {
+                        "from_label": label,
+                        "relation_type": "support",
+                    }
                 },
                 f"Show how claim `[{label}]` is embedded in the debate by adding a new argument which is supported by `[{label}]`.",
                 action_type="expand",
@@ -75,7 +87,9 @@ def add_suggestions_after_adding_node(
                         {
                             "from_label": "EXISTING_ARGUMENT_LABEL",
                             "to_label": label,
-                            "relation_type": "support",
+                            "relation_options": {
+                                "relation_type": "support",
+                            }
                         },
                         f"Show how claim `[{label}]` is related to other arguments by identifying a supporting argument.",
                         action_type="connect",
@@ -86,7 +100,9 @@ def add_suggestions_after_adding_node(
                         {
                             "from_label": "EXISTING_ARGUMENT_LABEL",
                             "to_label": label,
-                            "relation_type": "support",
+                            "relation_options": {
+                                "relation_type": "support",
+                            }
                         },
                         f"Show how claim `[{label}]` is related to other arguments by identifying a supporting argument.",
                         action_type="connect",

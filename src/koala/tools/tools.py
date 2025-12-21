@@ -23,15 +23,27 @@ logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 
 @mcp.tool()
-def add(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolResult:
+def add(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    node_options: dict[str, Any] | None = None,
+    relation_options: dict[str, Any] | None = None,
+) -> CallToolResult:
     """Create a new node in the argument map.
+
+    Args:
+        label: Unique identifier for the node
+        node_options: Node configuration (proposition, gist, conclusion, premises, node_type, tags, metadata)
+        relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
 
     Example usage:
 
-        add(label="CLAIM_1", proposition="This is a new claim.")
+        add(
+            label="CLAIM_1",
+            node_options={"proposition": "This is a new claim."},
+            relation_options={"from_label": "ARG_1", "relation_type": "support"}
+        )
     """
-
-
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
 
@@ -43,9 +55,12 @@ def add(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: Any
         # Ensure label is unique
         label = utils.ensure_label_is_unique(label, arg_map, tc)
 
-        # Handle MCP Inspector format where kwargs might be nested
-        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
-            kwargs = kwargs["kwargs"]
+        # Merge node_options and relation_options
+        kwargs = {}
+        if node_options:
+            kwargs.update(node_options)
+        if relation_options:
+            kwargs.update(relation_options)
 
         args = parse_tool_args("add", tc, arg_map, **kwargs)
 
@@ -91,12 +106,30 @@ def add(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: Any
     
 
 @mcp.tool()
-def edit(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolResult:
+def edit(
+    label: NodeLabel,
+    field: str,
+    ctx: Context[ServerSession, AppContext],
+    edit_options: dict[str, Any] | None = None,
+) -> CallToolResult:
     """Edit an existing node in the argument map.
+
+    Args:
+        label: Node identifier to edit
+        field: Field to edit (label, proposition, gist, conclusion, premises, tags, metadata)
+        edit_options: Field-specific configuration:
+            - For label/proposition/gist/conclusion: new_value
+            - For premises: new_value, premise_idx
+            - For tags: new_value (to add), old_value (to remove), or both
+            - For metadata: key, new_value
 
     Example usage:
 
-        edit(label="CLAIM_1", proposition="This is the updated claim content.")
+        edit(
+            label="CLAIM_1",
+            field="proposition",
+            edit_options={"new_value": "This is the updated claim content."}
+        )
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -111,10 +144,9 @@ def edit(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: An
                 error="NonExistentNode",
             ).build()
 
-        # Handle MCP Inspector format where kwargs might be nested
-        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
-            kwargs = kwargs["kwargs"]
-
+        kwargs = edit_options or {}
+        kwargs["field"] = field
+        
         node_type = "claim" if isinstance(node, ClaimNode) else "argument"
         args = parse_tool_args("edit", tc, arg_map, node_type=node_type, **kwargs)
 
@@ -176,15 +208,25 @@ def edit(label: NodeLabel, ctx: Context[ServerSession, AppContext], **kwargs: An
 
 
 @mcp.tool()
-def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolResult:
+def connect(
+    from_label: str,
+    to_label: str,
+    ctx: Context[ServerSession, AppContext],
+    relation_options: dict[str, Any] | None = None,
+) -> CallToolResult:
     """Create a new dialectical relation between two existing nodes.
+
+    Args:
+        from_label: Source node label
+        to_label: Target node label
+        relation_options: Relation configuration (relation_type, target_premise_idx, grounding_strategy)
 
     Example usage:
 
         connect(
             from_label="ARGUMENT_1",
             to_label="CLAIM_1",
-            relation_type="support"
+            relation_options={"relation_type": "support"}
         )
     """
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -192,9 +234,7 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
 
     with tool_context(arg_map, mode) as tc:
 
-        # Handle MCP Inspector format where kwargs might be nested
-        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
-            kwargs = kwargs["kwargs"]
+        kwargs = relation_options or {}
 
         if mode == "sketch":
             if kwargs.get("grounding_strategy") is not None:
@@ -301,12 +341,28 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
 
 
 @mcp.tool()
-def remove(ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolResult:
+def remove(
+    ctx: Context[ServerSession, AppContext],
+    label: str | None = None,
+    relation: dict[str, str] | None = None,
+) -> CallToolResult:
     """Remove an existing node or relation from the argument map.
+
+    Provide either `label` (to remove a node) OR `relation` (to remove a relation),
+    but not both.
+
+    Args:
+        label: Label of the node to remove (for node removal).
+        relation: Dictionary with `from_label` and `to_label` keys (for relation removal).
+        ctx: Tool context (auto-injected).
 
     Example usage:
 
+        # Remove a node
         remove(label="CLAIM_1")
+        
+        # Remove a relation
+        remove(relation={"from_label": "ARG_1", "to_label": "CLAIM_1"})
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -314,26 +370,29 @@ def remove(ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolRe
 
     with tool_context(arg_map, mode) as tc:
 
-        # Handle MCP Inspector format where kwargs might be nested
-        if "kwargs" in kwargs and len(kwargs) == 1 and isinstance(kwargs["kwargs"], dict):
-            kwargs = kwargs["kwargs"]
-
-        # validate kwargs
-        label = kwargs.get("label")
-        to_label = kwargs.get("to_label")
-        from_label = kwargs.get("from_label")
+        # Validate mutually exclusive parameters
+        if label and label.strip() and relation:
+            tc.issue("info", "Ignoring relation when removing a node.", priority=.2)
+            relation = None
+        
+        # Extract relation parameters if provided
+        to_label = None
+        from_label = None
+        if relation:
+            from_label = relation.get("from_label")
+            to_label = relation.get("to_label")
+        
+        # Validate that we have exactly one operation
         if label and label.strip():
-            if to_label is not None:
-                tc.issue("info", "Ignoring to_label when removing a node.", priority=.2)
-            if from_label is not None:
-                tc.issue("info", "Ignoring from_label when removing a node.", priority=.2)
-        elif to_label and to_label.strip() and from_label and from_label.strip():
-            if label is not None:
-                tc.issue("info", "Ignoring label when removing a relation.", priority=.2)
+            # Node removal - label is valid
+            pass
+        elif from_label and from_label.strip() and to_label and to_label.strip():
+            # Relation removal - both from_label and to_label are valid
+            pass
         else:
             return tc.issue(
                 "error",
-                "To remove a node, provide a non-empty 'label'. To remove a relation, provide non-empty 'from_label' and 'to_label'.",
+                "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
             ).suggest(
                 "remove",
                 {
@@ -343,10 +402,12 @@ def remove(ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolRe
             ).suggest(
                 "remove",
                 {
-                    "from_label": "SOURCE_NODE_LABEL",
-                    "to_label": "TARGET_NODE_LABEL",
+                    "relation": {
+                        "from_label": "SOURCE_NODE_LABEL",
+                        "to_label": "TARGET_NODE_LABEL",
+                    }
                 },
-                "Remove a relation by specifying source and target node labels.",
+                "Remove a relation by specifying source and target node labels in relation dict.",
             ).build()
 
         if label:

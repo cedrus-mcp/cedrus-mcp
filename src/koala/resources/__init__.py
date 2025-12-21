@@ -4,4 +4,5 @@
 from . import graph_views  # noqa: F401
 from . import instructions  # noqa: F401
 from . import node_details  # noqa: F401
+from . import summaries  # noqa: F401
 from . import validation_cache  # noqa: F401
