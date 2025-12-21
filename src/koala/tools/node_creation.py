@@ -67,8 +67,7 @@ def new_claim(
     claim_node = ClaimNode(
         label=label,
         proposition_id=proposition_node.id,
-        issues=tc.issues.copy(),
-        needs_review_flag=bool(tc.issues),
+        needs_review_flag=any(issue.severity in ["warning", "error"] for issue in tc.issues),
         tags=tags or [],
         metadata=metadata or {},
     )
@@ -182,8 +181,7 @@ def new_argument(
         gist=gist or "",
         premises=[p.id for p in premise_nodes],
         conclusion=conclusion_node.id if conclusion_node else "",
-        issues=tc.issues.copy(),
-        needs_review_flag=bool(tc.issues),
+        needs_review_flag=any(issue.severity in ["warning", "error"] for issue in tc.issues),
         tags=tags or [],
         metadata=metadata or {},
     )

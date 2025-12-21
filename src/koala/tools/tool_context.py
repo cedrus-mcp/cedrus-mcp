@@ -201,11 +201,12 @@ class ToolContext:
         if self._result_data is not None:
             structured_content["result"] = self._result_data
         
+        if self.issues:
+            structured_content["issues"] = [i.model_dump() for i in self.issues]
+
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
         
-        if self.issues:
-            structured_content["issues"] = [i.model_dump() for i in self.issues]
         
         return CallToolResult(
             content=self.content,

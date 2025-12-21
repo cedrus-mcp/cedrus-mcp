@@ -30,7 +30,7 @@ def add_suggestions_after_adding_node(
                 )
 
         # Add suggestions if no critical issues
-        if not tc.issues and tc.mode in ["sketch", "author"]:
+        if not any(issue.severity in ["warning", "error"] for issue in tc.issues) and tc.mode in ["sketch", "author"]:
             tc.suggest(
                 "add",
                 {
@@ -94,7 +94,7 @@ def add_suggestions_after_adding_node(
 
     elif argument_added := arg_map.get_argument(label):
         # Add suggestions if no critical issues
-        if not tc.issues and tc.mode in ["sketch", "author"]:
+        if not any(issue.severity in ["warning", "error"] for issue in tc.issues) and tc.mode in ["sketch", "author"]:
             # Suggest support for premises or argument
             if argument_added.premises:
                 tc.suggest_support_argument(
