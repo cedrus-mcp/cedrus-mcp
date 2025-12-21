@@ -13,7 +13,7 @@ class DialecticalRelation(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now, alias="_created_at")
     last_modified: datetime = Field(default_factory=datetime.now, alias="_last_modified")
     target_premise_idx: int | None = None
-    needs_review_flag: str | None = None
+    needs_review_flag: bool = False
     metadata: dict[str, Any] = Field(default_factory=dict)
     
     model_config = {"populate_by_name": True}

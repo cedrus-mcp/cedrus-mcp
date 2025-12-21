@@ -11,13 +11,16 @@ KOALA_DATA_FILE=~/maps/debate.json KOALA_MAX_NODES=200 uv run koala
 """
 
 from pathlib import Path
-from pydantic_settings import BaseSettings
-from typing import Optional
-import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """KOALA application settings."""
+    
+    model_config = SettingsConfigDict(
+        env_prefix="KOALA_",
+        case_sensitive=False
+    )
     
     # Data persistence
     data_file: Path = Path("argument_map.json")
@@ -27,10 +30,6 @@ class Settings(BaseSettings):
     
     # Validation settings
     enable_auto_validation: bool = True
-    
-    class Config:
-        env_prefix = "KOALA_"
-        case_sensitive = False
 
 
 # Global settings instance
