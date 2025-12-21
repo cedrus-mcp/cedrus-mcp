@@ -1,13 +1,8 @@
 """Node detail resources: detailed node information and context."""
 from typing import Any
 
-from mcp.server.fastmcp import Context
-from mcp.server.session import ServerSession
-
 from koala.graph.argument_map import ArgumentMap
-from koala.graph.rendering import render_argdown_node
-from koala.models.base import NodeLabel
-from koala.server import AppContext, mcp
+from koala.server import mcp
 
 @mcp.resource("argmap://statistics")
 async def statistics_resource() -> dict[str, Any]:
