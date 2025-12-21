@@ -75,7 +75,7 @@ def new_claim(
 
     # Add claim node to argument map
     arg_map.add_claim(claim_node)
-    tc.note(f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.")
+    tc.issue("info", f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.")
 
     # Create dialectical relation if specified
     relation_creation_fn = (
@@ -87,13 +87,13 @@ def new_claim(
         relation_creation_fn(
             from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
         )
-        tc.note(f"\n  Linked new claim to `{to_label}` via a `{relation_type}` relation.")
+        tc.issue("info", f"\n  Linked new claim to `{to_label}` via a `{relation_type}` relation.")
         maybe_ground_relation(
             label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
         )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
-        tc.note(f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation.")
+        tc.issue("info", f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation.")
         maybe_ground_relation(
             from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
         )
@@ -192,7 +192,7 @@ def new_argument(
     arg_map.add_argument(argument_node)
     msg = f"✓ Created new argument node `<{label}>`"
     msg += f" with gist `{textwrap.shorten(gist or '', width=50)}`." if gist else "."
-    tc.note(msg)
+    tc.issue("info", msg)
 
     # Create dialectical relation if specified
     relation_creation_fn = (
@@ -204,13 +204,13 @@ def new_argument(
         relation_creation_fn(
             from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
         )
-        tc.note(f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
+        tc.issue("info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
         maybe_ground_relation(
             label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
         )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
-        tc.note(f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
+        tc.issue("info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
         maybe_ground_relation(
             from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
         )

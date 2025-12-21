@@ -70,10 +70,10 @@ class AddToolArgs(BaseModel):
         if self.node_type is None:
             if self.gist or self.conclusion or self.premises:
                 self.node_type = "argument"
-                tc.note("Adding an 'argument' node (inferred from provided fields).", priority=.2)
+                tc.issue("info", "Adding an 'argument' node (inferred from provided fields).", priority=.2)
             else:
                 self.node_type = "claim"
-                tc.note("Adding a 'claim' node (inferred from provided fields).", priority=.2)
+                tc.issue("info", "Adding a 'claim' node (inferred from provided fields).", priority=.2)
 
         # Check node arguments
         if self.node_type not in ["claim", "argument"]:
@@ -94,7 +94,7 @@ class AddToolArgs(BaseModel):
         )
         if self.to_label or self.from_label:
             if self.relation_type is None:
-                tc.note("Assuming 'support' relation type as default.", priority=.2)
+                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
                 self.relation_type = "support"
             if self.relation_type not in ["support", "attack"]:
                 raise ValueError("relation_type must be either 'support' or 'attack'.")
@@ -133,29 +133,29 @@ class EditToolArgs(BaseModel):
                 if self.new_value is None and self.old_value is None:
                     raise ValueError("When editing 'tags', at least one of 'new_value' or 'old_value' must be provided.")
                 if self.premise_idx is not None:
-                    tc.note("Ignoring premise_idx when editing 'tags' field.", priority=.2)
+                    tc.issue("warning", "Ignoring premise_idx when editing 'tags' field.", priority=.2)
                     self.premise_idx = None
                 if self.key is not None:
-                    tc.note("Ignoring key when editing 'tags' field.", priority=.2)
+                    tc.issue("info", "Ignoring key when editing 'tags' field.", priority=.2)
                     self.key = None
             case "metadata":
                 if self.key is None:
                     raise ValueError("When editing 'metadata', 'key' must be provided.")
                 if self.premise_idx is not None:
-                    tc.note("Ignoring premise_idx when editing 'metadata' field.", priority=.2)
+                    tc.issue("warning", "Ignoring premise_idx when editing 'metadata' field.", priority=.2)
                     self.premise_idx = None
                 if self.old_value is not None:
-                    tc.note("Ignoring old_value when editing 'metadata' field.", priority=.2)
+                    tc.issue("info", "Ignoring old_value when editing 'metadata' field.", priority=.2)
                     self.old_value = None
             case "proposition" | "gist" | "conclusion" | "label":
                 if self.key is not None:
-                    tc.note(f"Ignoring `key` when editing '{self.field}' field.", priority=.2)
+                    tc.issue("info", f"Ignoring `key` when editing '{self.field}' field.", priority=.2)
                     self.key = None
                 if self.premise_idx is not None:
-                    tc.note(f"Ignoring `premise_idx` when editing '{self.field}' field.", priority=.2)
+                    tc.issue("warning", f"Ignoring `premise_idx` when editing '{self.field}' field.", priority=.2)
                     self.premise_idx = None
                 if self.old_value is not None:
-                    tc.note(f"Ignoring `old_value` when editing '{self.field}' field.", priority=.2)
+                    tc.issue("info", f"Ignoring `old_value` when editing '{self.field}' field.", priority=.2)
                     self.old_value = None
 
 
@@ -172,7 +172,7 @@ class ConnectToolArgs(BaseModel):
         """Validate and sanitize arguments for the connect tool."""
         
         if self.relation_type is None:
-            tc.note(
+            tc.issue("info", 
                 "Assuming 'support' relation type as default.", priority=.2
             ).suggest(
                 "connect",

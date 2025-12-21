@@ -38,7 +38,7 @@ def flag_relations_as_needing_review(
 
     total_flagged = len(supporters) + len(attackers) + len(supported) + len(attacked)
     if total_flagged > 0:
-        tc.note(
+        tc.issue("info", 
             f"Flagged {total_flagged} dialectical relation(s) connected to node `{ref_node_label}` as needing review.",
             priority=1.0,
         )
@@ -72,7 +72,7 @@ def flag_nodes_as_needing_review(
         arg_map.update_node(node_label, {"needs_review_flag": True})
 
     if nodes_requiring_review:
-        tc.note(
+        tc.issue("info", 
             f"Flagged {len(nodes_requiring_review)} node(s) as needing review due to proposition update: {', '.join(nodes_requiring_review)}",
             priority=1.0,
         )

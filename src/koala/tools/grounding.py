@@ -169,7 +169,7 @@ def maybe_ground_relation(
         True if grounding succeeded, False otherwise
     """
     if is_grounded_relation(from_label, to_label, relation_type, arg_map):
-        tc.note("Dialectical relation (`{relation_type}`) created is already grounded.")
+        tc.issue("info", f"Dialectical relation (`{relation_type}`) created is already grounded.")
         return True
 
     if not validate_grounding_strategy(
@@ -193,7 +193,7 @@ def maybe_ground_relation(
                     else source_node.conclusion
                 )
                 arg_map.add_equivalence(from_prop_id, to_prop_id)
-                tc.note(
+                tc.issue("info", 
                     "Grounded support relation by defining equivalence between target and sourcepropositions."
                 )
                 return True
@@ -209,7 +209,7 @@ def maybe_ground_relation(
                     else source_node.conclusion
                 )
                 arg_map.add_negation(from_prop_id, to_prop_id)
-                tc.note(
+                tc.issue("info", 
                     "Grounded attack relation by defining negation between target and source propositions."
                 )
                 return True
@@ -226,12 +226,12 @@ def maybe_ground_relation(
                 )  # may be empty
                 if isinstance(source_node, ClaimNode):
                     arg_map.update_node(source_node.label, {"proposition_id": to_prop_id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded support relation by using target proposition as source claim's proposition."
                     )
                 else:
                     arg_map.update_node(source_node.label, {"conclusion": to_prop_id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded support relation by using target proposition to source argument's conclusion."
                     )
                 if from_prop_id:
@@ -262,12 +262,12 @@ def maybe_ground_relation(
                     arg_map.add_proposition(neg_to_prop)
                 if isinstance(source_node, ClaimNode):
                     arg_map.update_node(source_node.label, {"proposition_id": neg_to_prop.id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded attack relation by using negated target proposition as source claim's proposition."
                     )
                 else:
                     arg_map.update_node(source_node.label, {"conclusion": neg_to_prop.id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded attack relation by using negated target proposition as source argument's conclusion."
                     )
                 return True
@@ -282,14 +282,14 @@ def maybe_ground_relation(
                 )
                 if isinstance(target_node, ClaimNode):
                     arg_map.update_node(target_node.label, {"proposition_id": from_prop_id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded support relation by using source proposition as target claim's proposition."
                     )
                 else:
                     arg_map.update_node(
                         target_node.label, {"premises": target_node.premises + [from_prop_id]}
                     )
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded support relation by adding source proposition to target argument's premises."
                     )
                 return True
@@ -314,12 +314,12 @@ def maybe_ground_relation(
                     arg_map.add_proposition(neg_from_prop)
                 if isinstance(target_node, ClaimNode):
                     arg_map.update_node(target_node.label, {"proposition_id": neg_from_prop.id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded attack relation by using negated source proposition as target claim's proposition."
                     )
                 else:
                     arg_map.update_node(target_node.label, {"conclusion": neg_from_prop.id})
-                    tc.note(
+                    tc.issue("info", 
                         "Grounded attack relation by using negated source proposition as target argument's conclusion."
                     )
                 return True

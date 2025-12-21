@@ -199,21 +199,21 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
 
         if mode == "sketch":
             if kwargs.get("grounding_strategy") is not None:
-                tc.note(
+                tc.issue("warning",
                     "Ignoring grounding strategies in 'sketch' mode.", priority=.2
                 ).suggest(
                     "mode", {"mode": "author"}, "Switch to 'author' mode to use grounding strategies."
                 )
                 kwargs["grounding_strategy"] = None
             if kwargs.get("target_premise_idx") is not None:
-                tc.note(
+                tc.issue("warning", 
                     "Ignoring target_premise_idx in 'sketch' mode.", priority=.2
                 ).suggest(
                     "mode", {"mode": "author"}, "Switch to 'author' mode to specify target premise index."
                 )
                 kwargs["target_premise_idx"] = None
         elif mode == "review":
-            tc.note(
+            tc.issue("info", 
                 "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
                 "mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
@@ -267,7 +267,7 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
                                     tc=tc,
                                 )
                             except Exception as e:
-                                tc.note(f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
+                                tc.issue("warning", f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
                         return tc.failure(
                             f"✗ Failed to ground support relation from `{args.from_label}` to `{args.to_label}`.",
                             error="GroundingFailed",
@@ -283,7 +283,7 @@ def connect(from_label: str, to_label: str, ctx: Context[ServerSession, AppConte
                                     tc=tc,
                                 )
                             except Exception as e:
-                                tc.note(f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
+                                tc.issue("warning", f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
                         return tc.failure(
                             f"✗ Failed to ground attack relation from `{args.from_label}` to `{args.to_label}`.",
                             error="GroundingFailed",
@@ -325,12 +325,12 @@ def remove(ctx: Context[ServerSession, AppContext], **kwargs: Any) -> CallToolRe
         from_label = kwargs.get("from_label")
         if label and label.strip():
             if to_label is not None:
-                tc.note("Ignoring to_label when removing a node.", priority=.2)
+                tc.issue("info", "Ignoring to_label when removing a node.", priority=.2)
             if from_label is not None:
-                tc.note("Ignoring from_label when removing a node.", priority=.2)
+                tc.issue("info", "Ignoring from_label when removing a node.", priority=.2)
         elif to_label and to_label.strip() and from_label and from_label.strip():
             if label is not None:
-                tc.note("Ignoring label when removing a relation.", priority=.2)
+                tc.issue("info", "Ignoring label when removing a relation.", priority=.2)
         else:
             return tc.issue(
                 "error",

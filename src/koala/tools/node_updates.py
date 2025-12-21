@@ -368,7 +368,7 @@ def update_metadata(
         if new_value is None:
             if key in updated_metadata:
                 del updated_metadata[key]
-                tc.note(
+                tc.issue("info", 
                     f"Removing metadata key `{key}` from node `[{label}]` (`new_value=None`)."
                 )
         else:
@@ -434,15 +434,15 @@ def update_tags(
         if old_value is not None:
             if old_value in updated_tags:
                 updated_tags.remove(old_value)
-                tc.note(f"Removing tag `{old_value}` from node `[{label}]`.")
+                tc.issue("info", f"Removing tag `{old_value}` from node `[{label}]`.")
             else:
-                tc.note(f"Tag `{old_value}` not found in node `[{label}]`; nothing to remove.")
+                tc.issue("info", f"Tag `{old_value}` not found in node `[{label}]`; nothing to remove.")
         if new_value is not None:
             if new_value not in updated_tags:
                 updated_tags.add(new_value)
-                tc.note(f"Adding tag `{new_value}` to node `[{label}]`.")
+                tc.issue("info", f"Adding tag `{new_value}` to node `[{label}]`.")
             else:
-                tc.note(f"Tag `{new_value}` already present in node `[{label}]`; nothing to add.")
+                tc.issue("info", f"Tag `{new_value}` already present in node `[{label}]`; nothing to add.")
 
         try:
             arg_map.update_node(node.label, {"tags": list(updated_tags)})
@@ -496,7 +496,7 @@ def update_premises(
 
         premise_nodes = [arg_map.get_proposition(pid) for pid in argument_node.premises]
         if any(p is None for p in premise_nodes):
-            tc.note(
+            tc.issue("info", 
                 f"Found and cleaned up non-existing premises in argument `<{label}>`.",
                 priority=0.2,
             )

@@ -35,7 +35,7 @@ def ensure_label_is_unique(
     if new_label == label:
         return label
 
-    tc.note(
+    tc.issue("warning",
         f"Note: Label '{label}' is already in use. Creating unique label '{new_label}'.",
         priority=1.0,
     )
@@ -56,7 +56,7 @@ def sanitize_relation_args_new_node(
     # Make sure only one relation is created
     if to_label and from_label:
         from_label = None  # Can't have both
-        tc.note(
+        tc.issue("info", 
             "Note: Both 'to_label' and 'from_label' were provided. Will ignore 'from_label'.",
             priority=1.0,
         )
@@ -64,11 +64,11 @@ def sanitize_relation_args_new_node(
     # Check if to_label / from_label exist
     if to_label is not None and arg_map.is_node(to_label) is False:
         msg = f"Target node `{to_label}` does not exist in the argument map. Will create node without relation."
-        tc.note(f"Warning: {msg}", priority=1.0)
+        tc.issue("warning", msg, priority=1.0)
         to_label = None
     if from_label is not None and arg_map.is_node(from_label) is False:
         msg = f"Source node `{from_label}` does not exist in the argument map. Will create node without relation."
-        tc.note(f"Warning: {msg}", priority=1.0)
+        tc.issue("warning", msg, priority=1.0)
         from_label = None
 
     # Validate target_premise_idx
@@ -76,7 +76,7 @@ def sanitize_relation_args_new_node(
         not to_label or not validate_target_premise_idx(to_label, target_premise_idx, arg_map)
     ):
         msg = f"No premise at index {target_premise_idx} in target argument `{to_label}`. Ignoring `target_premise_idx`."
-        tc.note(f"Warning: {msg}", priority=1.0)
+        tc.issue("warning", msg, priority=1.0)
         target_premise_idx = None
 
     return to_label, from_label, target_premise_idx
