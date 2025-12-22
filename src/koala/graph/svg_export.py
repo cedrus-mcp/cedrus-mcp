@@ -118,6 +118,8 @@ def export_svg(
     
     # Add edges
     for from_label, to_label, edge_data in processed_graph.edges(data=True):
+        if (from_label, to_label) in arg_map.redundant_edges():
+            continue  # Skip redundant edges
         dot.edge(
             from_label,
             to_label,
@@ -160,6 +162,7 @@ def _preprocess_argument_graph(
     
     # Process edges
     for from_label, to_label in arg_map.argument_graph.edges():
+
         relation = arg_map.get_dialectic_relation(from_label, to_label)
         
         if relation:

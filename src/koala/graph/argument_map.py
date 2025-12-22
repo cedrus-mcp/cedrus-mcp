@@ -1,6 +1,7 @@
 # src/koala/graph/argument_map.py
 
 from __future__ import annotations
+from functools import lru_cache
 import textwrap
 
 from mcp.server.fastmcp.utilities.logging import get_logger
@@ -390,6 +391,19 @@ class ArgumentMap:
         """Get weakly connected components of the argument graph."""
         return [list(c) for c in nx.weakly_connected_components(self.argument_graph)]
 
+    def redundant_edges(self, subset: list[NodeLabel] | None = None) -> List[tuple[NodeLabel, NodeLabel]]:
+        """Get list of redundant edges in the argument graph.
+        
+        An edge (a, b) from argument node a to argument node b is redundant 
+        iff there is a claim c such that
+        * (a, b) is a support edge, a supports c, and c supports b, or
+        * (a, b) is an attack edge, a attacks c, and c supports b, or
+        * (a, b) is an attack edge, a supports c, and c attacks b.
+        """
+        subset_tuple = tuple(subset) if subset is not None else None
+        return self._redundant_edges(self.argument_graph, subset=subset_tuple)
+
+
     def find_proposition_by_content(self, content: str) -> Iterator[Proposition]:
         """Get propositions by content."""
         for node in self.proposition_graph.nodes:
@@ -523,3 +537,77 @@ class ArgumentMap:
         map.argument_graph = nx.node_link_graph(data["argument_graph"])
         map.proposition_graph = nx.node_link_graph(data["proposition_graph"])
         return map
+
+
+    # === Internal helper methods can be added here ===
+
+    @lru_cache(maxsize=64)
+    def _redundant_edges(self, graph: nx.DiGraph[NodeLabel], subset: list[NodeLabel] | None = None) -> List[tuple[NodeLabel, NodeLabel]]:
+        """Get list of redundant edges in the argument graph.
+        
+        An edge (a, b) from argument node a to argument node b is redundant 
+        iff there is a claim c such that
+        * (a, b) is a support edge, a supports c, and c supports b, or
+        * (a, b) is an attack edge, a attacks c, and c supports b, or
+        * (a, b) is an attack edge, a supports c, and c attacks b.
+        """
+        redundant: List[tuple[NodeLabel, NodeLabel]] = []
+
+        # Pre-fetch edge data to reduce redundant lookups
+        edge_data_cache = {
+            (u, v): graph.edges[u, v]
+            for u, v in graph.edges()
+        }
+
+        for u, v in edge_data_cache:
+            edge_data = edge_data_cache[(u, v)]
+            if edge_data.get("_type") not in {"support", "attack"}:
+                continue
+
+            u_node = self.get_node(u)
+            v_node = self.get_node(v)
+            if not isinstance(u_node, ArgumentNode) or not isinstance(v_node, ArgumentNode):
+                continue
+
+            for c in graph.successors(u):
+                if subset is not None and c not in subset:
+                    continue
+                c_node = self.get_node(c)
+                if not isinstance(c_node, ClaimNode):
+                    continue
+
+                c_edge_data = edge_data_cache.get((u, c))
+                if not c_edge_data or c_edge_data.get("_type") not in {"support", "attack"}:
+                    continue
+
+                if self._is_redundant_support(edge_data, c_edge_data, c, v, edge_data_cache):
+                    redundant.append((u, v))
+                    break
+                if self._is_redundant_attack(edge_data, c_edge_data, c, v, edge_data_cache):
+                    redundant.append((u, v))
+                    break
+
+        return redundant
+    
+    # Helper methods for redundancy checks
+    @staticmethod
+    def _is_redundant_support(edge_data, c_edge_data, c, v, edge_data_cache):
+        if edge_data["_type"] == "support" and c_edge_data["_type"] == "support":
+            c_to_v_edge_data = edge_data_cache.get((c, v))
+            if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "support":
+                return True
+        return False
+
+    @staticmethod
+    def _is_redundant_attack(edge_data, c_edge_data, c, v, edge_data_cache):
+        if edge_data["_type"] == "attack":
+            if c_edge_data["_type"] == "attack":
+                c_to_v_edge_data = edge_data_cache.get((c, v))
+                if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "support":
+                    return True
+            elif c_edge_data["_type"] == "support":
+                c_to_v_edge_data = edge_data_cache.get((c, v))
+                if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "attack":
+                    return True
+        return False
+

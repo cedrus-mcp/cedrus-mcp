@@ -194,3 +194,43 @@ def test_delete_relation() -> None:
     arg_map.delete_relation("A1", "C1")
     
     assert arg_map.get_dialectic_relation("A1", "C1") is None
+
+
+def test_redundant_edges_with_subset() -> None:
+    """Test redundant_edges with a subset of nodes."""
+    arg_map = ArgumentMap()
+
+    # Add propositions
+    prop1 = Proposition(content="Claim 1")
+    prop2 = Proposition(content="Claim 2")
+    prop3 = Proposition(content="Claim 3")
+    arg_map.add_proposition(prop1)
+    arg_map.add_proposition(prop2)
+    arg_map.add_proposition(prop3)
+
+    # Add claim nodes
+    claim1 = ClaimNode(label="C1", proposition_id=prop1.id)
+    claim2 = ClaimNode(label="C2", proposition_id=prop2.id)
+    arg_map.add_claim(claim1)
+    arg_map.add_claim(claim2)
+
+    # Add argument nodes
+    arg1 = ArgumentNode(label="A1", gist="Argument 1", premises=[prop1.id], conclusion=prop2.id)
+    arg2 = ArgumentNode(label="A2", gist="Argument 2", premises=[prop2.id], conclusion=prop3.id)
+    arg_map.add_argument(arg1)
+    arg_map.add_argument(arg2)
+
+    # Add relations
+    arg_map.add_support_relation("A1", "A2")
+    arg_map.add_support_relation("A1", "C1")
+    arg_map.add_support_relation("C1", "A2")
+
+    # Test redundant edges with a subset
+    subset = ["A1", "C1", "A2"]
+    redundant = arg_map.redundant_edges(subset=subset)
+    assert ("A1", "A2") in redundant
+
+    subset = ["A1", "A2"]
+    redundant = arg_map.redundant_edges(subset=subset)
+    assert ("A1", "A2") not in redundant
+

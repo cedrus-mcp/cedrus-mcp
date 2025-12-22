@@ -48,6 +48,8 @@ def _render_node_recursive(
             continue
         if support_id in nodes_visited:
             continue
+        if (support_id, node.label) in arg_map.redundant_edges(subset=subset):
+            continue
         support_node = arg_map.get_node(support_id)
         if support_node is not None:
             _render_node_recursive(
@@ -65,6 +67,8 @@ def _render_node_recursive(
         if subset is not None and attack_id not in subset:
             continue
         if attack_id in nodes_visited:
+            continue
+        if (attack_id, node.label) in arg_map.redundant_edges(subset=subset):
             continue
         attack_node = arg_map.get_node(attack_id)
         if attack_node is not None:
@@ -104,6 +108,28 @@ def render_argdown(
             label_only=label_only,
             extra_tags=extra_tags,
         )
+
+    # add any redundant edges that were skipped
+    extra_lines: list[str] = []
+    for from_label, to_label in arg_map.redundant_edges(subset=subset):
+        if not subset or (from_label in subset and to_label in subset):
+            from_node = arg_map.get_node(from_label)
+            to_node = arg_map.get_node(to_label)
+            if from_node is not None and to_node is not None:
+                line = "// "
+                line += f"[{from_node.label}]" if isinstance(from_node, ClaimNode) else f"<{from_node.label}>"
+                relation = arg_map.get_dialectic_relation(from_label, to_label)
+                if relation is not None:
+                    line += " +> " if relation.relation_type == "support" else " -> "
+                else:
+                    line += " ?? "
+                line += f"[{to_node.label}]" if isinstance(to_node, ClaimNode) else f"<{to_node.label}>"
+                extra_lines.append(line)
+
+    if extra_lines:
+        lines.append("")
+        lines.append("// Redundant edges skipped above:")
+        lines.extend(extra_lines)
 
     return "\n".join(lines)
 
