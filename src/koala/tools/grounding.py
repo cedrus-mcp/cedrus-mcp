@@ -4,8 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from koala.graph import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, NodeLabel, Proposition
+from koala.models import ClaimNode, NodeLabel, Proposition
 from koala.models.relations import DialecticalRelationType
+from koala.utils.relations import is_grounded_relation
+
 
 if TYPE_CHECKING:
     from koala.tools.tool_context import ToolContext
@@ -18,43 +20,6 @@ GroundingStrategy = Literal[
     "copy_conclusion",
     "negate_conclusion",
 ]
-
-
-def is_grounded_relation(
-    from_label: NodeLabel,
-    to_label: NodeLabel,
-    relation_type: DialecticalRelationType,
-    arg_map: ArgumentMap,
-) -> bool:
-    """Check if a dialectical relation is grounded.
-    
-    Args:
-        from_label: Source node label
-        to_label: Target node label
-        relation_type: Type of relation ('support' or 'attack')
-        arg_map: The argument map
-        
-    Returns:
-        True if the relation is grounded, False otherwise
-    """
-    rel = arg_map.get_dialectic_relation(from_label, to_label)
-    if rel is None:
-        return False
-    source_node = arg_map.get_node(from_label)
-    target_node = arg_map.get_node(to_label)
-    source_prop_id = (
-        source_node.proposition_id if isinstance(source_node, ClaimNode) else source_node.conclusion
-    )
-    target_prop_ids = (
-        [target_node.proposition_id] if isinstance(target_node, ClaimNode) else target_node.premises
-    )
-
-    if relation_type == "support":
-        return any(arg_map.are_equivalent(source_prop_id, pid) for pid in target_prop_ids)
-    elif relation_type == "attack":
-        return any(arg_map.are_contradictory(source_prop_id, pid) for pid in target_prop_ids)
-    else:
-        return False
 
 
 def validate_grounding_strategy(

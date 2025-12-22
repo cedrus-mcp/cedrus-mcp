@@ -20,6 +20,7 @@ from koala.tools import relation_authoring, suggestions, utils
 from koala.tools import node_creation, node_updates, node_deletion
 from koala.tools.tool_args import parse_tool_args
 from koala.tools.tool_context import tool_context
+from koala.validation import validate_argument_map
 
 logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
@@ -441,6 +442,50 @@ def remove(
             )
 
         raise ValueError("Internal Error: Unhandled case in remove tool.")
+
+@mcp.tool()
+def validate(
+    ctx: Context[ServerSession, AppContext],
+    fix: bool = False,
+) -> CallToolResult:
+    """Validate the current argument map for consistency and completeness.
+
+    Args:
+        fix: If True, attempt to automatically fix certain issues.
+
+    Example usage:
+
+        validate()
+    """
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+
+        if tc.mode == "sketch":
+            tc.issue("info",
+                "Validation may be limited in 'sketch' mode. Consider switching to 'author' mode for full validation."
+            ).suggest(
+                "mode", {"mode": "author"}, "Switch to 'author' mode for comprehensive validation."
+            )
+
+        validate_argument_map(arg_map, tc, fix=fix)
+
+        if not any(issue.severity == "error" for issue in tc.issues):
+            tc.success("✓ Argument map is valid and consistent.")
+        else:
+            tc.success(
+                f"✗ Argument map has {len(tc.issues)} issues.",
+            )
+            if not fix:
+                tc.suggest(
+                    "validate",
+                    {"fix": True},
+                    "Run validate with fix=True to attempt automatic corrections.",
+                )
+
+        return tc.build()
 
 
 @mcp.tool()

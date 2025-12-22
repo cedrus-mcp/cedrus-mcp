@@ -322,6 +322,10 @@ class ArgumentMap:
         """Check if a proposition exists."""
         return self.proposition_graph.has_node(prop_id)
 
+    def list_node_labels(self) -> List[NodeLabel]:
+        """Get all node labels."""
+        return list(self.argument_graph.nodes())
+
     def list_claims(self) -> List[ClaimNode]:
         """Get all claim nodes."""
         return [
@@ -341,6 +345,22 @@ class ArgumentMap:
     def list_roots(self) -> List[NodeLabel]:
         """Get all root nodes (nodes with no incoming edges)."""
         return [n for n in self.argument_graph.nodes() if self.argument_graph.out_degree(n) == 0]
+
+    def list_support_relations(self) -> List[tuple[NodeLabel, NodeLabel]]:
+        """Get all support relations."""
+        return [
+            (u, v)
+            for u, v in self.argument_graph.edges()
+            if self.argument_graph.edges[u, v]["_type"] == "support"
+        ]
+    
+    def list_attack_relations(self) -> List[tuple[NodeLabel, NodeLabel]]:
+        """Get all attack relations."""
+        return [
+            (u, v)
+            for u, v in self.argument_graph.edges()
+            if self.argument_graph.edges[u, v]["_type"] == "attack"
+        ]
 
     def get_supporters(self, label: NodeLabel) -> List[NodeLabel]:
         """Get nodes that support this node."""
@@ -412,6 +432,11 @@ class ArgumentMap:
             if proposition.content == content:
                 yield proposition
 
+    def list_equivalence_classes(self) -> List[set[PropositionID]]:
+        """Get all equivalence classes of propositions."""
+        equiv_graph: nx.Graph[PropositionID] = self._get_equivalence_graph()
+        return [set(c) for c in nx.connected_components(equiv_graph)]
+
     def is_acyclic(self) -> bool:
         """Check if the argument graph is acyclic."""
         return nx.is_directed_acyclic_graph(self.argument_graph)
@@ -456,10 +481,6 @@ class ArgumentMap:
         """Get most central nodes by degree centrality."""
         centrality = nx.degree_centrality(self.argument_graph)
         return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:k]
-
-    def get_connected_components(self) -> int:
-        """Get number of weakly connected components."""
-        return nx.number_weakly_connected_components(self.argument_graph)
 
     # === Utils ===
 

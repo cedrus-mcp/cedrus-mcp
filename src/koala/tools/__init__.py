@@ -7,6 +7,8 @@ from .tools import (
     edit,
     remove,
     connect,
+    validate,
+    export,
     mode,
 )
 
@@ -17,6 +19,8 @@ ToolName = Literal[
     "edit",
     "remove",
     "connect",
+    "validate",
+    "export",
     "mode",
 ]
 
@@ -25,6 +29,8 @@ __all__ = [
     "edit",
     "remove",
     "connect",
+    "validate",
+    "export",
     "mode",
     "ToolName",
 ]
