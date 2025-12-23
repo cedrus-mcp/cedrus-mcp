@@ -259,6 +259,8 @@ def connect(
                 "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
                 "mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
+            ).suggest(
+                "validate", {}, "Run 'validate' to check the argument map.",
             )
 
         args = parse_tool_args("connect", tc, arg_map, from_label=from_label, to_label=to_label, **kwargs)

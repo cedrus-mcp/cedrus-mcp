@@ -255,6 +255,13 @@ def add_suggestions_after_adding_node(
                     target_premise_idx="TARGET_PREMISE_IDX",
                 )
 
+        elif tc.mode == "review":
+            tc.suggest(
+                "validate",
+                {},
+                f"Review the argument `<{label}>`, and (re-)run all validations on the entire argument map.", 
+            )
+
 
 
 
