@@ -255,7 +255,8 @@ class ToolContext:
     def suggest_attack_argument(
         self,
         label: str,
-        reason: str
+        reason: str,
+        target_premise_idx: int | str | None = None
     ) -> ToolContext:
         """Shorthand for suggesting an attacking argument.
         
@@ -277,6 +278,7 @@ class ToolContext:
                 "relation_options": {
                     "to_label": label,
                     "relation_type": "attack",
+                    "target_premise_idx": target_premise_idx,
                 }
             },
             reason,

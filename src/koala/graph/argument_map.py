@@ -437,6 +437,32 @@ class ArgumentMap:
         equiv_graph: nx.Graph[PropositionID] = self._get_equivalence_graph()
         return [set(c) for c in nx.connected_components(equiv_graph)]
 
+    def has_non_supporting_arguments(self) -> bool:
+        """Check if there exist arguments without outgoing support relations"""
+        for node, data in self.argument_graph.nodes(data=True):
+            if data["_type"] != "argument":
+                continue
+            is_supporting = any(
+                self.argument_graph.edges[node, succ]["_type"] == "support"
+                for succ in self.argument_graph.successors(node)
+            )
+            if not is_supporting:
+                return True
+        return False
+
+    def has_non_attacking_arguments(self) -> bool:
+        """Check if there exist arguments without outgoing attack relations"""
+        for node, data in self.argument_graph.nodes(data=True):
+            if data["_type"] != "argument":
+                continue
+            is_attacking = any(
+                self.argument_graph.edges[node, succ]["_type"] == "attack"
+                for succ in self.argument_graph.successors(node)
+            )
+            if not is_attacking:
+                return True
+        return False
+
     def is_acyclic(self) -> bool:
         """Check if the argument graph is acyclic."""
         return nx.is_directed_acyclic_graph(self.argument_graph)
