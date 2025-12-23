@@ -447,11 +447,13 @@ def remove(
 def validate(
     ctx: Context[ServerSession, AppContext],
     fix: bool = False,
+    max_issues: int | None = None,
 ) -> CallToolResult:
     """Validate the current argument map for consistency and completeness.
 
     Args:
         fix: If True, attempt to automatically fix certain issues.
+        max_issues: Maximum number of issues to report (defaults to None for no limit).
 
     Example usage:
 
@@ -470,13 +472,13 @@ def validate(
                 "mode", {"mode": "author"}, "Switch to 'author' mode for comprehensive validation."
             )
 
-        validate_argument_map(arg_map, tc, fix=fix)
+        issues_found = validate_argument_map(arg_map, tc, fix=fix, max_issues=max_issues)
 
         if not any(issue.severity == "error" for issue in tc.issues):
             tc.success("✓ Argument map is valid and consistent.")
         else:
             tc.success(
-                f"✗ Argument map has {len(tc.issues)} issues.",
+                f"✗ Argument map has {issues_found} issues.",
             )
             if not fix:
                 tc.suggest(

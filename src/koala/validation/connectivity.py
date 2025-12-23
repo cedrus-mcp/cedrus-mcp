@@ -4,16 +4,20 @@ from koala.graph.argument_map import ArgumentMap
 from koala.tools.tool_context import ToolContext
 
 
-def check_connectivity(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False) -> None:
+def check_connectivity(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None) -> int:
     """Check that the argument map is fully connected.
 
     Args:
         arg_map: The argument map to validate.
         tc: The tool context.
         fix: If True, attempt to automatically fix certain issues.
+
+    Returns:
+        The number of issues found.
     """
 
-    # check for multiple connected components
+    issues_found = 0
+
     connected_components = arg_map.connected_components()
     num_components = len(connected_components)
     if num_components > 1:
@@ -29,3 +33,6 @@ def check_connectivity(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False)
             f" Consider connecting the components via their root nodes ({'; '.join(cc_roots)})."
         )
         tc.issue("warning", message)
+        issues_found += 1
+
+    return issues_found

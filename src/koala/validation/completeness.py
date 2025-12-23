@@ -6,18 +6,25 @@ from koala.tools.tool_context import ToolContext
 from koala.utils.relations import has_grounding
 
 
-def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False) -> None:
+def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None) -> int:
     """Check that every dialectical relation that can be derived from the internal structure of nodes is present in the argument map.
 
     Args:
         arg_map: The argument map to validate.
         tc: The tool context.
         fix: If True, attempt to automatically fix certain issues.
+
+    Returns:
+        The number of issues found.
     """
+
+    issues_found = 0
 
     # iterate over all node pairs
     for from_label in arg_map.list_node_labels():
         for to_label in arg_map.list_node_labels():
+            if max_issues is not None and issues_found >= max_issues:
+                break
             if from_label == to_label:
                 continue
 
@@ -25,6 +32,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False)
             if has_grounding(from_label, to_label, "support", arg_map):
                 relation = arg_map.get_dialectic_relation(from_label, to_label)
                 if not relation or relation.relation_type != "support":
+                    issues_found += 1
                     if fix:
                         # automatically add the missing support relation
                         _ = relation_authoring.new_support_relation(
@@ -54,6 +62,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False)
             if has_grounding(from_label, to_label, "attack", arg_map):
                 relation = arg_map.get_dialectic_relation(from_label, to_label)
                 if not relation or relation.relation_type != "attack":
+                    issues_found += 1
                     if fix:
                         # automatically add the missing attack relation
                         _ = relation_authoring.new_attack_relation(
@@ -79,3 +88,4 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False)
                             "fix",
                         )
 
+    return issues_found

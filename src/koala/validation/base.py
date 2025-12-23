@@ -9,7 +9,7 @@ from koala.validation.connectivity import check_connectivity
 from koala.validation.grounding import check_grounding
 
 
-def validate_argument_map(arg_map: ArgumentMap, tc: ToolContext, fix: bool=False) -> None:
+def validate_argument_map(arg_map: ArgumentMap, tc: ToolContext, fix: bool=False, max_issues: int | None = None) -> int:
     """Validate the argument map using a series of validation steps.
 
     Args:
@@ -18,13 +18,17 @@ def validate_argument_map(arg_map: ArgumentMap, tc: ToolContext, fix: bool=False
         fix: If True, attempt to automatically fix certain issues.
 
     Returns:
-        None
+        The number of issues found.
     """
-    
-    if tc.mode != "sketch":
-        check_grounding(arg_map, tc, fix)
-        check_completeness(arg_map, tc, fix)
-        check_consistency(arg_map, tc, fix)
 
-    check_connectivity(arg_map, tc, fix)
+    issues_found = 0
+
+    if tc.mode != "sketch":
+        issues_found += check_grounding(arg_map, tc, fix, max_issues)
+        issues_found += check_completeness(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
+        issues_found += check_consistency(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
+
+    issues_found += check_connectivity(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
+
+    return issues_found
 
