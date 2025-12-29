@@ -305,23 +305,26 @@ def add_argument(
                     error="InvalidRelationType",
                 ).build()
 
+        kwargs = {
+            "gist": gist,
+            "premises": premises,
+            "conclusion": conclusion,
+            "to_label": to_label,
+            "from_label": from_label,
+            "relation_type": relation_type,
+            "target_premise_idx": target_premise_idx,
+            "tags": tags,
+            "metadata": metadata,
+        }
         try:
             node_creation.new_argument(
                 label=label,
-                gist=gist,
-                premises=premises,
-                conclusion=conclusion,
-                to_label=to_label,
-                from_label=from_label,
-                relation_type=relation_type,
-                target_premise_idx=target_premise_idx,
-                tags=tags,
-                metadata=metadata,
+                **kwargs,
                 arg_map=arg_map,
                 tc=tc,
             )
         except Exception as e:
-            logger.error(f"Error creating argument `{label}`: {str(e)}")
+            logger.error(f"Error creating argument `{label}` ({kwargs}): {str(e)}")
             return tc.failure(
                 f"✗ Failed to create argument `{label}`: {str(e)}", error=str(e)
             ).build()
