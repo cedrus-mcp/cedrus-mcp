@@ -85,8 +85,8 @@ def test_remove_relation(tool_context: Mock) -> None:
 
 def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
     """Test removing a non-existent node raises KeyError."""
-    with pytest.raises(KeyError):
-        remove(label="NONEXISTENT", ctx=tool_context)
+    result = remove(label="NONEXISTENT", ctx=tool_context)
+    assert result.structuredContent["status"] == "failure"
 
 
 def test_remove_with_both_label_and_relation_prioritizes_label(tool_context: Mock) -> None:

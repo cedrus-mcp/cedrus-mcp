@@ -204,11 +204,15 @@ def add_claim(
                 tc=tc,
             )
         except Exception as e:
+            logger.error(f"Error creating claim `{label}`: {str(e)}")
             return tc.failure(
                 f"✗ Failed to create claim `{label}`: {str(e)}", error=str(e)
             ).build()
 
-        suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+        try:
+            suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+        except Exception as e:
+            logger.error(f"Error adding suggestions after creating claim `{label}`: {str(e)}")
 
         return tc.build()
 
@@ -317,11 +321,15 @@ def add_argument(
                 tc=tc,
             )
         except Exception as e:
+            logger.error(f"Error creating argument `{label}`: {str(e)}")
             return tc.failure(
                 f"✗ Failed to create argument `{label}`: {str(e)}", error=str(e)
             ).build()
 
-        suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+        try:
+            suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+        except Exception as e:
+            logger.error(f"Error adding suggestions after creating argument `{label}`: {str(e)}")
 
         return tc.build()
 
@@ -419,10 +427,12 @@ def edit(
                             tc=tc,
                         )
         except Exception as e:
+            logger.error(f"Error editing field '{args.field}' of {args.node_type} node `{label}`: {str(e)}")
             return tc.failure(
                 f"✗ Failed to edit node `{label}`: {str(e)}", error=str(e)
             ).build()
         
+        logger.error(f"Unhandled case when editing field '{args.field}' of {args.node_type} node `{label}`.")
         return tc.failure(
             f"✗ Failed to edit field '{args.field}' of {args.node_type} node `{label}`."
         ).build()
@@ -569,10 +579,12 @@ def connect(
                             error="InvalidRelationType",
                         ).build()
         except Exception as e:
+            logger.error(f"Error creating {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}")
             return tc.failure(
                 f"✗ Failed to create {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}", error=str(e)
             ).build()
         
+        logger.error(f"Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`.")
         raise RuntimeError(f"Internal Error: Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`.")
 
 
@@ -618,62 +630,69 @@ def remove(
             from_label = relation.get("from_label")
             to_label = relation.get("to_label")
         
-        # Validate that we have exactly one operation
-        if label and label.strip():
-            # Node removal - label is valid
-            pass
-        elif from_label and from_label.strip() and to_label and to_label.strip():
-            # Relation removal - both from_label and to_label are valid
-            pass
-        else:
-            return tc.issue(
-                "error",
-                "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
-            ).suggest(
-                "remove",
-                {
-                    "label": "NODE_LABEL",
-                },
-                "Remove a node by specifying its label.",
-            ).suggest(
-                "remove",
-                {
-                    "relation": {
-                        "from_label": "SOURCE_NODE_LABEL",
-                        "to_label": "TARGET_NODE_LABEL",
-                    }
-                },
-                "Remove a relation by specifying source and target node labels in relation dict.",
-            ).build()
 
-        if label:
-            node = arg_map.get_node(label)
-            if node is None:
-                return tc.failure(
-                    f"Node '{label}' does not exist.",
-                    error="NonExistentNode",
+        try:
+            # Validate that we have exactly one operation
+            if label and label.strip():
+                # Node removal - label is valid
+                pass
+            elif from_label and from_label.strip() and to_label and to_label.strip():
+                # Relation removal - both from_label and to_label are valid
+                pass
+            else:
+                return tc.issue(
+                    "error",
+                    "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
+                ).suggest(
+                    "remove",
+                    {
+                        "label": "NODE_LABEL",
+                    },
+                    "Remove a node by specifying its label.",
+                ).suggest(
+                    "remove",
+                    {
+                        "relation": {
+                            "from_label": "SOURCE_NODE_LABEL",
+                            "to_label": "TARGET_NODE_LABEL",
+                        }
+                    },
+                    "Remove a relation by specifying source and target node labels in relation dict.",
                 ).build()
 
-            if isinstance(node, ClaimNode):
-                return node_deletion.delete_claim(
-                    label=label,
-                    arg_map=arg_map,
-                    tc=tc,
-                )
-            else:
-                return node_deletion.delete_argument(
-                    label=label,
-                    arg_map=arg_map,
-                    tc=tc,
-                )
-        elif to_label and from_label:
-            return relation_authoring.delete_relation(
-                from_label=from_label,
-                to_label=to_label,
-                arg_map=arg_map,
-                tc=tc,
-            )
+            if label:
+                node = arg_map.get_node(label)
+                if node is None:
+                    return tc.failure(
+                        f"Node '{label}' does not exist.",
+                        error="NonExistentNode",
+                    ).build()
 
+                if isinstance(node, ClaimNode):
+                    return node_deletion.delete_claim(
+                        label=label,
+                        arg_map=arg_map,
+                        tc=tc,
+                    )
+                else:
+                    return node_deletion.delete_argument(
+                        label=label,
+                        arg_map=arg_map,
+                        tc=tc,
+                    )
+            elif to_label and from_label:
+                return relation_authoring.delete_relation(
+                    from_label=from_label,
+                    to_label=to_label,
+                    arg_map=arg_map,
+                    tc=tc,
+                )
+        except Exception as e:
+            logger.error(f"Error removing node/relation: {str(e)}")
+            return tc.failure(
+                f"✗ Failed to remove node/relation: {str(e)}", error=str(e)
+            ).build()
+        logger.error("Unhandled case in remove tool.")
         raise ValueError("Internal Error: Unhandled case in remove tool.")
 
 
@@ -695,11 +714,17 @@ async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResul
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        text = await koala.resources.instructions.instruction_resource()
-        tc.embed_resource(
-            uri=AnyUrl("argmap://instructions"),
-            text=text
-        )
+        try:
+            text = await koala.resources.instructions.instruction_resource()
+            tc.embed_resource(
+                uri=AnyUrl("argmap://instructions"),
+                text=text
+            )
+        except Exception as e:
+            logger.error(f"Error embedding instructions resource: {str(e)}")
+            return tc.failure(
+                f"✗ Failed to embed instructions resource: {str(e)}", error=str(e)
+            ).build()
 
     tc.success("✓ Printed instructions.")
     return tc.build()        
@@ -728,61 +753,67 @@ async def inspect(uri: str, ctx: Context[ServerSession, AppContext]) -> CallTool
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        if uri == "argmap://graph/thin":
-            text = await koala.resources.graph_views.graph_thin_resource()
-            tc.embed_resource(
-                uri=AnyUrl("argmap://graph/thin"),
-                text=text
-            )
-        elif uri == "argmap://graph/details":
-            text = await koala.resources.graph_views.graph_details_resource()
-            tc.embed_resource(
-                uri=AnyUrl("argmap://graph/details"),
-                text=text
-            )
-        elif uri.startswith("argmap://neighborhood/"):
-            parts = uri[len("argmap://neighborhood/"):].split("/")
-            if len(parts) != 2:
+        try:
+            if uri == "argmap://graph/thin":
+                text = await koala.resources.graph_views.graph_thin_resource()
+                tc.embed_resource(
+                    uri=AnyUrl("argmap://graph/thin"),
+                    text=text
+                )
+            elif uri == "argmap://graph/details":
+                text = await koala.resources.graph_views.graph_details_resource()
+                tc.embed_resource(
+                    uri=AnyUrl("argmap://graph/details"),
+                    text=text
+                )
+            elif uri.startswith("argmap://neighborhood/"):
+                parts = uri[len("argmap://neighborhood/"):].split("/")
+                if len(parts) != 2:
+                    return tc.failure(
+                        "Invalid URI format for neighborhood resource. Expected 'argmap://neighborhood/{{label}}/{{k}}'.",
+                        error="InvalidURIFormat",
+                    ).build()
+                label = parts[0]
+                try:
+                    k = int(parts[1])
+                except ValueError:
+                    return tc.failure(
+                        f"Invalid value for k in neighborhood resource. Expected an integer, got '{parts[1]}'.",
+                        error="InvalidKValue",
+                    ).build()
+                text = await koala.resources.graph_views.neighborhood_details_resource(label, k)
+                tc.embed_resource(
+                    uri=AnyUrl(uri),
+                    text=text
+                )
+            elif uri.startswith("argmap://node/details/"):
+                label = uri[len("argmap://node/details/"):]
+                node = arg_map.get_node(label)
+                if node is None:
+                    return tc.failure(
+                        f"Node '{label}' does not exist.",
+                        error="NonExistentNode",
+                    ).build()
+                text = await koala.resources.node_details.node_details_resource(label)
+                tc.embed_resource(
+                    uri=AnyUrl(uri),
+                    text=text
+                )
+            elif uri == "argmap://statistics":
+                text = await koala.resources.summaries.statistics_resource()
+                tc.embed_resource(
+                    uri=AnyUrl("argmap://statistics"),
+                    text=text
+                )
+            else:
                 return tc.failure(
-                    "Invalid URI format for neighborhood resource. Expected 'argmap://neighborhood/{{label}}/{{k}}'.",
-                    error="InvalidURIFormat",
+                    f"Unknown resource URI '{uri}'.",
+                    error="UnknownResourceURI",
                 ).build()
-            label = parts[0]
-            try:
-                k = int(parts[1])
-            except ValueError:
-                return tc.failure(
-                    f"Invalid value for k in neighborhood resource. Expected an integer, got '{parts[1]}'.",
-                    error="InvalidKValue",
-                ).build()
-            text = await koala.resources.graph_views.neighborhood_details_resource(label, k)
-            tc.embed_resource(
-                uri=AnyUrl(uri),
-                text=text
-            )
-        elif uri.startswith("argmap://node/details/"):
-            label = uri[len("argmap://node/details/"):]
-            node = arg_map.get_node(label)
-            if node is None:
-                return tc.failure(
-                    f"Node '{label}' does not exist.",
-                    error="NonExistentNode",
-                ).build()
-            text = await koala.resources.node_details.node_details_resource(label)
-            tc.embed_resource(
-                uri=AnyUrl(uri),
-                text=text
-            )
-        elif uri == "argmap://statistics":
-            text = await koala.resources.summaries.statistics_resource()
-            tc.embed_resource(
-                uri=AnyUrl("argmap://statistics"),
-                text=text
-            )
-        else:
+        except Exception as e:
+            logger.error(f"Error embedding resource '{uri}': {str(e)}")
             return tc.failure(
-                f"Unknown resource URI '{uri}'.",
-                error="UnknownResourceURI",
+                f"✗ Failed to embed resource '{uri}': {str(e)}", error=str(e)
             ).build()
 
     tc.success("✓ Printed resource.")
@@ -817,12 +848,16 @@ def validate(
 
         if tc.mode == "sketch":
             tc.issue("info",
-                "Validation may be limited in 'sketch' mode. Consider switching to 'author' mode for full validation."
-            ).suggest(
-                "mode", {"mode": "author"}, "Switch to 'author' mode for comprehensive validation."
+                "Validation may be limited in 'sketch' mode."
             )
 
-        issues_found = validate_argument_map(arg_map, tc, fix=fix, max_issues=max_issues)
+        try:
+            issues_found = validate_argument_map(arg_map, tc, fix=fix, max_issues=max_issues)
+        except Exception as e:
+            logger.error(f"Error during argument map validation: {str(e)}")
+            return tc.failure(
+                f"✗ Failed to validate argument map: {str(e)}", error=str(e)
+            ).build()
 
         if not any(issue.severity == "error" for issue in tc.issues):
             tc.success("✓ Argument map is valid and consistent.")

@@ -7,6 +7,7 @@ from koala.validation.completeness import check_completeness
 from koala.validation.consistency import check_consistency
 from koala.validation.connectivity import check_connectivity
 from koala.validation.grounding import check_grounding
+from koala.validation.content import check_core_content, check_argument_structure
 
 
 def validate_argument_map(arg_map: ArgumentMap, tc: ToolContext, fix: bool=False, max_issues: int | None = None) -> int:
@@ -23,8 +24,11 @@ def validate_argument_map(arg_map: ArgumentMap, tc: ToolContext, fix: bool=False
 
     issues_found = 0
 
+    issues_found += check_core_content(arg_map, tc, fix, max_issues)
+
     if tc.mode != "sketch":
-        issues_found += check_grounding(arg_map, tc, fix, max_issues)
+        issues_found += check_argument_structure(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
+        issues_found += check_grounding(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
         issues_found += check_completeness(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
         issues_found += check_consistency(arg_map, tc, fix, max_issues - issues_found if max_issues is not None else None)
 

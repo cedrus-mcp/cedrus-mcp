@@ -33,6 +33,7 @@ class ToolContext:
     content: list[ContentBlock] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
     suggestions: list[NextAction] = field(default_factory=list)
+    resources: list[EmbeddedResource] = field(default_factory=list)
     
     # Result state
     _status: Literal["success", "failure", "partial"] = "success"
@@ -140,7 +141,7 @@ class ToolContext:
             Self for method chaining
         """
         default_audience: list[Role] = ["assistant"]
-        self.content.append(
+        self.resources.append(
             EmbeddedResource(
                 type="resource",
                 resource=TextResourceContents(
@@ -241,6 +242,9 @@ class ToolContext:
 
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
+
+        if self.resources:
+            structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
         
         
         return CallToolResult(

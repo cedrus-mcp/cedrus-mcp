@@ -7,8 +7,10 @@ from pydantic import BaseModel
 from koala.graph.argument_map import ArgumentMap
 from koala.models import NodeLabel
 from koala.models.relations import DialecticalRelationType
+from mcp.server.fastmcp.utilities.logging import get_logger
 from koala.tools.tool_context import ToolContext
 
+logger = get_logger("koala.tool_args")
 
 # @overload
 # def parse_tool_args(tool_name: Literal["add"], tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "AddToolArgs": ...
@@ -27,6 +29,7 @@ def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwa
     elif tool_name == "connect":
         ToolArgClass = ConnectToolArgs
     else:
+        logger.error(f"Internal Error: Unknown tool name '{tool_name}' for argument parsing.")
         raise RuntimeError(f"Internal Error: Unknown tool name '{tool_name}' for argument parsing.")
 
     try:
@@ -41,6 +44,7 @@ def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwa
         args.sanitize(tc, arg_map)
         return args
     except Exception as e:
+        logger.error(f"Error parsing arguments for tool '{tool_name}': {str(e)}")
         raise ValueError(f"Error while parsing arguments for tool '{tool_name}': {str(e)}")
 
 
@@ -114,6 +118,7 @@ class EditToolArgs(BaseModel):
         elif self.node_type == "argument":
             valid_fields = ["label", "gist", "conclusion", "premises", "tags", "metadata"]
         else:
+            logger.error(f"Internal Error: Unknown node_type '{self.node_type}' for edit tool argument parsing.")
             raise ValueError("Internal error: node_type must be either 'claim' or 'argument'.")
 
         if self.field not in valid_fields:
@@ -122,11 +127,13 @@ class EditToolArgs(BaseModel):
                 {"label": self.node_type.upper(), "field": valid_fields[2], "edit_options": {"new_value": "NEW_VALUE"}},
                 f"Edit the '{valid_fields[2]}' field of {self.node_type.upper()}.",
             )
+            logger.error(f"Invalid field '{self.field}' for node_type '{self.node_type}'. Valid fields are: {', '.join(valid_fields)}.")
             raise ValueError(f"For node_type '{self.node_type}', field to edit must be one of {', '.join(valid_fields)}.")
 
         match self.field:
             case "tags":
                 if self.new_value is None and self.old_value is None:
+                    logger.error("When editing 'tags', at least one of 'new_value' or 'old_value' must be provided.")
                     raise ValueError("When editing 'tags', at least one of 'new_value' or 'old_value' must be provided.")
                 if self.premise_idx is not None:
                     tc.issue("warning", "Ignoring premise_idx when editing 'tags' field.", priority=.2)
@@ -136,6 +143,7 @@ class EditToolArgs(BaseModel):
                     self.key = None
             case "metadata":
                 if self.key is None:
+                    logger.error("When editing 'metadata', 'key' must be provided.")
                     raise ValueError("When editing 'metadata', 'key' must be provided.")
                 if self.premise_idx is not None:
                     tc.issue("warning", "Ignoring premise_idx when editing 'metadata' field.", priority=.2)
@@ -182,6 +190,7 @@ class ConnectToolArgs(BaseModel):
                 {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "RELATION_TYPE"}},
                 "Create a relation of type RELATION_TYPE ('support' or 'attack').",
             )
+            logger.error(f"relation_type must be either 'support' or 'attack', got '{self.relation_type}'.")
             raise ValueError("relation_type must be either 'support' or 'attack'.")
         if self.relation_type == "support" and self.grounding_strategy not in [None, "define_equivalence", "copy_premise", "copy_conclusion"]:
             tc.suggest(
@@ -189,6 +198,7 @@ class ConnectToolArgs(BaseModel):
                 {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "support", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
+            logger.error(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `support`.")
             raise ValueError(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `{self.relation_type}`. Must be one of 'define_equivalence', 'copy_premise', 'copy_conclusion', or None.")
         if self.relation_type == "attack" and self.grounding_strategy not in [None, "define_negation", "negate_premise", "negate_conclusion"]:
             tc.suggest(
@@ -196,4 +206,5 @@ class ConnectToolArgs(BaseModel):
                 {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "attack", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
+            logger.error(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `attack`.")
             raise ValueError(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `{self.relation_type}`. Must be one of 'define_negation', 'negate_premise', 'negate_conclusion', or None.")
