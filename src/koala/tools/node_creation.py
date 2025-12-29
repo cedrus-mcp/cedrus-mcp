@@ -205,15 +205,17 @@ def new_argument(
             from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
         )
         tc.issue("info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
-        maybe_ground_relation(
-            label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
-        )
+        if tc.mode == "author":
+            maybe_ground_relation(
+                label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+            )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
         tc.issue("info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
-        maybe_ground_relation(
-            from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
-        )
+        if tc.mode == "author":
+            maybe_ground_relation(
+                from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+            )
 
     # Refresh argument_node after possible grounding updates
     refreshed_argument_node = arg_map.get_argument(label)

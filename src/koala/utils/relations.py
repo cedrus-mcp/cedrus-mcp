@@ -30,10 +30,14 @@ def has_grounding(
         [target_node.proposition_id] if isinstance(target_node, ClaimNode) else target_node.premises
     )
 
+
+    if not source_prop_id:
+        return False
+
     if relation_type == "support":
-        return any(arg_map.are_equivalent(source_prop_id, pid) for pid in target_prop_ids)
+        return any(arg_map.are_equivalent(source_prop_id, pid) for pid in target_prop_ids if pid)
     elif relation_type == "attack":
-        return any(arg_map.are_contradictory(source_prop_id, pid) for pid in target_prop_ids)
+        return any(arg_map.are_contradictory(source_prop_id, pid) for pid in target_prop_ids if pid)
     else:
         return False
 
