@@ -133,17 +133,19 @@ def add_claim(
         tags: Optional list of tags for the claim
         metadata: Optional dictionary of metadata for the claim
 
-    Example usage (minimal):
+    Example usage:
+
+        # Basic
         add_claim(
-            label="MY-NEW-CLAIM",
+            label="My-New-Claim",
             proposition="The Earth is round."
         )
 
-    Example usage (with relation and metadata):
+        # Advanced
         add_claim(
-            label="MY-NEW-CLAIM",
+            label="My-New-Claim",
             proposition="The Earth is round.",
-            relation_options={"to_label": "EXISTING-ARGUMENT-TITLE", "relation_type": "support"},
+            relation_options={"to_label": "Existing-Argument-Title", "relation_type": "support"},
             tags=["geography", "science"],
             metadata={"source": "common knowledge"}
         )
@@ -157,8 +159,21 @@ def add_claim(
         if not label or not label.strip():
             raise ValueError("Label must be a non-empty string.")
         
-        # Ensure label is unique
-        label = utils.ensure_label_is_unique(label, arg_map, tc)
+        if label in arg_map.list_node_labels():
+            tc.failure(
+                f"Node with label '{label}' already exists.",
+                error="DuplicateLabel",
+            )
+            tc.embed_resource(AnyUrl("argmap://graph/thin"), "Current Argument Map", 0.9)
+            params = {"label": f"Revised-{label}"}
+            if proposition:
+                params["proposition"] = proposition
+            tc.suggest(
+                "add_claim",
+                params,
+                "Make sure this claim is distinct from the existing one, and add the claim again with a new unique label.",
+                action_type="expand",
+            )
 
         # Validate relation arguments
         relation_type = relation_options.pop("relation_type", None)
@@ -225,6 +240,24 @@ def add_argument(
         relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
         tags: Optional list of tags for the argument
         metadata: Optional dictionary of metadata for the argument
+
+    Example usage:
+
+        # Basic
+        add_argument(
+            label="My-New-Argument",
+            gist="This is a brief summary of the argument."
+        )
+
+        # Advanced
+        add_argument(
+            label="My-New-Argument",
+            gist="This is a brief summary of the argument.",
+            premises=["Premise 1", "Premise 2"],
+            conclusion="Therefore, the conclusion follows.",
+            relation_options={"to_label": "Supported-Claim-Title", "relation_type": "support"},
+            tags=["some topic"]
+        )
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -235,9 +268,23 @@ def add_argument(
 
         if not label or not label.strip():
             raise ValueError("Label must be a non-empty string.")
-        
-        # Ensure label is unique
-        label = utils.ensure_label_is_unique(label, arg_map, tc)
+
+        if label in arg_map.list_node_labels():
+            tc.failure(
+                f"Node with label '{label}' already exists.",
+                error="DuplicateLabel",
+            )
+            tc.embed_resource(AnyUrl("argmap://graph/thin"), "Current Argument Map", 0.9)
+            params = {"label": f"Revised-{label}"}
+            if gist:
+                params["gist"] = gist
+            tc.suggest(
+                "add_argument",
+                params,
+                "Make sure this argument is distinct from the existing one, and add the argument again with a new unique label.",
+                action_type="expand",
+            )
+            return tc.build()
 
         # Validate relation arguments
         relation_type = relation_options.pop("relation_type", None)
@@ -300,7 +347,7 @@ def edit(
     Example usage:
 
         edit(
-            label="CLAIM_1",
+            label="Existing-Claim",
             field="proposition",
             edit_options={"new_value": "This is the updated claim content."}
         )
@@ -397,12 +444,25 @@ def connect(
 
     Example usage:
 
+        # Basic usage:
         connect(
-            from_label="ARGUMENT_1",
-            to_label="CLAIM_1",
+            from_label="Existing-Argument-Title",
+            to_label="Existing-Claim-Title",
             relation_options={"relation_type": "support"}
         )
+
+        # Advanced usage (with grounding strategy):
+        connect(
+            from_label="Some-Argument",
+            to_label="Another-Argument",
+            relation_options={
+                "relation_type": "attack",
+                "target_premise_idx": 2,
+                "grounding_strategy": "define_negation"
+            }
+        )
     """
+
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
 
@@ -535,10 +595,10 @@ def remove(
     Example usage:
 
         # Remove a node
-        remove(label="CLAIM_1")
+        remove(label="Existing-Node-Title")
         
         # Remove a relation
-        remove(relation={"from_label": "ARG_1", "to_label": "CLAIM_1"})
+        remove(relation={"from_label": "Existing-Argument", "to_label": "Existing-Claim"})
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -866,4 +926,10 @@ def mode(
 
         ctx.request_context.lifespan_context.mode = mode
         tc.success(f"✓ Switched mode from '{old_mode}' to '{mode}'.")
+        tc.suggest(
+            "instructions",
+            {},
+            f"Run 'instructions' to see guidelines for '{mode}' mode.",
+            action_type="help",
+        )
         return tc.build()
