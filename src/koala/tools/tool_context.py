@@ -268,10 +268,7 @@ class ToolContext:
         """
         params: dict[str, Any] = {
             "label": "NEW_ARGUMENT_LABEL",
-            "node_options": {
-                "node_type": "argument",
-                "gist": "KEY_IDEA",
-            },
+            "gist": "KEY_IDEA",
             "relation_options": {
                 "to_label": label,
                 "relation_type": "support",
@@ -281,7 +278,7 @@ class ToolContext:
             params["relation_options"]["target_premise_idx"] = target_premise_idx
             
         return self.suggest(
-            "add",
+            "add_argument",
             params,
             reason,
             action_type="expand"
@@ -303,13 +300,10 @@ class ToolContext:
             Self for method chaining
         """
         return self.suggest(
-            "add",
+            "add_argument",
             {
                 "label": "NEW_ARGUMENT_LABEL",
-                "node_options": {
-                    "node_type": "argument",
-                    "gist": "KEY_IDEA",
-                },
+                "gist": "KEY_IDEA",
                 "relation_options": {
                     "to_label": label,
                     "relation_type": "attack",

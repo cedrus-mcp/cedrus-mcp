@@ -83,13 +83,10 @@ def add_suggestions_after_adding_node(
             # Suggest adding supporting/attacking arguments if none exist
             if not arg_map.get_supporters(label):
                 tc.suggest(
-                    "add",
+                    "add_argument",
                     {
                         "label": "NEW_ARGUMENT_LABEL",
-                        "node_options": {
-                            "node_type": "argument",
-                            "gist": "KEY_POINT_OF_NEW_ARGUMENT",
-                        },
+                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
                         "relation_options": {
                             "to_label": label,
                             "relation_type": "support",
@@ -100,13 +97,10 @@ def add_suggestions_after_adding_node(
                 )
             if not arg_map.get_attackers(label):
                 tc.suggest(
-                    "add",
+                    "add_argument",
                     {
                         "label": "NEW_ARGUMENT_LABEL",
-                        "node_options": {
-                            "node_type": "argument",
-                            "gist": "KEY_POINT_OF_NEW_ARGUMENT",
-                        },
+                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
                         "relation_options": {
                             "to_label": label,
                             "relation_type": "attack",

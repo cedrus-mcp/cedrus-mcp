@@ -1,15 +1,13 @@
 """Authoring tools: new_claim, new_argument, new_support, new_attack."""
 
-import base64
 from typing import Any
 
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
-from mcp.types import CallToolResult, ImageContent
+from mcp.types import CallToolResult #, ImageContent
 from pydantic import AnyUrl
 
-import koala.graph.svg_export
 from koala.models import (
     NodeLabel,
     ClaimNode,
@@ -27,32 +25,132 @@ from koala.validation import validate_argument_map
 logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 
+# @mcp.tool()
+# def add(
+#     label: NodeLabel,
+#     ctx: Context[ServerSession, AppContext],
+#     node_options: dict[str, Any] | None = None,
+#     relation_options: dict[str, Any] | None = None,
+# ) -> CallToolResult:
+#     """Create a new node (claim or argument) in the argument map.
+    
+#     To create an argument, provide a "gist" in node_options or set node_type to "argument".
+
+#     Args:
+#         label: Succinct and informative title (serves as unique identifier for the node)
+#         node_options: Node configuration (proposition, gist, conclusion, premises, node_type, tags, metadata)
+#         relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
+
+#     Example usage:
+
+#         add(
+#             label="MY-NEW-CLAIM",
+#             node_options={"proposition": "This is a new claim."},
+#             relation_options={"from_label": "EXISTING-ARGUMENT-TITLE", "relation_type": "support"}
+#         )
+
+#     Take care to use succinct and informative labels instead of placeholders like "CLAIM_1".
+#     """
+#     arg_map = ctx.request_context.lifespan_context.arg_map
+#     mode = ctx.request_context.lifespan_context.mode
+
+#     with tool_context(arg_map, mode) as tc:
+
+#         if not label or not label.strip():
+#             raise ValueError("Label must be a non-empty string.")
+        
+#         # Ensure label is unique
+#         label = utils.ensure_label_is_unique(label, arg_map, tc)
+
+#         # Merge node_options and relation_options
+#         kwargs = {}
+#         if node_options:
+#             kwargs.update(node_options)
+#         if relation_options:
+#             kwargs.update(relation_options)
+
+#         args = parse_tool_args("add", tc, arg_map, **kwargs)
+
+#         try:
+#             if args.node_type == "claim":
+#                 # Adding a claim node
+#                 node_creation.new_claim(
+#                     label=label,
+#                     proposition=args.proposition,
+#                     to_label=args.to_label,
+#                     from_label=args.from_label,
+#                     relation_type=args.relation_type or "support",
+#                     target_premise_idx=args.target_premise_idx,
+#                     tags=args.tags,
+#                     metadata=args.metadata,
+#                     arg_map=arg_map,
+#                     tc=tc,
+#                 )
+#             elif args.node_type == "argument":
+#                 # Adding an argument node
+#                 node_creation.new_argument(
+#                     label=label,
+#                     gist=args.gist,
+#                     to_label=args.to_label,
+#                     from_label=args.from_label,
+#                     relation_type=args.relation_type or "support",
+#                     target_premise_idx=args.target_premise_idx,
+#                     premises=args.premises,
+#                     conclusion=args.conclusion,
+#                     tags=args.tags,
+#                     metadata=args.metadata,
+#                     arg_map=arg_map,
+#                     tc=tc,
+#                 )
+#         except Exception as e:
+#             return tc.failure(
+#                 f"✗ Failed to create {args.node_type} `{label}`: {str(e)}", error=str(e)
+#             ).build()
+#         suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+#         return tc.build()
+    
+
 @mcp.tool()
-def add(
+def add_claim(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
-    node_options: dict[str, Any] | None = None,
+    proposition: str | None = None,
     relation_options: dict[str, Any] | None = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> CallToolResult:
-    """Create a new node in the argument map.
+    """Add a new claim node to your argumentation graph.
+
+    A claim represents a single proposition. By adding a claim, you're not ascertaining its truth, 
+    but rather introducing it as a point for discussion within your argument map. Try to keep claims clear, 
+    unambiguous, and focused on a single idea. Provide a succinct and informative label that captures 
+    the essence of the claim and helps you to refer to it easily later on.
 
     Args:
-        label: Unique identifier for the node
-        node_options: Node configuration (proposition, gist, conclusion, premises, node_type, tags, metadata)
+        label: Succinct and informative title (serves as unique identifier for the claim)
+        proposition: The content of the claim
         relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
+        tags: Optional list of tags for the claim
+        metadata: Optional dictionary of metadata for the claim
 
-    Example usage:
-
-        add(
-            label="CLAIM_1",
-            node_options={"proposition": "This is a new claim."},
-            relation_options={"from_label": "ARG_1", "relation_type": "support"}
+    Example usage (minimal):
+        add_claim(
+            label="MY-NEW-CLAIM",
+            proposition="The Earth is round."
         )
 
-    Take care to use succinct and informative labels instead of placeholders like "CLAIM_1".
+    Example usage (with relation and metadata):
+        add_claim(
+            label="MY-NEW-CLAIM",
+            proposition="The Earth is round.",
+            relation_options={"to_label": "EXISTING-ARGUMENT-TITLE", "relation_type": "support"},
+            tags=["geography", "science"],
+            metadata={"source": "common knowledge"}
+        )
     """
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
+    relation_options = relation_options or {}
 
     with tool_context(arg_map, mode) as tc:
 
@@ -62,55 +160,124 @@ def add(
         # Ensure label is unique
         label = utils.ensure_label_is_unique(label, arg_map, tc)
 
-        # Merge node_options and relation_options
-        kwargs = {}
-        if node_options:
-            kwargs.update(node_options)
-        if relation_options:
-            kwargs.update(relation_options)
-
-        args = parse_tool_args("add", tc, arg_map, **kwargs)
+        # Validate relation arguments
+        relation_type = relation_options.pop("relation_type", None)
+        to_label, from_label, target_premise_idx = utils.sanitize_relation_args_new_node(
+            arg_map=arg_map, tc=tc, **relation_options
+        )
+        if to_label or from_label:
+            if relation_type is None:
+                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
+                relation_type = "support"
+            if relation_type not in ["support", "attack"]:
+                return tc.failure(
+                    f"Invalid relation_type '{relation_type}'. Must be 'support' or 'attack'.",
+                    error="InvalidRelationType",
+                ).build()
 
         try:
-            if args.node_type == "claim":
-                # Adding a claim node
-                node_creation.new_claim(
-                    label=label,
-                    proposition=args.proposition,
-                    to_label=args.to_label,
-                    from_label=args.from_label,
-                    relation_type=args.relation_type or "support",
-                    target_premise_idx=args.target_premise_idx,
-                    tags=args.tags,
-                    metadata=args.metadata,
-                    arg_map=arg_map,
-                    tc=tc,
-                )
-            elif args.node_type == "argument":
-                # Adding an argument node
-                node_creation.new_argument(
-                    label=label,
-                    gist=args.gist,
-                    to_label=args.to_label,
-                    from_label=args.from_label,
-                    relation_type=args.relation_type or "support",
-                    target_premise_idx=args.target_premise_idx,
-                    premises=args.premises,
-                    conclusion=args.conclusion,
-                    tags=args.tags,
-                    metadata=args.metadata,
-                    arg_map=arg_map,
-                    tc=tc,
-                )
+            node_creation.new_claim(
+                label=label,
+                proposition=proposition,
+                to_label=to_label,
+                from_label=from_label,
+                relation_type=relation_type,
+                target_premise_idx=target_premise_idx,
+                tags=tags,
+                metadata=metadata,
+                arg_map=arg_map,
+                tc=tc,
+            )
         except Exception as e:
             return tc.failure(
-                f"✗ Failed to create {args.node_type} `{label}`: {str(e)}", error=str(e)
+                f"✗ Failed to create claim `{label}`: {str(e)}", error=str(e)
             ).build()
 
         suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
 
         return tc.build()
+
+@mcp.tool()
+def add_argument(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    gist: str | None = None,
+    premises: list[str] | None = None,
+    conclusion: str | None = None,
+    relation_options: dict[str, Any] | None = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> CallToolResult:
+    """Add a new argument node to your argumentation graph.
     
+    An argument represents a justification or an objection. Provide a 'gist' to summarize the 
+    key idea of the argument. Use premises and conclusion to detail its structure. Be clear and
+    concise in your descriptions. Provide a succinct and informative label that captures
+    the essence of the argument and helps you to refer to it easily later on.
+
+    By adding an argument, you're not necessarily asserting its premises or conclusion as true.
+
+    Args:
+        label: Succinct and informative title (serves as unique identifier for the argument)
+        gist: A brief summary of the argument
+        premises: List of premises supporting the argument
+        conclusion: Conclusion drawn from the premises
+        relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
+        tags: Optional list of tags for the argument
+        metadata: Optional dictionary of metadata for the argument
+    """
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+    relation_options = relation_options or {}
+
+    with tool_context(arg_map, mode) as tc:
+
+        if not label or not label.strip():
+            raise ValueError("Label must be a non-empty string.")
+        
+        # Ensure label is unique
+        label = utils.ensure_label_is_unique(label, arg_map, tc)
+
+        # Validate relation arguments
+        relation_type = relation_options.pop("relation_type", None)
+        to_label, from_label, target_premise_idx = utils.sanitize_relation_args_new_node(
+            arg_map=arg_map, tc=tc, **relation_options
+        )
+        if to_label or from_label:
+            if relation_type is None:
+                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
+                relation_type = "support"
+            if relation_type not in ["support", "attack"]:
+                return tc.failure(
+                    f"Invalid relation_type '{relation_type}'. Must be 'support' or 'attack'.",
+                    error="InvalidRelationType",
+                ).build()
+
+        try:
+            node_creation.new_argument(
+                label=label,
+                gist=gist,
+                premises=premises,
+                conclusion=conclusion,
+                to_label=to_label,
+                from_label=from_label,
+                relation_type=relation_type,
+                target_premise_idx=target_premise_idx,
+                tags=tags,
+                metadata=metadata,
+                arg_map=arg_map,
+                tc=tc,
+            )
+        except Exception as e:
+            return tc.failure(
+                f"✗ Failed to create argument `{label}`: {str(e)}", error=str(e)
+            ).build()
+
+        suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
+
+        return tc.build()
+
 
 @mcp.tool()
 def edit(
@@ -613,64 +780,64 @@ def validate(
         return tc.build()
 
 
-@mcp.tool()
-async def export_svg(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
-    """
-    Generate SVG visualization of the argument map.
+# @mcp.tool()
+# async def export_svg(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
+#     """
+#     Generate SVG visualization of the argument map.
     
-    Creates a visual representation of the current argument map using GraphViz.
-    Returns the SVG as an image that can be displayed directly by visual clients.
+#     Creates a visual representation of the current argument map using GraphViz.
+#     Returns the SVG as an image that can be displayed directly by visual clients.
         
-    Returns:
-        CallToolResult with ImageContent containing the SVG visualization and
-        structured metadata about the graph (node counts, edge counts).
+#     Returns:
+#         CallToolResult with ImageContent containing the SVG visualization and
+#         structured metadata about the graph (node counts, edge counts).
         
-    Example:
-        Call this tool to generate and visualize the current argument map.
-        The result will be displayed as an image in compatible clients.
-    """
-    arg_map = ctx.request_context.lifespan_context.arg_map
-    mode = ctx.request_context.lifespan_context.mode
+#     Example:
+#         Call this tool to generate and visualize the current argument map.
+#         The result will be displayed as an image in compatible clients.
+#     """
+#     arg_map = ctx.request_context.lifespan_context.arg_map
+#     mode = ctx.request_context.lifespan_context.mode
 
-    with tool_context(arg_map, mode) as tc:
+#     with tool_context(arg_map, mode) as tc:
     
-        try:
-            svg_string = koala.graph.svg_export.export_svg(arg_map)
+#         try:
+#             svg_string = koala.graph.svg_export.export_svg(arg_map)
             
-            # Encode SVG as base64 for ImageContent
-            svg_base64 = base64.b64encode(svg_string.encode('utf-8')).decode('ascii')
+#             # Encode SVG as base64 for ImageContent
+#             svg_base64 = base64.b64encode(svg_string.encode('utf-8')).decode('ascii')
             
-            # Count nodes by type
-            claim_nodes = arg_map.list_claims()
-            argument_nodes = arg_map.list_arguments()
+#             # Count nodes by type
+#             claim_nodes = arg_map.list_claims()
+#             argument_nodes = arg_map.list_arguments()
             
-            return CallToolResult(
-                content=[
-                    ImageContent(
-                        type="image",
-                        data=svg_base64,
-                        mimeType="image/svg+xml"
-                    )
-                ],
-                structuredContent={
-                    "format": "svg",
-                    "total_nodes": len(claim_nodes + argument_nodes),
-                    "claim_count": len(claim_nodes),
-                    "argument_count": len(argument_nodes),
-                },
-                isError=False
-            )
+#             return CallToolResult(
+#                 content=[
+#                     ImageContent(
+#                         type="image",
+#                         data=svg_base64,
+#                         mimeType="image/svg+xml"
+#                     )
+#                 ],
+#                 structuredContent={
+#                     "format": "svg",
+#                     "total_nodes": len(claim_nodes + argument_nodes),
+#                     "claim_count": len(claim_nodes),
+#                     "argument_count": len(argument_nodes),
+#                 },
+#                 isError=False
+#             )
         
-        except RuntimeError as e:
-            # GraphViz not installed
-            return tc.failure(
-                f"Cannot generate SVG because `graphviz` is not installed. (Original error message: {str(e)})", error="GraphVizNotInstalled"
-            ).build()        
-        except Exception as e:
-            # Other errors
-            return tc.failure(
-                f"Error generating SVG: {str(e)}", error="SVGGenerationError"
-            ).build()
+#         except RuntimeError as e:
+#             # GraphViz not installed
+#             return tc.failure(
+#                 f"Cannot generate SVG because `graphviz` is not installed. (Original error message: {str(e)})", error="GraphVizNotInstalled"
+#             ).build()        
+#         except Exception as e:
+#             # Other errors
+#             return tc.failure(
+#                 f"Error generating SVG: {str(e)}", error="SVGGenerationError"
+#             ).build()
 
 
 

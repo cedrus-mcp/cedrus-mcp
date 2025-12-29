@@ -19,8 +19,8 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         "A good sketch includes all the important claims and arguments, connects them provisionally via support and attack relations, "
         "captures the main point of each claim and argument, and identifies each node by means of concise and distinct labels.\n\n"
         "Typical actions in sketch mode include:\n"
-        f'{NextAction(tool="add", params={"label": "Claim Label", "node_options": {"proposition": "The proposition maintained by this claim."}}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
-        f'{NextAction(tool="add", params={"label": "Argument Label", "node_options": {"gist": "The main idea of this argument."}}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
+        f'{NextAction(tool="add_claim", params={"label": "Claim Label", "proposition": "The proposition maintained by this claim."}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
+        f'{NextAction(tool="add_argument", params={"label": "Argument Label", "gist": "The main idea of this argument."}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
         f'{NextAction(tool="connect", params={"from_label": "Argument Label", "to_label": "Claim Label", "relation_options": {"relation_type": "support"}}, reason="Connect an argument to a claim with a support relation.", action_type="expand").model_dump()}\n'
         "\n"
     )

@@ -6,12 +6,12 @@ from koala.models.results import NextAction
 def test_create_next_action() -> None:
     """Test creating a NextAction."""
     action = NextAction(
-        tool="add",
-        params={"label": "C1", "node_options": {"proposition": "Test"}},
+        tool="add_claim",
+        params={"label": "C1", "proposition": "Test"},
         reason="Add a new claim"
     )
     
-    assert action.tool == "add"
+    assert action.tool == "add_claim"
     assert action.params["label"] == "C1"
     assert action.reason == "Add a new claim"
 

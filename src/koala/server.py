@@ -40,10 +40,17 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         save_graph(arg_map, data_file)
         print(f"Saved argument map to {data_file}")
 
+instructions="""\
+The KOALA MCP server equips AI agents with tools to structure their internal thinking. \
+It allows agents to organize heterogeneous and conflicting reasoning in a structured \
+argumentation graph, and provides capabilities to sketch, refine and review such argumentation \
+graphs.\
+"""
 
 # Create the MCP server instance
 mcp = FastMCP(
-    "KOALA Argument Mapper",
+    "KOALA Structured Thinking MCP Server",
+    instructions=instructions,
     lifespan=app_lifespan,
     stateless_http=False,
 )

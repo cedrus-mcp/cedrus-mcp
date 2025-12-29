@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add, connect
+from koala.tools.tools import add_claim, add_argument, connect
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -23,8 +23,8 @@ def test_connect_support_relation(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add two nodes
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Claim"})
-    add(label="A1", ctx=tool_context, node_options={"node_type": "argument", "gist": "Arg"})
+    add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Connect them
     result = connect(
@@ -45,8 +45,8 @@ def test_connect_attack_relation(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add two nodes
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Claim"})
-    add(label="A1", ctx=tool_context, node_options={"node_type": "argument", "gist": "Arg"})
+    add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Connect them
     result = connect(
@@ -65,8 +65,8 @@ def test_connect_attack_relation(tool_context: Mock) -> None:
 def test_connect_with_grounding_in_sketch_mode(tool_context: Mock) -> None:
     """Test that grounding is ignored in sketch mode."""
     # Add two nodes
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Claim"})
-    add(label="A1", ctx=tool_context, node_options={"node_type": "argument", "gist": "Arg"})
+    add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Try to connect with grounding strategy
     result = connect(

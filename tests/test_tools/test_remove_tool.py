@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add, connect, remove
+from koala.tools.tools import add_claim, add_argument, connect, remove
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -23,7 +23,7 @@ def test_remove_claim_node(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add a claim
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Test"})
+    add_claim(label="C1", ctx=tool_context, proposition="Test")
     assert arg_map.get_node("C1") is not None
     
     # Remove it
@@ -39,10 +39,10 @@ def test_remove_argument_node(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add an argument
-    add(
+    add_argument(
         label="A1",
         ctx=tool_context,
-        node_options={"node_type": "argument", "gist": "Test"}
+        gist="Test"
     )
     assert arg_map.get_node("A1") is not None
     
@@ -59,8 +59,8 @@ def test_remove_relation(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add nodes and connect them
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Claim"})
-    add(label="A1", ctx=tool_context, node_options={"node_type": "argument", "gist": "Arg"})
+    add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    add_argument(label="A1", ctx=tool_context, gist="Arg")
     connect(
         from_label="A1",
         to_label="C1",
@@ -92,7 +92,7 @@ def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
 def test_remove_with_both_label_and_relation_prioritizes_label(tool_context: Mock) -> None:
     """Test that providing both label and relation uses label."""
     # Add a node
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Test"})
+    add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Call remove with both (should remove node, not relation)
     result = remove(

@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add
+from koala.tools.tools import add_claim, add_argument
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -20,10 +20,10 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
 
 def test_add_claim_basic(tool_context: Mock) -> None:
     """Test adding a basic claim."""
-    result = add(
+    result = add_claim(
         label="C1",
         ctx=tool_context,
-        node_options={"proposition": "Test claim"}
+        proposition="Test claim"
     )
     
     assert not result.isError
@@ -38,13 +38,10 @@ def test_add_claim_basic(tool_context: Mock) -> None:
 
 def test_add_argument_basic(tool_context: Mock) -> None:
     """Test adding a basic argument."""
-    result = add(
+    result = add_argument(
         label="A1",
         ctx=tool_context,
-        node_options={
-            "node_type": "argument",
-            "gist": "Test argument"
-        }
+        gist="Test argument"
     )
     
     assert not result.isError
@@ -59,13 +56,13 @@ def test_add_with_relation(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add first node
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Claim 1"})
+    add_claim(label="C1", ctx=tool_context, proposition="Claim 1")
     
     # Add second node with relation
-    result = add(
+    result = add_argument(
         label="A1",
         ctx=tool_context,
-        node_options={"node_type": "argument", "gist": "Argument"},
+        gist="Argument",
         relation_options={"to_label": "C1", "relation_type": "support"}
     )
     
@@ -76,20 +73,20 @@ def test_add_with_relation(tool_context: Mock) -> None:
 def test_add_empty_label_fails(tool_context: Mock) -> None:
     """Test that empty label raises ValueError."""
     with pytest.raises(ValueError, match="Label must be a non-empty string"):
-        add(
+        add_claim(
             label="",
             ctx=tool_context,
-            node_options={"proposition": "Test"}
+            proposition="Test"
         )
 
 
 def test_add_duplicate_label_gets_unique(tool_context: Mock) -> None:
     """Test that duplicate labels are made unique."""
     # Add first node
-    add(label="C1", ctx=tool_context, node_options={"proposition": "First"})
+    add_claim(label="C1", ctx=tool_context, proposition="First")
     
     # Try to add with same label
-    result = add(label="C1", ctx=tool_context, node_options={"proposition": "Second"})
+    result = add_claim(label="C1", ctx=tool_context, proposition="Second")
     
     # Should succeed with modified label
     assert not result.isError

@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add, edit
+from koala.tools.tools import add_claim, add_argument, edit
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -21,7 +21,7 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
 def test_edit_claim_proposition(tool_context: Mock) -> None:
     """Test editing a claim's proposition."""
     # Add a claim
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Original"})
+    add_claim(label="C1", ctx=tool_context, proposition="Original")
     
     # Edit it
     result = edit(
@@ -41,10 +41,10 @@ def test_edit_claim_proposition(tool_context: Mock) -> None:
 def test_edit_argument_gist(tool_context: Mock) -> None:
     """Test editing an argument's gist."""
     # Add an argument
-    add(
+    add_argument(
         label="A1",
         ctx=tool_context,
-        node_options={"node_type": "argument", "gist": "Original gist"}
+        gist="Original gist"
     )
     
     # Edit it
@@ -64,10 +64,10 @@ def test_edit_argument_gist(tool_context: Mock) -> None:
 def test_edit_argument_conclusion(tool_context: Mock) -> None:
     """Test editing an argument's conclusion."""
     # Add an argument
-    add(
+    add_argument(
         label="A1",
         ctx=tool_context,
-        node_options={"node_type": "argument", "gist": "Argument"}
+        gist="Argument",
     )
     
     # Edit conclusion
@@ -101,7 +101,7 @@ def test_edit_nonexistent_node_fails(tool_context: Mock) -> None:
 def test_edit_tags(tool_context: Mock) -> None:
     """Test editing tags on a node."""
     # Add a claim
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Test"})
+    add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Add a tag
     result = edit(
@@ -117,7 +117,7 @@ def test_edit_tags(tool_context: Mock) -> None:
 def test_edit_metadata(tool_context: Mock) -> None:
     """Test editing metadata on a node."""
     # Add a claim
-    add(label="C1", ctx=tool_context, node_options={"proposition": "Test"})
+    add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Add metadata
     result = edit(

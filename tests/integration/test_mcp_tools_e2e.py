@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 from mcp.types import CallToolResult
-from koala.tools.tools import add, edit, connect, remove, mode
+from koala.tools.tools import add_claim, add_argument, edit, connect, remove, mode
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -21,10 +21,10 @@ def mock_context(empty_arg_map: ArgumentMap) -> Mock:
 
 def test_add_tool_creates_claim(mock_context: Mock) -> None:
     """Test adding a claim via add tool."""
-    result = add(
+    result = add_claim(
         label="C1",
         ctx=mock_context,
-        node_options={"proposition": "Test claim"}
+        proposition="Test claim"
     )
     
     assert isinstance(result, CallToolResult)
@@ -34,13 +34,10 @@ def test_add_tool_creates_claim(mock_context: Mock) -> None:
 
 def test_add_tool_creates_argument(mock_context: Mock) -> None:
     """Test adding an argument via add tool."""
-    result = add(
+    result = add_argument(
         label="A1",
         ctx=mock_context,
-        node_options={
-            "node_type": "argument",
-            "gist": "Test argument"
-        }
+        gist="Test argument"
     )
     
     assert isinstance(result, CallToolResult)
@@ -53,8 +50,8 @@ def test_connect_tool_creates_relation(mock_context: Mock) -> None:
     arg_map = mock_context.request_context.lifespan_context.arg_map
     
     # Add nodes first
-    add(label="C1", ctx=mock_context, node_options={"proposition": "Claim 1"})
-    add(label="A1", ctx=mock_context, node_options={"node_type": "argument", "gist": "Arg 1"})
+    add_claim(label="C1", ctx=mock_context, proposition="Claim 1")
+    add_argument(label="A1", ctx=mock_context, gist="Arg 1")
     
     # Connect them
     result = connect(
@@ -72,7 +69,7 @@ def test_connect_tool_creates_relation(mock_context: Mock) -> None:
 def test_edit_tool_updates_claim(mock_context: Mock) -> None:
     """Test editing a claim via edit tool."""
     # Add a claim first
-    add(label="C1", ctx=mock_context, node_options={"proposition": "Original"})
+    add_claim(label="C1", ctx=mock_context, proposition="Original")
     
     # Edit it
     result = edit(
@@ -93,7 +90,7 @@ def test_edit_tool_updates_claim(mock_context: Mock) -> None:
 def test_remove_tool_deletes_node(mock_context: Mock) -> None:
     """Test removing a node via remove tool."""
     # Add a claim first
-    add(label="C1", ctx=mock_context, node_options={"proposition": "Test"})
+    add_claim(label="C1", ctx=mock_context, proposition="Test")
     
     # Remove it
     result = remove(label="C1", ctx=mock_context)
@@ -121,11 +118,11 @@ def test_tool_chain_workflow(mock_context: Mock) -> None:
     arg_map = mock_context.request_context.lifespan_context.arg_map
     
     # 1. Add two claims
-    add(label="C1", ctx=mock_context, node_options={"proposition": "Claim 1"})
-    add(label="C2", ctx=mock_context, node_options={"proposition": "Claim 2"})
+    add_claim(label="C1", ctx=mock_context, proposition="Claim 1")
+    add_claim(label="C2", ctx=mock_context, proposition="Claim 2")
     
     # 2. Add an argument
-    add(label="A1", ctx=mock_context, node_options={"node_type": "argument", "gist": "Argument"})
+    add_argument(label="A1", ctx=mock_context, gist="Argument")
     
     # 3. Connect them
     connect(from_label="A1", to_label="C1", ctx=mock_context, relation_options={"relation_type": "support"})

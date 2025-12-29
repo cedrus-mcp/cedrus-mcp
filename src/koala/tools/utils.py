@@ -47,11 +47,11 @@ def ensure_label_is_unique(
 
 
 def sanitize_relation_args_new_node(
-    to_label: NodeLabel | None,
-    from_label: NodeLabel | None,
-    target_premise_idx: int | None,
     arg_map: ArgumentMap,
     tc: ToolContext,
+    to_label: NodeLabel | None = None,
+    from_label: NodeLabel | None = None,
+    target_premise_idx: int | None = None,
 ) -> tuple[NodeLabel | None, NodeLabel | None, int | None]:
     # Make sure only one relation is created
     if to_label and from_label:

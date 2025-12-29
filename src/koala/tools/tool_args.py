@@ -6,14 +6,12 @@ from pydantic import BaseModel
 
 from koala.graph.argument_map import ArgumentMap
 from koala.models import NodeLabel
-from koala.models.base import PropositionID
 from koala.models.relations import DialecticalRelationType
-from koala.tools import utils
 from koala.tools.tool_context import ToolContext
 
 
-@overload
-def parse_tool_args(tool_name: Literal["add"], tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "AddToolArgs": ...
+# @overload
+# def parse_tool_args(tool_name: Literal["add"], tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "AddToolArgs": ...
 
 @overload
 def parse_tool_args(tool_name: Literal["edit"], tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "EditToolArgs": ...
@@ -21,12 +19,10 @@ def parse_tool_args(tool_name: Literal["edit"], tc: ToolContext, arg_map: Argume
 @overload
 def parse_tool_args(tool_name: Literal["connect"], tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "ConnectToolArgs": ...
 
-def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "AddToolArgs | EditToolArgs | ConnectToolArgs":
+def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwargs: Any) -> "EditToolArgs | ConnectToolArgs":
     """Parse and validate tool arguments for the specified tool."""
-    ToolArgClass: type[AddToolArgs] | type[EditToolArgs] | type[ConnectToolArgs]
-    if tool_name == "add":
-        ToolArgClass = AddToolArgs
-    elif tool_name == "edit":
+    ToolArgClass: type[EditToolArgs] | type[ConnectToolArgs]
+    if tool_name == "edit":
         ToolArgClass = EditToolArgs
     elif tool_name == "connect":
         ToolArgClass = ConnectToolArgs
@@ -48,56 +44,56 @@ def parse_tool_args(tool_name: str, tc: ToolContext, arg_map: ArgumentMap, **kwa
         raise ValueError(f"Error while parsing arguments for tool '{tool_name}': {str(e)}")
 
 
-class AddToolArgs(BaseModel):
-    """Arguments for the add tool."""
+# class AddToolArgs(BaseModel):
+#     """Arguments for the add tool."""
     
-    proposition: str | None = None
-    gist: str | None = None
-    conclusion: PropositionID | None = None
-    premises: list[PropositionID] | None = None
-    node_type: Literal["claim", "argument"] | None = None
-    to_label: NodeLabel | None = None
-    from_label: NodeLabel | None = None
-    relation_type: DialecticalRelationType | None = None
-    target_premise_idx: int | None = None
-    tags: list[str] | None = None
-    metadata: dict[str, str] | None = None
+#     proposition: str | None = None
+#     gist: str | None = None
+#     conclusion: PropositionID | None = None
+#     premises: list[PropositionID] | None = None
+#     node_type: Literal["claim", "argument"] | None = None
+#     to_label: NodeLabel | None = None
+#     from_label: NodeLabel | None = None
+#     relation_type: DialecticalRelationType | None = None
+#     target_premise_idx: int | None = None
+#     tags: list[str] | None = None
+#     metadata: dict[str, str] | None = None
 
-    def sanitize(self, tc: ToolContext, arg_map: ArgumentMap) -> None:
-        """Validate and sanitize arguments for the add tool."""
+#     def sanitize(self, tc: ToolContext, arg_map: ArgumentMap) -> None:
+#         """Validate and sanitize arguments for the add tool."""
 
-        # Infer node_type if not provided
-        if self.node_type is None:
-            if self.gist or self.conclusion or self.premises:
-                self.node_type = "argument"
-                tc.issue("info", "Adding an 'argument' node (inferred from provided fields).", priority=.2)
-            else:
-                self.node_type = "claim"
-                tc.issue("info", "Adding a 'claim' node (inferred from provided fields).", priority=.2)
+#         # Infer node_type if not provided
+#         if self.node_type is None:
+#             if self.gist or self.conclusion or self.premises:
+#                 self.node_type = "argument"
+#                 tc.issue("info", "Adding an 'argument' node (inferred from provided fields).", priority=.2)
+#             else:
+#                 self.node_type = "claim"
+#                 tc.issue("info", "Adding a 'claim' node (inferred from provided fields).", priority=.2)
 
-        # Check node arguments
-        if self.node_type not in ["claim", "argument"]:
-            raise ValueError("node_type must be either 'claim' or 'argument'.")
-        if self.node_type == "argument":
-            if self.proposition is not None:
-                tc.issue("info", "As we are adding an argument node, 'proposition' will be ignored.")
-        if self.node_type == "claim":
-            ignored_fields = [
-                field for field in ["gist", "conclusion", "premises"] if getattr(self, field) is not None
-            ]
-            if ignored_fields:
-                tc.issue("info", f"As we are adding a claim node, fields {', '.join(ignored_fields)} will be ignored.")
+#         # Check node arguments
+#         if self.node_type not in ["claim", "argument"]:
+#             raise ValueError("node_type must be either 'claim' or 'argument'.")
+#         if self.node_type == "argument":
+#             if self.proposition is not None:
+#                 tc.issue("info", "As we are adding an argument node, 'proposition' will be ignored.")
+#         if self.node_type == "claim":
+#             ignored_fields = [
+#                 field for field in ["gist", "conclusion", "premises"] if getattr(self, field) is not None
+#             ]
+#             if ignored_fields:
+#                 tc.issue("info", f"As we are adding a claim node, fields {', '.join(ignored_fields)} will be ignored.")
 
-        # Validate relation arguments
-        self.to_label, self.from_label, self.target_premise_idx = utils.sanitize_relation_args_new_node(
-            self.to_label, self.from_label, self.target_premise_idx, arg_map, tc
-        )
-        if self.to_label or self.from_label:
-            if self.relation_type is None:
-                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
-                self.relation_type = "support"
-            if self.relation_type not in ["support", "attack"]:
-                raise ValueError("relation_type must be either 'support' or 'attack'.")
+#         # Validate relation arguments
+#         self.to_label, self.from_label, self.target_premise_idx = utils.sanitize_relation_args_new_node(
+#             self.to_label, self.from_label, self.target_premise_idx, arg_map, tc
+#         )
+#         if self.to_label or self.from_label:
+#             if self.relation_type is None:
+#                 tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
+#                 self.relation_type = "support"
+#             if self.relation_type not in ["support", "attack"]:
+#                 raise ValueError("relation_type must be either 'support' or 'attack'.")
 
 
 class EditToolArgs(BaseModel):

@@ -3,40 +3,43 @@
 from typing import Literal
 
 from .tools import (
-    add,
+    add_claim,
+    add_argument,
     edit,
     remove,
     connect,
     inspect,
     instructions,
     validate,
-    export_svg,
+    #export_svg,
     mode,
 )
 
 
 # This generates the literal type values
 ToolName = Literal[
-    "add",
+    "add_claim",
+    "add_argument",
     "edit",
     "remove",
     "connect",
     "inspect",
     "instructions",
     "validate",
-    "export_svg",
+    #"export_svg",
     "mode",
 ]
 
 __all__ = [
-    "add",
+    "add_claim",
+    "add_argument",
     "edit",
     "remove",
     "connect",
     "inspect",
     "instructions",
     "validate",
-    "export_svg",
+    #"export_svg",
     "mode",
     "ToolName",
 ]
