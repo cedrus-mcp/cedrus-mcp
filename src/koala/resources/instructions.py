@@ -92,10 +92,11 @@ def instruction_review(app_ctx: AppContext) -> str:
         instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
     return instructions
 
-@mcp.resource("argmap://instructions/{mode}")
-async def instruction_resource(mode: Literal["sketch", "author", "review"]) -> str:
+@mcp.resource("argmap://instructions")
+async def instruction_resource() -> str:
     """Provide instruction text for different modes."""
     app_ctx = mcp.get_context().request_context.lifespan_context
+    mode = app_ctx.mode
     match mode:
         case "sketch":
             return instructions_sketch(app_ctx)
