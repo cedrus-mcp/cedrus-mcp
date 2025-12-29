@@ -7,14 +7,17 @@ from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult, ImageContent
+from pydantic import AnyUrl
 
-from koala.graph.svg_export import export_svg
+from koala.graph.rendering import render_argdown
+import koala.graph.svg_export
 from koala.models import (
     NodeLabel,
     ClaimNode,
     ArgumentNode,
 )
 from koala.models.base import Mode
+import koala.resources
 from koala.server import AppContext, mcp
 from koala.tools import relation_authoring, suggestions, utils
 from koala.tools import node_creation, node_updates, node_deletion
@@ -46,6 +49,8 @@ def add(
             node_options={"proposition": "This is a new claim."},
             relation_options={"from_label": "ARG_1", "relation_type": "support"}
         )
+
+    Take care to use succinct and informative labels instead of placeholders like "CLAIM_1".
     """
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
@@ -445,6 +450,106 @@ def remove(
 
         raise ValueError("Internal Error: Unhandled case in remove tool.")
 
+
+##############################################
+# Exposing resources as tools
+##############################################
+
+@mcp.tool()
+async def print_resource(uri: str, ctx: Context[ServerSession, AppContext]) -> CallToolResult:
+    """Print a representation of the specified resource.
+
+    Args:    
+        uri: The URI of the resource to print.
+
+    Available resources (URI patterns):
+        - argmap://graph/thin : Thin argdown representation of the entire argument map (labels only).
+        - argmap://graph/details : Detailed argdown representation of the entire argument map.
+        - argmap://neighborhood/{label}/{k} : Detailed argdown representation of the k-neighborhood of node `label`.
+        - argmap://node/details/{label} : Detailed argdown representation of node `label`.
+        - argmap://statistics : Descriptive statistics of the argument map.
+        - argmap://instructions : Instructions for the current editing mode.
+
+    Example usage:
+
+        print_resource("argmap://graph/thin")
+    """
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        if uri == "argmap://graph/thin":
+            text = await koala.resources.graph_views.graph_thin_resource()
+            tc.embed_resource(
+                uri=AnyUrl("argmap://graph/thin"),
+                text=text
+            )
+        elif uri == "argmap://graph/details":
+            text = await koala.resources.graph_views.graph_details_resource()
+            tc.embed_resource(
+                uri=AnyUrl("argmap://graph/details"),
+                text=text
+            )
+        elif uri.startswith("argmap://neighborhood/"):
+            parts = uri[len("argmap://neighborhood/"):].split("/")
+            if len(parts) != 2:
+                return tc.failure(
+                    "Invalid URI format for neighborhood resource. Expected 'argmap://neighborhood/{{label}}/{{k}}'.",
+                    error="InvalidURIFormat",
+                ).build()
+            label = parts[0]
+            try:
+                k = int(parts[1])
+            except ValueError:
+                return tc.failure(
+                    f"Invalid value for k in neighborhood resource. Expected an integer, got '{parts[1]}'.",
+                    error="InvalidKValue",
+                ).build()
+            text = await koala.resources.graph_views.neighborhood_details_resource(label, k)
+            tc.embed_resource(
+                uri=AnyUrl(uri),
+                text=text
+            )
+        elif uri.startswith("argmap://node/details/"):
+            label = uri[len("argmap://node/details/"):]
+            node = arg_map.get_node(label)
+            if node is None:
+                return tc.failure(
+                    f"Node '{label}' does not exist.",
+                    error="NonExistentNode",
+                ).build()
+            text = await koala.resources.node_details.node_details_resource(label)
+            tc.embed_resource(
+                uri=AnyUrl(uri),
+                text=text
+            )
+        elif uri == "argmap://statistics":
+            text = await koala.resources.summaries.statistics_resource()
+            tc.embed_resource(
+                uri=AnyUrl("argmap://statistics"),
+                text=text
+            )
+        elif uri == "argmap://instructions":
+            text = await koala.resources.instructions.instruction_resource()
+            tc.embed_resource(
+                uri=AnyUrl("argmap://instructions"),
+                text=text
+            )
+        else:
+            return tc.failure(
+                f"Unknown resource URI '{uri}'.",
+                error="UnknownResourceURI",
+            ).build()
+
+    tc.success("✓ Printed resource.")
+    return tc.build()        
+
+
+###############################################
+# Additional tools
+###############################################
+
 @mcp.tool()
 def validate(
     ctx: Context[ServerSession, AppContext],
@@ -493,7 +598,7 @@ def validate(
 
 
 @mcp.tool()
-async def export(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
+async def export_svg(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
     """
     Generate SVG visualization of the argument map.
     
@@ -514,7 +619,7 @@ async def export(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
     with tool_context(arg_map, mode) as tc:
     
         try:
-            svg_string = export_svg(arg_map)
+            svg_string = koala.graph.svg_export.export_svg(arg_map)
             
             # Encode SVG as base64 for ImageContent
             svg_base64 = base64.b64encode(svg_string.encode('utf-8')).decode('ascii')

@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.tools.tools import add, export
+from koala.tools.tools import add, export_svg
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 from mcp.types import ImageContent
@@ -30,7 +30,7 @@ async def test_export_svg_basic(tool_context: Mock) -> None:
     with patch('koala.tools.tools.export_svg') as mock_export:
         mock_export.return_value = '<svg>test</svg>'
         
-        result = await export(ctx=tool_context)
+        result = await export_svg(ctx=tool_context)
         
         assert not result.isError
         assert len(result.content) > 0
@@ -48,7 +48,7 @@ async def test_export_includes_metadata(tool_context: Mock) -> None:
     with patch('koala.tools.tools.export_svg') as mock_export:
         mock_export.return_value = '<svg>test</svg>'
         
-        result = await export(ctx=tool_context)
+        result = await export_svg(ctx=tool_context)
         
         assert not result.isError
         assert result.structuredContent is not None
@@ -60,10 +60,9 @@ async def test_export_includes_metadata(tool_context: Mock) -> None:
 @pytest.mark.asyncio
 async def test_export_handles_graphviz_error(tool_context: Mock) -> None:
     """Test that export handles GraphViz errors gracefully."""
-    with patch('koala.tools.tools.export_svg') as mock_export:
+    with patch('koala.graph.svg_export.export_svg') as mock_export:
         mock_export.side_effect = RuntimeError("GraphViz not installed")
-        
-        result = await export(ctx=tool_context)
+        result = await export_svg(ctx=tool_context)
         
         # Error is indicated in structured content, not isError flag
         assert result.structuredContent["status"] == "failure"

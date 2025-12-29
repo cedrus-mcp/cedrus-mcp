@@ -7,8 +7,9 @@ from .tools import (
     edit,
     remove,
     connect,
+    print_resource,
     validate,
-    export,
+    export_svg,
     mode,
 )
 
@@ -19,8 +20,9 @@ ToolName = Literal[
     "edit",
     "remove",
     "connect",
+    "print_resource",
     "validate",
-    "export",
+    "export_svg",
     "mode",
 ]
 
@@ -29,8 +31,9 @@ __all__ = [
     "edit",
     "remove",
     "connect",
+    "print_resource",
     "validate",
-    "export",
+    "export_svg",
     "mode",
     "ToolName",
 ]

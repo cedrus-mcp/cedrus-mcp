@@ -3,9 +3,10 @@
 from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pydantic.networks import AnyUrl
 from typing import Any, Literal, TYPE_CHECKING, Iterator
 
-from mcp.types import CallToolResult, TextContent, Annotations, ContentBlock, Role
+from mcp.types import CallToolResult, TextContent, TextResourceContents, EmbeddedResource, Annotations, ContentBlock, Role
 
 from koala.models.base import Issue, NodeLabel, Mode
 from koala.models.results import NextAction
@@ -120,6 +121,40 @@ class ToolContext:
         )
         return self
     
+    def embed_resource(
+        self,
+        uri: AnyUrl,
+        text: str,
+        priority: float = 0.5,
+        audience: list[Role] | None = None
+    ) -> ToolContext:
+        """Embed a text resource as content.
+        
+        Args:
+            uri: Resource URI
+            text: Resource text content
+            priority: Priority level (0.0-1.0)
+            audience: Target audience (defaults to ["assistant"])
+            
+        Returns:
+            Self for method chaining
+        """
+        default_audience: list[Role] = ["assistant"]
+        self.content.append(
+            EmbeddedResource(
+                type="resource",
+                resource=TextResourceContents(
+                    uri=uri,
+                    text=text,
+                ),
+                annotations=Annotations(
+                    audience=audience or default_audience,
+                    priority=priority
+                )
+            )
+        )
+        return self
+
     # === Result State Methods ===
     
     def success(self, message: str, result: Any = None) -> ToolContext:

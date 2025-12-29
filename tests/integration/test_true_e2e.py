@@ -39,7 +39,9 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "edit" in tool_names
             assert "connect" in tool_names
             assert "remove" in tool_names
-            assert "export" in tool_names
+            assert "print_resource" in tool_names
+            assert "validate" in tool_names
+            assert "export_svg" in tool_names
             assert "mode" in tool_names
             
             # List available resources
@@ -148,7 +150,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             # Read instructions resource for author mode
             instructions_resource: Any = await session.read_resource(
-                uri=TypeAdapter(AnyUrl).validate_python("argmap://instructions/author")
+                uri=TypeAdapter(AnyUrl).validate_python("argmap://instructions")
             )
             
             assert len(instructions_resource.contents) > 0
@@ -161,10 +163,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
                 pytest.skip("GraphViz (dot) is not installed; skipping export test.")
 
             export_result: Any = await session.call_tool(
-                "export",
-                arguments={
-                    "format": "argdown"
-                }
+                "export_svg",
             )
 
             assert export_result.structuredContent is not None

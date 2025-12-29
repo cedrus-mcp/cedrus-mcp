@@ -22,7 +22,8 @@ def mock_context(empty_arg_map: ArgumentMap) -> Mock:
 async def test_instructions_in_sketch_mode(mock_context: Mock) -> None:
     """Test instruction resource for sketch mode."""
     with patch.object(mcp, 'get_context', return_value=mock_context):
-        result = await instruction_resource(mode="sketch")
+        mcp.get_context().request_context.lifespan_context.mode = "sketch"
+        result = await instruction_resource()
         
         assert isinstance(result, str)
         assert len(result) > 0
@@ -33,7 +34,8 @@ async def test_instructions_in_sketch_mode(mock_context: Mock) -> None:
 async def test_instruction_author_mode(mock_context: Mock) -> None:
     """Test instruction resource for author mode."""
     with patch.object(mcp, 'get_context', return_value=mock_context):
-        result = await instruction_resource(mode="author")
+        mcp.get_context().request_context.lifespan_context.mode = "author"
+        result = await instruction_resource()
         
         assert isinstance(result, str)
         assert "author" in result.lower()
@@ -43,7 +45,8 @@ async def test_instruction_author_mode(mock_context: Mock) -> None:
 async def test_instruction_review_mode(mock_context: Mock) -> None:
     """Test instruction resource for review mode."""
     with patch.object(mcp, 'get_context', return_value=mock_context):
-        result = await instruction_resource(mode="review")
+        mcp.get_context().request_context.lifespan_context.mode = "review"
+        result = await instruction_resource()
         
         assert isinstance(result, str)
         assert "review" in result.lower()
@@ -59,9 +62,13 @@ async def test_instruction_all_modes_different() -> None:
     )
     
     with patch.object(mcp, 'get_context', return_value=ctx):
-        sketch = await instruction_resource(mode="sketch")
-        author = await instruction_resource(mode="author")
-        review = await instruction_resource(mode="review")
+        
+        mcp.get_context().request_context.lifespan_context.mode = "sketch"
+        sketch = await instruction_resource()
+        mcp.get_context().request_context.lifespan_context.mode = "author"
+        author = await instruction_resource()
+        mcp.get_context().request_context.lifespan_context.mode = "review"
+        review = await instruction_resource()
     
     # Each should be different
     assert sketch != author
