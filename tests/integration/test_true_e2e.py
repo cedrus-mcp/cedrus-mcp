@@ -39,7 +39,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "edit" in tool_names
             assert "connect" in tool_names
             assert "remove" in tool_names
-            assert "print_resource" in tool_names
+            assert "inspect" in tool_names
             assert "validate" in tool_names
             assert "export_svg" in tool_names
             assert "mode" in tool_names

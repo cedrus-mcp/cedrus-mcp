@@ -38,6 +38,15 @@ def add_suggestions_after_adding_node(
             return
 
         if tc.mode in ["sketch", "author"]:
+            if len(arg_map.list_node_labels()) > 1:
+                tc.suggest(
+                    "inspect",
+                    {
+                        "uri": "argmap://graph/thin",
+                    },
+                    f"Inspect the current argument map to get an overview of all existing nodes and their relations, which can help in deciding how to further connect claim `[{label}]`.",
+                    action_type="explore",
+                )
             # Suggest connecting to existing arguments if isolated
             if not arg_map.get_supported(label) and not arg_map.get_attacked(label) and len(arg_map.list_arguments()) > 1:
                 relation_options = {"relation_type": "support"}
@@ -142,6 +151,17 @@ def add_suggestions_after_adding_node(
         if any(issue.severity in ["warning", "error"] for issue in tc.issues) and tc.mode in ["sketch", "author"]:
             return
         
+        if len(arg_map.list_node_labels()) > 1:
+            tc.suggest(
+                "inspect",
+                {
+                    "uri": "argmap://graph/thin",
+                },
+                f"Inspect the current argument map to get an overview of all existing nodes and their relations, which can help in deciding how to further connect claim `[{label}]`.",
+                action_type="explore",
+            )
+
+
         # Suggest adding gist if missing
         if not argument_added.gist:
             tc.suggest_update_field(
@@ -182,6 +202,15 @@ def add_suggestions_after_adding_node(
                     tc.suggest_support_argument(label=target_node.label, reason=reason)
             
         if tc.mode == "author":
+
+            tc.suggest(
+                "inspect",
+                {
+                    "uri": f"argmap://node/details/{label}",
+                },
+                f"Inspect the details of argument `<{label}>` to review and possibly improve its content and structure.",
+                action_type="explore",
+            )
 
             if not argument_added.conclusion:
                 tc.suggest_update_field(label=argument_added.label, field="conclusion", reason="State explicitly the conclusion of this argument.")

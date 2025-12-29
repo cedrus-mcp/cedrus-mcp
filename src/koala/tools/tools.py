@@ -9,7 +9,6 @@ from mcp.server.session import ServerSession
 from mcp.types import CallToolResult, ImageContent
 from pydantic import AnyUrl
 
-from koala.graph.rendering import render_argdown
 import koala.graph.svg_export
 from koala.models import (
     NodeLabel,
@@ -455,12 +454,36 @@ def remove(
 # Exposing resources as tools
 ##############################################
 
+
 @mcp.tool()
-async def print_resource(uri: str, ctx: Context[ServerSession, AppContext]) -> CallToolResult:
-    """Print a representation of the specified resource.
+async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResult:
+    """Show instructions for current mode.
+
+    Example usage:
+
+        instructions()
+    """
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        text = await koala.resources.instructions.instruction_resource()
+        tc.embed_resource(
+            uri=AnyUrl("argmap://instructions"),
+            text=text
+        )
+
+    tc.success("✓ Printed instructions.")
+    return tc.build()        
+
+
+@mcp.tool()
+async def inspect(uri: str, ctx: Context[ServerSession, AppContext]) -> CallToolResult:
+    """Show specific info for the current argument map, as specified by resource uri.
 
     Args:    
-        uri: The URI of the resource to print.
+        uri: The URI of the resource / view to show.
 
     Available resources (URI patterns):
         - argmap://graph/thin : Thin argdown representation of the entire argument map (labels only).
@@ -468,11 +491,10 @@ async def print_resource(uri: str, ctx: Context[ServerSession, AppContext]) -> C
         - argmap://neighborhood/{label}/{k} : Detailed argdown representation of the k-neighborhood of node `label`.
         - argmap://node/details/{label} : Detailed argdown representation of node `label`.
         - argmap://statistics : Descriptive statistics of the argument map.
-        - argmap://instructions : Instructions for the current editing mode.
 
     Example usage:
 
-        print_resource("argmap://graph/thin")
+        inspect("argmap://graph/thin")
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -528,12 +550,6 @@ async def print_resource(uri: str, ctx: Context[ServerSession, AppContext]) -> C
             text = await koala.resources.summaries.statistics_resource()
             tc.embed_resource(
                 uri=AnyUrl("argmap://statistics"),
-                text=text
-            )
-        elif uri == "argmap://instructions":
-            text = await koala.resources.instructions.instruction_resource()
-            tc.embed_resource(
-                uri=AnyUrl("argmap://instructions"),
                 text=text
             )
         else:
