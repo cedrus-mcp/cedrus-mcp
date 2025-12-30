@@ -271,8 +271,8 @@ class ToolContext:
             Self for method chaining
         """
         params: dict[str, Any] = {
-            "label": "NEW_ARGUMENT_LABEL",
-            "gist": "KEY_IDEA",
+            "label": "New-Argument-Label",
+            "gist": "Key point of new argument goes here",
             "relation_options": {
                 "to_label": label,
                 "relation_type": "support",
@@ -306,8 +306,8 @@ class ToolContext:
         return self.suggest(
             "add_argument",
             {
-                "label": "NEW_ARGUMENT_LABEL",
-                "gist": "KEY_IDEA",
+                "label": "New-Argument-Label",
+                "gist": "Key point of new argument goes here",
                 "relation_options": {
                     "to_label": label,
                     "relation_type": "attack",

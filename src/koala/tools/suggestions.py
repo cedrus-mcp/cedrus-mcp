@@ -85,8 +85,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "add_argument",
                     {
-                        "label": "NEW_ARGUMENT_LABEL",
-                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
+                        "label": "Concise-Argument_Label",
+                        "gist": "Key point of new argument goes here",
                         "relation_options": {
                             "to_label": label,
                             "relation_type": "support",
@@ -99,8 +99,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "add_argument",
                     {
-                        "label": "NEW_ARGUMENT_LABEL",
-                        "gist": "KEY_POINT_OF_NEW_ARGUMENT",
+                        "label": "Concise-Argument_Label",
+                        "gist": "Key point of new argument goes here",
                         "relation_options": {
                             "to_label": label,
                             "relation_type": "attack",
