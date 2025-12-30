@@ -213,19 +213,21 @@ class ToolContext:
             CallToolResult with all collected content and structured data
         """
         if self._status == "failure":
-            return CallToolResult(
-                content=self.content or [
-                    TextContent(
-                        type="text",
-                        text=self._message,
-                        annotations=Annotations(audience=["assistant"], priority=0.3)
-                    )
-                ],
-                structuredContent={
+            structuredContent={
                     "status": "failure",
                     "error": self._error,
                     "issues": [i.model_dump() for i in self.issues] if self.issues else []
                 }
+            self.content.append(
+                TextContent(
+                    type="text",
+                    text=str(structuredContent),
+                    annotations=Annotations(audience=["assistant"], priority=1.0)
+                )
+            )
+            return CallToolResult(
+                content=self.content,
+                structuredContent=structuredContent
             )
         
         # Build structured content for success case
@@ -246,7 +248,14 @@ class ToolContext:
         if self.resources:
             structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
         
-        
+        self.content.append(
+            TextContent(
+                type="text",
+                text=str(structured_content),
+                annotations=Annotations(audience=["assistant"], priority=1.0)
+            )
+        )
+
         return CallToolResult(
             content=self.content,
             structuredContent=structured_content

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
         env_prefix="KOALA_",
         case_sensitive=False
     )
-    
+
     # Data persistence
     data_file: Path = Path("argument_map.json")
     
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     max_nodes: int = 1000
     
     # Validation settings
-    enable_auto_validation: bool = True
+    enable_auto_validation: bool = False
 
 
 # Global settings instance

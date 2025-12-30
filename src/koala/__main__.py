@@ -21,6 +21,8 @@ including claims, arguments, and dialectical relations between them.
 import sys
 from typing import Literal
 
+import argparse
+
 from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
 
 from koala.server import mcp
@@ -36,22 +38,33 @@ import koala.prompts  # noqa: F401
 import koala.resources  # noqa: F401
 
 
+
+
+
 # === Entry Point ===
 
 def main() -> None:
     """Run the KOALA MCP server."""
     # Determine transport from command line or default to stdio
+
+    parser = argparse.ArgumentParser(description="KOALA MCP server")
+    parser.add_argument(
+        "--http",
+        action="store_true",
+        help="Use HTTP transport instead of stdio",
+    )
+    args = parser.parse_args()
+
     transport: Literal["stdio", "sse", "streamable-http"] = "stdio"
-    if len(sys.argv) > 1 and sys.argv[1] == "--http":
+    if args.http:
         transport = "streamable-http"
 
-    print(f"Starting KOALA MCP server with {transport} transport...")
+    print(f"Starting KOALA MCP server with {transport} transport ...")
     try:
         mcp.run(transport=transport)
     except KeyboardInterrupt:
         print("\nServer stopped by user.")
         sys.exit(0)
-
 
 if __name__ == "__main__":
     main()

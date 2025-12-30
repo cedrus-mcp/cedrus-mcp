@@ -8,7 +8,6 @@ from mcp.server.fastmcp import FastMCP
 
 from koala.config.settings import settings
 from koala.graph.argument_map import ArgumentMap
-from koala.graph.persistence import load_graph, save_graph
 from koala.models.base import Mode
 
 
@@ -39,6 +38,8 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     #     # Save on shutdown
     #     save_graph(arg_map, data_file)
     #     print(f"Saved argument map to {data_file}")
+
+    print(f"Settings: {settings}")
 
     yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
