@@ -23,22 +23,24 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """Manage application lifecycle - load and save argument map."""
-    data_file = settings.data_file
+    # data_file = settings.data_file
+    #
+    # # Load argument map on startup
+    # try:
+    #     arg_map = load_graph(data_file)
+    #     print(f"Loaded argument map from {data_file}")
+    # except FileNotFoundError:
+    #     arg_map = ArgumentMap()
+    #     print("Created new argument map")
+    # 
+    # try:
+    #     yield AppContext(arg_map=arg_map, mode="sketch")
+    # finally:
+    #     # Save on shutdown
+    #     save_graph(arg_map, data_file)
+    #     print(f"Saved argument map to {data_file}")
 
-    # Load argument map on startup
-    try:
-        arg_map = load_graph(data_file)
-        print(f"Loaded argument map from {data_file}")
-    except FileNotFoundError:
-        arg_map = ArgumentMap()
-        print("Created new argument map")
-
-    try:
-        yield AppContext(arg_map=arg_map, mode="sketch")
-    finally:
-        # Save on shutdown
-        save_graph(arg_map, data_file)
-        print(f"Saved argument map to {data_file}")
+    yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
 instructions="""\
 The KOALA MCP server equips AI agents with tools to structure their internal thinking. \
