@@ -40,7 +40,9 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "edit" in tool_names
             assert "connect" in tool_names
             assert "remove" in tool_names
-            assert "inspect" in tool_names
+            assert "inspect_graph" in tool_names
+            assert "inspect_neighborhood" in tool_names
+            assert "inspect_node" in tool_names
             assert "validate" in tool_names
             #assert "export_svg" in tool_names
             assert "mode" in tool_names
@@ -50,10 +52,19 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             resource_uris: list[str] = [str(resource.uri) for resource in resources_result.resources]
             
             # Core graph resources should be available
-            assert "argmap://graph/thin" in resource_uris
-            assert "argmap://graph/details" in resource_uris
+            assert "argmap://instructions" in resource_uris
             assert "argmap://statistics" in resource_uris
-            
+
+            # List available resource templates
+            resource_templates_result = await session.list_resource_templates()
+            resource_template_uris: list[str] = [
+                str(template.uriTemplate) for template in resource_templates_result.resourceTemplates
+            ]
+            assert "argmap://node/details/{label}" in resource_template_uris
+            assert "argmap://graph/thin/{format}" in resource_template_uris
+            assert "argmap://graph/details/{format}" in resource_template_uris
+            assert "argmap://neighborhood/{label}/{k}" in resource_template_uris
+
             # Call tool: add a claim
             add_result: Any = await session.call_tool(
                 "add_claim",
@@ -95,7 +106,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             # Read resource: graph thin view
             graph_resource: Any = await session.read_resource(
-                uri=TypeAdapter(AnyUrl).validate_python("argmap://graph/thin")
+                uri=TypeAdapter(AnyUrl).validate_python("argmap://graph/thin/argdown")
             )
             
             assert len(graph_resource.contents) > 0
@@ -190,7 +201,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             # Verify node is gone by reading graph
             final_graph: Any = await session.read_resource(
-                uri=TypeAdapter(AnyUrl).validate_python("argmap://graph/thin")
+                uri=TypeAdapter(AnyUrl).validate_python("argmap://graph/thin/argdown")
             )
             final_text: str = final_graph.contents[0].text
             # A1 should be removed, C1 should remain

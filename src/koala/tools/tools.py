@@ -1,11 +1,11 @@
 """Authoring tools: new_claim, new_argument, new_support, new_attack."""
 
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
-from mcp.types import CallToolResult #, ImageContent
+from mcp.types import CallToolResult  # , ImageContent
 from pydantic import AnyUrl
 
 from koala.models import (
@@ -33,7 +33,7 @@ logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 #     relation_options: dict[str, Any] | None = None,
 # ) -> CallToolResult:
 #     """Create a new node (claim or argument) in the argument map.
-    
+
 #     To create an argument, provide a "gist" in node_options or set node_type to "argument".
 
 #     Args:
@@ -58,7 +58,7 @@ logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 #         if not label or not label.strip():
 #             raise ValueError("Label must be a non-empty string.")
-        
+
 #         # Ensure label is unique
 #         label = utils.ensure_label_is_unique(label, arg_map, tc)
 
@@ -108,7 +108,7 @@ logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 #             ).build()
 #         suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
 #         return tc.build()
-    
+
 
 @mcp.tool()
 def add_claim(
@@ -121,9 +121,9 @@ def add_claim(
 ) -> CallToolResult:
     """Add a new claim node to your argumentation graph.
 
-    A claim represents a single proposition. By adding a claim, you're not ascertaining its truth, 
-    but rather introducing it as a point for discussion within your argument map. Try to keep claims clear, 
-    unambiguous, and focused on a single idea. Provide a succinct and informative label that captures 
+    A claim represents a single proposition. By adding a claim, you're not ascertaining its truth,
+    but rather introducing it as a point for discussion within your argument map. Try to keep claims clear,
+    unambiguous, and focused on a single idea. Provide a succinct and informative label that captures
     the essence of the claim and helps you to refer to it easily later on.
 
     Args:
@@ -155,10 +155,9 @@ def add_claim(
     relation_options = relation_options or {}
 
     with tool_context(arg_map, mode) as tc:
-
         if not label or not label.strip():
             raise ValueError("Label must be a non-empty string.")
-        
+
         if label in arg_map.list_node_labels():
             tc.failure(
                 f"Node with label '{label}' already exists.",
@@ -182,7 +181,7 @@ def add_claim(
         )
         if to_label or from_label:
             if relation_type is None:
-                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
+                tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
                 relation_type = "support"
             if relation_type not in ["support", "attack"]:
                 return tc.failure(
@@ -205,9 +204,7 @@ def add_claim(
             )
         except Exception as e:
             logger.error(f"Error creating claim `{label}`: {str(e)}")
-            return tc.failure(
-                f"✗ Failed to create claim `{label}`: {str(e)}", error=str(e)
-            ).build()
+            return tc.failure(f"✗ Failed to create claim `{label}`: {str(e)}", error=str(e)).build()
 
         try:
             suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
@@ -215,6 +212,7 @@ def add_claim(
             logger.error(f"Error adding suggestions after creating claim `{label}`: {str(e)}")
 
         return tc.build()
+
 
 @mcp.tool()
 def add_argument(
@@ -228,8 +226,8 @@ def add_argument(
     metadata: dict[str, Any] | None = None,
 ) -> CallToolResult:
     """Add a new argument node to your argumentation graph.
-    
-    An argument represents a justification or an objection. Provide a 'gist' to summarize the 
+
+    An argument represents a justification or an objection. Provide a 'gist' to summarize the
     key idea of the argument. Use premises and conclusion to detail its structure. Be clear and
     concise in your descriptions. Provide a succinct and informative label that captures
     the essence of the argument and helps you to refer to it easily later on.
@@ -269,7 +267,6 @@ def add_argument(
     relation_options = relation_options or {}
 
     with tool_context(arg_map, mode) as tc:
-
         if not label or not label.strip():
             raise ValueError("Label must be a non-empty string.")
 
@@ -297,7 +294,7 @@ def add_argument(
         )
         if to_label or from_label:
             if relation_type is None:
-                tc.issue("info", "Assuming 'support' relation type as default.", priority=.2)
+                tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
                 relation_type = "support"
             if relation_type not in ["support", "attack"]:
                 return tc.failure(
@@ -368,7 +365,6 @@ def edit(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-
         node = arg_map.get_node(label)
         if node is None:
             return tc.failure(
@@ -378,7 +374,7 @@ def edit(
 
         kwargs = edit_options or {}
         kwargs["field"] = field
-        
+
         node_type = "claim" if isinstance(node, ClaimNode) else "argument"
         args = parse_tool_args("edit", tc, arg_map, node_type=node_type, **kwargs)
 
@@ -430,12 +426,14 @@ def edit(
                             tc=tc,
                         )
         except Exception as e:
-            logger.error(f"Error editing field '{args.field}' of {args.node_type} node `{label}`: {str(e)}")
-            return tc.failure(
-                f"✗ Failed to edit node `{label}`: {str(e)}", error=str(e)
-            ).build()
-        
-        logger.error(f"Unhandled case when editing field '{args.field}' of {args.node_type} node `{label}`.")
+            logger.error(
+                f"Error editing field '{args.field}' of {args.node_type} node `{label}`: {str(e)}"
+            )
+            return tc.failure(f"✗ Failed to edit node `{label}`: {str(e)}", error=str(e)).build()
+
+        logger.error(
+            f"Unhandled case when editing field '{args.field}' of {args.node_type} node `{label}`."
+        )
         return tc.failure(
             f"✗ Failed to edit field '{args.field}' of {args.node_type} node `{label}`."
         ).build()
@@ -480,34 +478,41 @@ def connect(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-
         kwargs = relation_options or {}
 
         if mode == "sketch":
             if kwargs.get("grounding_strategy") is not None:
-                tc.issue("warning",
-                    "Ignoring grounding strategies in 'sketch' mode.", priority=.2
+                tc.issue(
+                    "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "mode", {"mode": "author"}, "Switch to 'author' mode to use grounding strategies."
+                    "mode",
+                    {"mode": "author"},
+                    "Switch to 'author' mode to use grounding strategies.",
                 )
                 kwargs["grounding_strategy"] = None
             if kwargs.get("target_premise_idx") is not None:
-                tc.issue("warning", 
-                    "Ignoring target_premise_idx in 'sketch' mode.", priority=.2
+                tc.issue(
+                    "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "mode", {"mode": "author"}, "Switch to 'author' mode to specify target premise index."
+                    "mode",
+                    {"mode": "author"},
+                    "Switch to 'author' mode to specify target premise index.",
                 )
                 kwargs["target_premise_idx"] = None
         elif mode == "review":
-            tc.issue("info", 
-                "Creating new relations in 'review' mode. Consider switching mode."
+            tc.issue(
+                "info", "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
                 "mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
             ).suggest(
-                "validate", {}, "Run 'validate' to check the argument map.",
+                "validate",
+                {},
+                "Run 'validate' to check the argument map.",
             )
 
-        args = parse_tool_args("connect", tc, arg_map, from_label=from_label, to_label=to_label, **kwargs)
+        args = parse_tool_args(
+            "connect", tc, arg_map, from_label=from_label, to_label=to_label, **kwargs
+        )
 
         try:
             if not arg_map.get_dialectic_relation(args.from_label, args.to_label):
@@ -536,16 +541,26 @@ def connect(
                             error="InvalidRelationType",
                         ).build()
             elif mode != "author":
-                return tc.failure(
-                    f"Cannot ground existing relation from `{args.from_label}` to `{args.to_label}` in '{mode}' mode.",
-                    error="RelationAlreadyExists",
-                ).suggest(
-                    "mode", {"mode": "author"}, "Switch to 'author' mode to ground existing relations."
-                ).build()
+                return (
+                    tc.failure(
+                        f"Cannot ground existing relation from `{args.from_label}` to `{args.to_label}` in '{mode}' mode.",
+                        error="RelationAlreadyExists",
+                    )
+                    .suggest(
+                        "mode",
+                        {"mode": "author"},
+                        "Switch to 'author' mode to ground existing relations.",
+                    )
+                    .build()
+                )
             else:
                 match args.relation_type:
                     case "support":
-                        for grounding_strategy in ["define_equivalence", "copy_conclusion", "copy_premise"]:
+                        for grounding_strategy in [
+                            "define_equivalence",
+                            "copy_conclusion",
+                            "copy_premise",
+                        ]:
                             try:
                                 return relation_authoring.ground_support_relation(
                                     from_label=args.from_label,
@@ -555,13 +570,21 @@ def connect(
                                     tc=tc,
                                 )
                             except Exception as e:
-                                tc.issue("warning", f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
+                                tc.issue(
+                                    "warning",
+                                    f"Failed to ground with strategy '{grounding_strategy}': {str(e)}",
+                                    priority=0.1,
+                                )
                         return tc.failure(
                             f"✗ Failed to ground support relation from `{args.from_label}` to `{args.to_label}`.",
                             error="GroundingFailed",
-                        ).build()                    
+                        ).build()
                     case "attack":
-                        for grounding_strategy in ["define_negation", "negate_conclusion", "negate_premise"]:
+                        for grounding_strategy in [
+                            "define_negation",
+                            "negate_conclusion",
+                            "negate_premise",
+                        ]:
                             try:
                                 return relation_authoring.ground_attack_relation(
                                     from_label=args.from_label,
@@ -571,7 +594,11 @@ def connect(
                                     tc=tc,
                                 )
                             except Exception as e:
-                                tc.issue("warning", f"Failed to ground with strategy '{grounding_strategy}': {str(e)}", priority=.1)
+                                tc.issue(
+                                    "warning",
+                                    f"Failed to ground with strategy '{grounding_strategy}': {str(e)}",
+                                    priority=0.1,
+                                )
                         return tc.failure(
                             f"✗ Failed to ground attack relation from `{args.from_label}` to `{args.to_label}`.",
                             error="GroundingFailed",
@@ -582,13 +609,20 @@ def connect(
                             error="InvalidRelationType",
                         ).build()
         except Exception as e:
-            logger.error(f"Error creating {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}")
+            logger.error(
+                f"Error creating {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}"
+            )
             return tc.failure(
-                f"✗ Failed to create {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}", error=str(e)
+                f"✗ Failed to create {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}",
+                error=str(e),
             ).build()
-        
-        logger.error(f"Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`.")
-        raise RuntimeError(f"Internal Error: Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`.")
+
+        logger.error(
+            f"Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`."
+        )
+        raise RuntimeError(
+            f"Internal Error: Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`."
+        )
 
 
 @mcp.tool()
@@ -611,7 +645,7 @@ def remove(
 
         # Remove a node
         remove(label="Existing-Node-Title")
-        
+
         # Remove a relation
         remove(relation={"from_label": "Existing-Argument", "to_label": "Existing-Claim"})
     """
@@ -620,19 +654,17 @@ def remove(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-
         # Validate mutually exclusive parameters
         if label and label.strip() and relation:
-            tc.issue("info", "Ignoring relation when removing a node.", priority=.2)
+            tc.issue("info", "Ignoring relation when removing a node.", priority=0.2)
             relation = None
-        
+
         # Extract relation parameters if provided
         to_label = None
         from_label = None
         if relation:
             from_label = relation.get("from_label")
             to_label = relation.get("to_label")
-        
 
         try:
             # Validate that we have exactly one operation
@@ -643,25 +675,30 @@ def remove(
                 # Relation removal - both from_label and to_label are valid
                 pass
             else:
-                return tc.issue(
-                    "error",
-                    "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
-                ).suggest(
-                    "remove",
-                    {
-                        "label": "NODE_LABEL",
-                    },
-                    "Remove a node by specifying its label.",
-                ).suggest(
-                    "remove",
-                    {
-                        "relation": {
-                            "from_label": "SOURCE_NODE_LABEL",
-                            "to_label": "TARGET_NODE_LABEL",
-                        }
-                    },
-                    "Remove a relation by specifying source and target node labels in relation dict.",
-                ).build()
+                return (
+                    tc.issue(
+                        "error",
+                        "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
+                    )
+                    .suggest(
+                        "remove",
+                        {
+                            "label": "NODE_LABEL",
+                        },
+                        "Remove a node by specifying its label.",
+                    )
+                    .suggest(
+                        "remove",
+                        {
+                            "relation": {
+                                "from_label": "SOURCE_NODE_LABEL",
+                                "to_label": "TARGET_NODE_LABEL",
+                            }
+                        },
+                        "Remove a relation by specifying source and target node labels in relation dict.",
+                    )
+                    .build()
+                )
 
             if label:
                 node = arg_map.get_node(label)
@@ -692,9 +729,7 @@ def remove(
                 )
         except Exception as e:
             logger.error(f"Error removing node/relation: {str(e)}")
-            return tc.failure(
-                f"✗ Failed to remove node/relation: {str(e)}", error=str(e)
-            ).build()
+            return tc.failure(f"✗ Failed to remove node/relation: {str(e)}", error=str(e)).build()
         logger.error("Unhandled case in remove tool.")
         raise ValueError("Internal Error: Unhandled case in remove tool.")
 
@@ -719,10 +754,7 @@ async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResul
     with tool_context(arg_map, mode) as tc:
         try:
             text = await koala.resources.instructions.instruction_resource()
-            tc.embed_resource(
-                uri=AnyUrl("argmap://instructions"),
-                text=text
-            )
+            tc.embed_resource(uri=AnyUrl("argmap://instructions"), text=text)
         except Exception as e:
             logger.error(f"Error embedding instructions resource: {str(e)}")
             return tc.failure(
@@ -730,102 +762,144 @@ async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResul
             ).build()
 
     tc.success("✓ Printed instructions.")
-    return tc.build()        
-
+    return tc.build()
 
 @mcp.tool()
-async def inspect(uri: str, ctx: Context[ServerSession, AppContext]) -> CallToolResult:
-    """Show specific info for the current argument map, as specified by resource uri.
+async def inspect_graph(
+    ctx: Context[ServerSession, AppContext],
+    verbose: bool = False,
+    format: Literal["argdown", "tree"] = "argdown",
+) -> CallToolResult:
+    """Show an overview representation of the current argumentation graph.
 
-    Args:    
-        uri: The URI of the resource / view to show.
-
-    Available resources (URI patterns):
-        - argmap://graph/thin : Thin argdown representation of the entire argument map (labels only).
-        - argmap://graph/details : Detailed argdown representation of the entire argument map.
-        - argmap://neighborhood/{label}/{k} : Detailed argdown representation of the k-neighborhood of node `label`.
-        - argmap://node/details/{label} : Detailed argdown representation of node `label`.
-        - argmap://statistics : Descriptive statistics of the argument map.
-
-    Example usage:
-
-        inspect("argmap://graph/thin")
+    Args:
+        verbose: If True, include detailed information about each node.
+        format: The format of the graph representation ("argdown" or "tree").
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        try:
-            if uri == "argmap://graph/thin":
-                text = await koala.resources.graph_views.graph_thin_resource()
-                tc.embed_resource(
-                    uri=AnyUrl("argmap://graph/thin"),
-                    text=text
-                )
-            elif uri == "argmap://graph/details":
-                text = await koala.resources.graph_views.graph_details_resource()
-                tc.embed_resource(
-                    uri=AnyUrl("argmap://graph/details"),
-                    text=text
-                )
-            elif uri.startswith("argmap://neighborhood/"):
-                parts = uri[len("argmap://neighborhood/"):].split("/")
-                if len(parts) != 2:
-                    return tc.failure(
-                        "Invalid URI format for neighborhood resource. Expected 'argmap://neighborhood/{{label}}/{{k}}'.",
-                        error="InvalidURIFormat",
-                    ).build()
-                label = parts[0]
-                try:
-                    k = int(parts[1])
-                except ValueError:
-                    return tc.failure(
-                        f"Invalid value for k in neighborhood resource. Expected an integer, got '{parts[1]}'.",
-                        error="InvalidKValue",
-                    ).build()
-                text = await koala.resources.graph_views.neighborhood_details_resource(label, k)
-                tc.embed_resource(
-                    uri=AnyUrl(uri),
-                    text=text
-                )
-            elif uri.startswith("argmap://node/details/"):
-                label = uri[len("argmap://node/details/"):]
-                node = arg_map.get_node(label)
-                if node is None:
-                    return tc.failure(
-                        f"Node '{label}' does not exist.",
-                        error="NonExistentNode",
-                    ).build()
-                text = await koala.resources.node_details.node_details_resource(label)
-                tc.embed_resource(
-                    uri=AnyUrl(uri),
-                    text=text
-                )
-            elif uri == "argmap://statistics":
-                text = await koala.resources.summaries.statistics_resource()
-                tc.embed_resource(
-                    uri=AnyUrl("argmap://statistics"),
-                    text=text
-                )
-            else:
-                return tc.failure(
-                    f"Unknown resource URI '{uri}'.",
-                    error="UnknownResourceURI",
-                ).build()
-        except Exception as e:
-            logger.error(f"Error embedding resource '{uri}': {str(e)}")
+        if format not in ["argdown", "tree"]:
             return tc.failure(
-                f"✗ Failed to embed resource '{uri}': {str(e)}", error=str(e)
+                f"Invalid format '{format}'. Supported formats are 'argdown' and 'tree'.",
+                error="InvalidFormat",
+            ).build()
+        
+        # embed graph
+        try:
+            if verbose:
+                text = await koala.resources.graph_views.graph_details_resource(format=format)
+                uri = AnyUrl("argmap://graph/details")
+            else:
+                text = await koala.resources.graph_views.graph_thin_resource(format=format)
+                uri = AnyUrl("argmap://graph/thin")
+            tc.embed_resource(uri=uri, text=text)
+        except Exception as e:
+            logger.error(f"Error showing graph representation: {str(e)}")
+            return tc.failure(
+                f"✗ Failed to show graph representation: {str(e)}", error=str(e)
             ).build()
 
-    tc.success("✓ Printed resource.")
-    return tc.build()        
+        # embed statistics
+        try:
+            if verbose:
+                text = await koala.resources.summaries.statistics_resource()
+                tc.embed_resource(uri=AnyUrl("argmap://statistics"), text=text)
+        except Exception as e:
+            logger.error(f"Error showing graph statistics: {str(e)}")
+            tc.issue(
+                "warning",
+                f"✗ Failed to show graph statistics: {str(e)}", error=str(e)
+            )            
+
+    tc.success("✓ Printed graph representation.")
+    return tc.build()
+
+
+@mcp.tool()
+async def inspect_neighborhood(
+    ctx: Context[ServerSession, AppContext],
+    label: NodeLabel,
+    k: int = 2,
+) -> CallToolResult:
+    """Show detailed information about the k-neighborhood of a specific node in the argument map.
+
+    Args:
+        label: The label of the node whose neighborhood to inspect.
+        k: The radius of the neighborhood to include.
+    """
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        if arg_map.get_node(label) is None:
+            most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
+            msg = f"Node '{label}' does not exist."
+            if most_similar_label:
+                msg += f" Did you mean '{most_similar_label}'?"
+            return tc.failure(msg, error="NonExistentNode").build()
+        if k < 1:
+            return tc.failure(
+                f"Invalid neighborhood radius k={k}. Must be a positive integer.",
+                error="InvalidKValue",
+            ).build()
+
+        try:
+            uri = f"argmap://neighborhood/{label}/{k}"
+            text = await koala.resources.graph_views.neighborhood_details_resource(label, k)
+            tc.embed_resource(uri=AnyUrl(uri), text=text)
+        except Exception as e:
+            logger.error(f"Error showing neighborhood of node '{label}': {str(e)}")
+            return tc.failure(
+                f"✗ Failed to show neighborhood of node '{label}': {str(e)}", error=str(e)
+            ).build()
+        
+    tc.success(f"✓ Printed {k}-neighborhood of node '{label}'.")
+    return tc.build()
+
+@mcp.tool()
+async def inspect_node(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+) -> CallToolResult:
+    """Show detailed information about a specific node in the argument map.
+
+    Args:
+        label: The label of the node to inspect.
+    """
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        if arg_map.get_node(label) is None:
+            most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
+            msg = f"Node '{label}' does not exist."
+            if most_similar_label:
+                msg += f" Did you mean '{most_similar_label}'?"
+            return tc.failure(msg, error="NonExistentNode").build()
+
+        try:
+            uri = f"argmap://node/details/{label}"
+            text = await koala.resources.node_details.node_details_resource(label)
+            tc.embed_resource(uri=AnyUrl(uri), text=text)
+        except Exception as e:
+            logger.error(f"Error showing details of node '{label}': {str(e)}")
+            return tc.failure(
+                f"✗ Failed to show details of node '{label}': {str(e)}", error=str(e)
+            ).build()
+
+    tc.success(f"✓ Printed details of node '{label}'.")
+    return tc.build()
+
 
 
 ###############################################
 # Additional tools
 ###############################################
+
 
 @mcp.tool()
 def validate(
@@ -848,19 +922,14 @@ def validate(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-
         if tc.mode == "sketch":
-            tc.issue("info",
-                "Validation may be limited in 'sketch' mode."
-            )
+            tc.issue("info", "Validation may be limited in 'sketch' mode.")
 
         try:
             issues_found = validate_argument_map(arg_map, tc, fix=fix, max_issues=max_issues)
         except Exception as e:
             logger.error(f"Error during argument map validation: {str(e)}")
-            return tc.failure(
-                f"✗ Failed to validate argument map: {str(e)}", error=str(e)
-            ).build()
+            return tc.failure(f"✗ Failed to validate argument map: {str(e)}", error=str(e)).build()
 
         if not any(issue.severity == "error" for issue in tc.issues):
             tc.success("✓ Argument map is valid and consistent.")
@@ -882,14 +951,14 @@ def validate(
 # async def export_svg(ctx: Context[ServerSession, AppContext],) -> CallToolResult:
 #     """
 #     Generate SVG visualization of the argument map.
-    
+
 #     Creates a visual representation of the current argument map using GraphViz.
 #     Returns the SVG as an image that can be displayed directly by visual clients.
-        
+
 #     Returns:
 #         CallToolResult with ImageContent containing the SVG visualization and
 #         structured metadata about the graph (node counts, edge counts).
-        
+
 #     Example:
 #         Call this tool to generate and visualize the current argument map.
 #         The result will be displayed as an image in compatible clients.
@@ -898,17 +967,17 @@ def validate(
 #     mode = ctx.request_context.lifespan_context.mode
 
 #     with tool_context(arg_map, mode) as tc:
-    
+
 #         try:
 #             svg_string = koala.graph.svg_export.export_svg(arg_map)
-            
+
 #             # Encode SVG as base64 for ImageContent
 #             svg_base64 = base64.b64encode(svg_string.encode('utf-8')).decode('ascii')
-            
+
 #             # Count nodes by type
 #             claim_nodes = arg_map.list_claims()
 #             argument_nodes = arg_map.list_arguments()
-            
+
 #             return CallToolResult(
 #                 content=[
 #                     ImageContent(
@@ -925,18 +994,17 @@ def validate(
 #                 },
 #                 isError=False
 #             )
-        
+
 #         except RuntimeError as e:
 #             # GraphViz not installed
 #             return tc.failure(
 #                 f"Cannot generate SVG because `graphviz` is not installed. (Original error message: {str(e)})", error="GraphVizNotInstalled"
-#             ).build()        
+#             ).build()
 #         except Exception as e:
 #             # Other errors
 #             return tc.failure(
 #                 f"Error generating SVG: {str(e)}", error="SVGGenerationError"
 #             ).build()
-
 
 
 @mcp.tool()
@@ -955,7 +1023,6 @@ def mode(
     old_mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-
         if mode not in ["sketch", "author", "review"]:
             return tc.failure(
                 f"Invalid mode '{mode}'. Valid modes are 'sketch', 'author', and 'review'.",

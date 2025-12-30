@@ -1,23 +1,24 @@
 """Graph view resources: summary, nodes, claims, arguments."""
 
 
+from typing import Literal
 from koala.graph.rendering import render_argdown
 from koala.models.base import NodeLabel
 from koala.server import mcp
 
-@mcp.resource("argmap://graph/thin")
-async def graph_thin_resource() -> str:
+@mcp.resource("argmap://graph/thin/{format}")
+async def graph_thin_resource(format: Literal["argdown", "tree"] = "argdown") -> str:
     """Provide a thin argdown representation of the entire argument map."""
     app_ctx = mcp.get_context().request_context.lifespan_context
-    rendering = render_argdown(app_ctx.arg_map, label_only=True)
+    rendering = render_argdown(app_ctx.arg_map, label_only=True, format=format)
     return f"```argdown\n{rendering}\n```"
 
 
-@mcp.resource("argmap://graph/details")
-async def graph_details_resource() -> str:
+@mcp.resource("argmap://graph/details/{format}")
+async def graph_details_resource(format: Literal["argdown", "tree"] = "argdown") -> str:
     """Provide a detailed argdown representation of the entire argument map."""
     app_ctx = mcp.get_context().request_context.lifespan_context
-    rendering = render_argdown(app_ctx.arg_map, label_only=False, extra_tags=app_ctx.mode in ['author', 'review'])
+    rendering = render_argdown(app_ctx.arg_map, label_only=False, format=format, extra_tags=app_ctx.mode in ['author', 'review'])
     return f"```argdown\n{rendering}\n```"
 
 

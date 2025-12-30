@@ -531,6 +531,18 @@ class ArgumentMap:
             counter += 1
         return label
 
+    def most_similar_labels(self, label: str) -> Iterator[tuple[str, float]]:
+        """Get most similar existing labels by Indel similarity."""
+        from rapidfuzz import fuzz
+        fuzz.ratio("this is a test", "this is a test!")
+        sorted_tuples = [
+            (existing_label, fuzz.ratio(label, existing_label) / 100.0)
+            for existing_label in self.argument_graph.nodes
+        ]
+        sorted_tuples.sort(key=lambda x: x[1], reverse=True)
+        yield from sorted_tuples
+
+
     def is_proposition_used(self, prop_id: PropositionID) -> bool:
         """Check if proposition is referenced by any node."""
         for node_label in self.argument_graph.nodes:

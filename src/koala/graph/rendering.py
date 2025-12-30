@@ -1,5 +1,6 @@
 """Render argumen map as argdown"""
 
+from typing import Literal
 import json
 from koala.graph import ArgumentMap
 from koala.models.base import NodeLabel
@@ -14,7 +15,7 @@ def _get_next_indent_str(current_indent_str: str, child_index: int, total_childr
         for c in current_indent_str
     ])
     if base_indent_str:
-        base_indent_str = base_indent_str + "   "
+        base_indent_str = base_indent_str + "    "
     if child_index == total_children - 1:
         return base_indent_str + "└─ "
     else:
@@ -31,12 +32,21 @@ def _render_node_recursive(
     indent_str: str,
     nodes_visited: set[NodeLabel],
     label_only: bool,
+    format: Literal["argdown", "tree"],
     extra_tags: bool,
 ) -> None:
     """Recursively render a node and its successors."""
-    line = indent_str # "    " * indent_level
-    if relation_to_successor is not None:
-        line += "<+ " if relation_to_successor == "support" else "<- "
+    if format == "argdown":
+        line = "    " * indent_level
+        if relation_to_successor is not None:
+            line += "<+ " if relation_to_successor == "support" else "<- "
+    elif format == "tree":
+        line = indent_str
+        if relation_to_successor is not None:
+            line += "PRO " if relation_to_successor == "support" else "CON "
+    else:
+        raise RuntimeError(f"Unknown format (_render_node_recursive): {format}")
+    
     line += f"[{node.label}]" if isinstance(node, ClaimNode) else f"<{node.label}>"
     if not label_only:
         if isinstance(node, ClaimNode):
@@ -95,15 +105,15 @@ def _render_node_recursive(
             indent_str=next_indent_str,
             nodes_visited=nodes_visited | {node.label},
             label_only=label_only,
+            format=format,
             extra_tags=extra_tags,
         )
-
-
 
 def render_argdown(
     arg_map: ArgumentMap,
     subset: list[NodeLabel] | None = None,
     label_only: bool = False,
+    format: Literal["argdown", "tree"] = "argdown",
     extra_tags: bool = False,
 ) -> str:
     lines: list[str] = []
@@ -123,6 +133,7 @@ def render_argdown(
             indent_str="",
             nodes_visited=set(),
             label_only=label_only,
+            format=format,
             extra_tags=extra_tags,
         )
 

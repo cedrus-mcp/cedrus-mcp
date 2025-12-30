@@ -40,10 +40,8 @@ def add_suggestions_after_adding_node(
         if tc.mode in ["sketch", "author"]:
             if len(arg_map.list_node_labels()) > 1:
                 tc.suggest(
-                    "inspect",
-                    {
-                        "uri": "argmap://graph/thin",
-                    },
+                    "inspect_graph",
+                    {},
                     f"Inspect the current argument map to get an overview of all existing nodes and their relations, which can help in deciding how to further connect claim `[{label}]`.",
                     action_type="explore",
                 )
@@ -147,10 +145,8 @@ def add_suggestions_after_adding_node(
         
         if len(arg_map.list_node_labels()) > 1:
             tc.suggest(
-                "inspect",
-                {
-                    "uri": "argmap://graph/thin",
-                },
+                "inspect_graph",
+                {},
                 f"Inspect the current argument map to get an overview of all existing nodes and their relations, which can help in deciding how to further connect claim `[{label}]`.",
                 action_type="explore",
             )
@@ -198,9 +194,9 @@ def add_suggestions_after_adding_node(
         if tc.mode == "author":
 
             tc.suggest(
-                "inspect",
+                "inspect_node",
                 {
-                    "uri": f"argmap://node/details/{label}",
+                    "label": label,
                 },
                 f"Inspect the details of argument `<{label}>` to review and possibly improve its content and structure.",
                 action_type="explore",
