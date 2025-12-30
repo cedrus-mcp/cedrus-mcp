@@ -14,6 +14,7 @@ from koala.models import (
     ArgumentNode,
 )
 from koala.models.base import Mode
+from koala.models.relations import RelationConfig
 import koala.resources
 from koala.server import AppContext, mcp
 from koala.tools import relation_authoring, suggestions, utils
@@ -129,7 +130,7 @@ async def add_claim(
     Args:
         label: Succinct and informative title (serves as unique identifier for the claim)
         proposition: The content of the claim
-        relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
+        relation_options: Optional relation to create (source, target, type, target_premise_idx)
         tags: Optional list of tags for the claim
         metadata: Optional dictionary of metadata for the claim
 
@@ -145,14 +146,14 @@ async def add_claim(
         add_claim(
             label="My-New-Claim",
             proposition="The Earth is round.",
-            relation_options={"to_label": "Existing-Argument-Title", "relation_type": "support"},
+            relation_options={"target": "Existing-Argument-Title", "type": "support"},
             tags=["geography", "science"],
-            metadata={"source": "common knowledge"}
+            metadata={"reference": "common knowledge"}
         )
     """
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
-    relation_options = relation_options or {}
+    relation_config = RelationConfig(**(relation_options or {}))
 
     with tool_context(arg_map, mode) as tc:
         if not label or not label.strip():
@@ -176,17 +177,16 @@ async def add_claim(
             )
 
         # Validate relation arguments
-        relation_type = relation_options.pop("relation_type", None)
-        to_label, from_label, target_premise_idx = utils.sanitize_relation_args_new_node(
-            arg_map=arg_map, tc=tc, **relation_options
+        relation_config = utils.sanitize_relation_args_new_node(
+            arg_map=arg_map, tc=tc, relation_config=relation_config
         )
-        if to_label or from_label:
-            if relation_type is None:
+        if relation_config.target or relation_config.source: # pyright: ignore[reportAttributeAccessIssue]
+            if relation_config.relation_type is None:
                 tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
-                relation_type = "support"
-            if relation_type not in ["support", "attack"]:
+                relation_config.relation_type = "support"
+            if relation_config.relation_type not in ["support", "attack"]:
                 return tc.failure(
-                    f"Invalid relation_type '{relation_type}'. Must be 'support' or 'attack'.",
+                    f"Invalid relation type '{relation_config.relation_type}'. Must be 'support' or 'attack'.",
                     error="InvalidRelationType",
                 ).build()
 
@@ -194,10 +194,10 @@ async def add_claim(
             node_creation.new_claim(
                 label=label,
                 proposition=proposition,
-                to_label=to_label,
-                from_label=from_label,
-                relation_type=relation_type,
-                target_premise_idx=target_premise_idx,
+                to_label=relation_config.to_label,  
+                from_label=relation_config.from_label,
+                relation_type=relation_config.relation_type,
+                target_premise_idx=relation_config.target_premise_idx,
                 tags=tags,
                 metadata=metadata,
                 arg_map=arg_map,
@@ -240,7 +240,7 @@ async def add_argument(
         gist: A brief summary of the argument
         premises: List of premises supporting the argument
         conclusion: Conclusion drawn from the premises
-        relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
+        relation_options: Optional relation to create (target, source, type, target_premise_idx)
         tags: Optional list of tags for the argument
         metadata: Optional dictionary of metadata for the argument
 
@@ -258,14 +258,14 @@ async def add_argument(
             gist="This is a brief summary of the argument.",
             premises=["Premise 1", "Premise 2"],
             conclusion="Therefore, the conclusion follows.",
-            relation_options={"to_label": "Supported-Claim-Title", "relation_type": "support"},
+            relation_options={"target": "Supported-Claim-Title", "type": "support"},
             tags=["some topic"]
         )
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
-    relation_options = relation_options or {}
+    relation_config = RelationConfig(**(relation_options or {}))
 
     with tool_context(arg_map, mode) as tc:
         if not label or not label.strip():
@@ -290,17 +290,16 @@ async def add_argument(
             return tc.build()
 
         # Validate relation arguments
-        relation_type = relation_options.pop("relation_type", None)
-        to_label, from_label, target_premise_idx = utils.sanitize_relation_args_new_node(
-            arg_map=arg_map, tc=tc, **relation_options
+        relation_config = utils.sanitize_relation_args_new_node(
+            arg_map=arg_map, tc=tc, relation_config=relation_config
         )
-        if to_label or from_label:
-            if relation_type is None:
+        if relation_config.to_label or relation_config.from_label:
+            if relation_config.relation_type is None:
                 tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
-                relation_type = "support"
-            if relation_type not in ["support", "attack"]:
+                relation_config.relation_type = "support"
+            if relation_config.relation_type not in ["support", "attack"]:
                 return tc.failure(
-                    f"Invalid relation_type '{relation_type}'. Must be 'support' or 'attack'.",
+                    f"Invalid relation type '{relation_config.relation_type}'. Must be 'support' or 'attack'.",
                     error="InvalidRelationType",
                 ).build()
 
@@ -308,10 +307,10 @@ async def add_argument(
             "gist": gist,
             "premises": premises,
             "conclusion": conclusion,
-            "to_label": to_label,
-            "from_label": from_label,
-            "relation_type": relation_type,
-            "target_premise_idx": target_premise_idx,
+            "to_label": relation_config.to_label,
+            "from_label": relation_config.from_label,
+            "relation_type": relation_config.relation_type,
+            "target_premise_idx": relation_config.target_premise_idx,
             "tags": tags,
             "metadata": metadata,
         }
@@ -445,33 +444,33 @@ def edit(
 
 @mcp.tool()
 def connect(
-    from_label: str,
-    to_label: str,
+    source: str,
+    target: str,
     ctx: Context[ServerSession, AppContext],
     relation_options: dict[str, Any] | None = None,
 ) -> CallToolResult:
     """Create a new dialectical relation between two existing nodes.
 
     Args:
-        from_label: Source node label
-        to_label: Target node label
-        relation_options: Relation configuration (relation_type, target_premise_idx, grounding_strategy)
+        source: Source node label
+        target: Target node label
+        relation_options: Relation configuration (type, target_premise_idx, grounding_strategy)
 
     Example usage:
 
         # Basic usage:
         connect(
-            from_label="Existing-Argument-Title",
-            to_label="Existing-Claim-Title",
-            relation_options={"relation_type": "support"}
+            source="Existing-Argument-Title",
+            target="Existing-Claim-Title",
+            relation_options={"type": "support"}
         )
 
         # Advanced usage (with grounding strategy):
         connect(
-            from_label="Some-Argument",
-            to_label="Another-Argument",
+            source="Some-Argument",
+            target="Another-Argument",
             relation_options={
-                "relation_type": "attack",
+                "type": "attack",
                 "target_premise_idx": 2,
                 "grounding_strategy": "define_negation"
             }
@@ -483,6 +482,8 @@ def connect(
 
     with tool_context(arg_map, mode) as tc:
         kwargs = relation_options or {}
+        if "type" in kwargs:
+            kwargs["relation_type"] = kwargs.pop("type")
 
         if mode == "sketch":
             if kwargs.get("grounding_strategy") is not None:
@@ -515,16 +516,16 @@ def connect(
             )
 
         args = parse_tool_args(
-            "connect", tc, arg_map, from_label=from_label, to_label=to_label, **kwargs
+            "connect", tc, arg_map, source=source, target=target, **kwargs
         )
 
         try:
-            if not arg_map.get_dialectic_relation(args.from_label, args.to_label):
+            if not arg_map.get_dialectic_relation(args.source, args.target):
                 match args.relation_type:
                     case "support":
                         return relation_authoring.new_support_relation(
-                            from_label=args.from_label,
-                            to_label=args.to_label,
+                            from_label=args.source,
+                            to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
                             grounding_strategy=args.grounding_strategy,  # type: ignore
                             arg_map=arg_map,
@@ -532,8 +533,8 @@ def connect(
                         )
                     case "attack":
                         return relation_authoring.new_attack_relation(
-                            from_label=args.from_label,
-                            to_label=args.to_label,
+                            from_label=args.source,
+                            to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
                             grounding_strategy=args.grounding_strategy,  # type: ignore
                             arg_map=arg_map,
@@ -541,13 +542,13 @@ def connect(
                         )
                     case _:
                         return tc.failure(
-                            f"Invalid relation_type '{args.relation_type}'.",
+                            f"Invalid relation type '{args.relation_type}'.",
                             error="InvalidRelationType",
                         ).build()
             elif mode != "author":
                 return (
                     tc.failure(
-                        f"Cannot ground existing relation from `{args.from_label}` to `{args.to_label}` in '{mode}' mode.",
+                        f"Cannot ground existing relation from `{args.source}` to `{args.target}` in '{mode}' mode.",
                         error="RelationAlreadyExists",
                     )
                     .suggest(
@@ -567,8 +568,8 @@ def connect(
                         ]:
                             try:
                                 return relation_authoring.ground_support_relation(
-                                    from_label=args.from_label,
-                                    to_label=args.to_label,
+                                    from_label=args.source,
+                                    to_label=args.target,
                                     strategy=grounding_strategy,  # type: ignore
                                     arg_map=arg_map,
                                     tc=tc,
@@ -580,7 +581,7 @@ def connect(
                                     priority=0.1,
                                 )
                         return tc.failure(
-                            f"✗ Failed to ground support relation from `{args.from_label}` to `{args.to_label}`.",
+                            f"✗ Failed to ground support relation from `{args.source}` to `{args.target}`.",
                             error="GroundingFailed",
                         ).build()
                     case "attack":
@@ -591,8 +592,8 @@ def connect(
                         ]:
                             try:
                                 return relation_authoring.ground_attack_relation(
-                                    from_label=args.from_label,
-                                    to_label=args.to_label,
+                                    from_label=args.source,
+                                    to_label=args.target,
                                     strategy=grounding_strategy,  # type: ignore
                                     arg_map=arg_map,
                                     tc=tc,
@@ -604,28 +605,28 @@ def connect(
                                     priority=0.1,
                                 )
                         return tc.failure(
-                            f"✗ Failed to ground attack relation from `{args.from_label}` to `{args.to_label}`.",
+                            f"✗ Failed to ground attack relation from `{args.source}` to `{args.target}`.",
                             error="GroundingFailed",
                         ).build()
                     case _:
                         return tc.failure(
-                            f"Invalid relation_type '{args.relation_type}'.",
+                            f"Invalid relation type '{args.relation_type}'.",
                             error="InvalidRelationType",
                         ).build()
         except Exception as e:
             logger.error(
-                f"Error creating {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}"
+                f"Error creating {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}"
             )
             return tc.failure(
-                f"✗ Failed to create {args.relation_type} relation from `{args.from_label}` to `{args.to_label}`: {str(e)}",
+                f"✗ Failed to create {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}",
                 error=str(e),
             ).build()
 
         logger.error(
-            f"Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`."
+            f"Unhandled case when creating relation from `{args.source}` to `{args.target}`."
         )
         raise RuntimeError(
-            f"Internal Error: Unhandled case when creating relation from `{args.from_label}` to `{args.to_label}`."
+            f"Internal Error: Unhandled case when creating relation from `{args.source}` to `{args.target}`."
         )
 
 
@@ -642,7 +643,7 @@ def remove(
 
     Args:
         label: Label of the node to remove (for node removal).
-        relation: Dictionary with `from_label` and `to_label` keys (for relation removal).
+        relation: Dictionary with `source` and `target` keys (for relation removal).
         ctx: Tool context (auto-injected).
 
     Example usage:
@@ -651,7 +652,7 @@ def remove(
         remove(label="Existing-Node-Title")
 
         # Remove a relation
-        remove(relation={"from_label": "Existing-Argument", "to_label": "Existing-Claim"})
+        remove(relation={"source": "Existing-Argument", "target": "Existing-Claim"})
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -664,25 +665,24 @@ def remove(
             relation = None
 
         # Extract relation parameters if provided
-        to_label = None
-        from_label = None
+        target = None
+        source = None
         if relation:
-            from_label = relation.get("from_label")
-            to_label = relation.get("to_label")
-
+            source = relation.get("source")
+            target = relation.get("target")
         try:
             # Validate that we have exactly one operation
             if label and label.strip():
                 # Node removal - label is valid
                 pass
-            elif from_label and from_label.strip() and to_label and to_label.strip():
-                # Relation removal - both from_label and to_label are valid
+            elif source and source.strip() and target and target.strip():
+                # Relation removal - both source and target are valid
                 pass
             else:
                 return (
                     tc.issue(
                         "error",
-                        "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'from_label' and 'to_label'.",
+                        "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'source' and 'target'.",
                     )
                     .suggest(
                         "remove",
@@ -695,8 +695,8 @@ def remove(
                         "remove",
                         {
                             "relation": {
-                                "from_label": "SOURCE_NODE_LABEL",
-                                "to_label": "TARGET_NODE_LABEL",
+                                "source": "SOURCE_NODE_LABEL",
+                                "target": "TARGET_NODE_LABEL",
                             }
                         },
                         "Remove a relation by specifying source and target node labels in relation dict.",
@@ -726,10 +726,10 @@ def remove(
                         arg_map=arg_map,
                         tc=tc,
                     )
-            elif to_label and from_label:
+            elif source and target:
                 return relation_authoring.delete_relation(
-                    from_label=from_label,
-                    to_label=to_label,
+                    from_label=source,
+                    to_label=target,
                     arg_map=arg_map,
                     tc=tc,
                 )

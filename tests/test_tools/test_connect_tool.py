@@ -28,10 +28,10 @@ async def test_connect_support_relation(tool_context: Mock) -> None:
     
     # Connect them
     result = connect(
-        from_label="A1",
-        to_label="C1",
+        source="A1",
+        target="C1",
         ctx=tool_context,
-        relation_options={"relation_type": "support"}
+        relation_options={"type": "support"}
     )
     
     assert not result.isError
@@ -50,10 +50,10 @@ async def test_connect_attack_relation(tool_context: Mock) -> None:
     
     # Connect them
     result = connect(
-        from_label="A1",
-        to_label="C1",
+        source="A1",
+        target="C1",
         ctx=tool_context,
-        relation_options={"relation_type": "attack"}
+        relation_options={"type": "attack"}
     )
     
     assert not result.isError
@@ -70,11 +70,11 @@ async def test_connect_with_grounding_in_sketch_mode(tool_context: Mock) -> None
     
     # Try to connect with grounding strategy
     result = connect(
-        from_label="A1",
-        to_label="C1",
+        source="A1",
+        target="C1",
         ctx=tool_context,
         relation_options={
-            "relation_type": "support",
+            "type": "support",
             "grounding_strategy": "copy_conclusion"
         }
     )
@@ -86,10 +86,10 @@ async def test_connect_with_grounding_in_sketch_mode(tool_context: Mock) -> None
 def test_connect_nonexistent_nodes_fails(tool_context: Mock) -> None:
     """Test connecting non-existent nodes returns error status."""
     result = connect(
-        from_label="NONEXISTENT1",
-        to_label="NONEXISTENT2",
+        source="NONEXISTENT1",
+        target="NONEXISTENT2",
         ctx=tool_context,
-        relation_options={"relation_type": "support"}
+        relation_options={"type": "support"}
     )
     
     # Check that error is indicated in structured content

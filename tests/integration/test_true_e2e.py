@@ -94,8 +94,8 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             connect_result: Any = await session.call_tool(
                 "connect",
                 arguments={
-                    "from_label": "A1",
-                    "to_label": "C1",
+                    "source": "A1",
+                    "target": "C1",
                     "relation_options": {
                         "relation_type": "support"
                     }
@@ -245,8 +245,8 @@ async def test_mcp_server_error_handling(tmp_path: Path) -> None:
             connect_result: Any = await session.call_tool(
                 "connect",
                 arguments={
-                    "from_label": "NONEXISTENT1",
-                    "to_label": "NONEXISTENT2",
+                    "source": "NONEXISTENT1",
+                    "target": "NONEXISTENT2",
                     "relation_options": {
                         "relation_type": "support"
                     }

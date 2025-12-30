@@ -63,11 +63,21 @@ async def test_add_with_relation(tool_context: Mock) -> None:
         label="A1",
         ctx=tool_context,
         gist="Argument",
-        relation_options={"to_label": "C1", "relation_type": "support"}
+        relation_options={"target": "C1", "relation_type": "support"}
     )
     
-    assert not result.isError
     assert arg_map.get_dialectic_relation("A1", "C1") is not None
+
+    # Add third node with relation using alias names
+    result = await add_argument(
+        label="A2",
+        ctx=tool_context,
+        gist="Argument",
+        relation_options={"target": "C1", "type": "support"}
+    )
+
+    assert arg_map.get_dialectic_relation("A2", "C1") is not None
+    assert not result.isError
 
 
 async def test_add_empty_label_fails(tool_context: Mock) -> None:

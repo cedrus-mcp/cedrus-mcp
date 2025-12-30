@@ -10,6 +10,7 @@ from koala.models import (
     ArgumentNode,
     Proposition,
 )
+from koala.models.relations import RelationConfig
 
 if TYPE_CHECKING:
     from koala.tools.tool_context import ToolContext
@@ -49,10 +50,12 @@ def ensure_label_is_unique(
 def sanitize_relation_args_new_node(
     arg_map: ArgumentMap,
     tc: ToolContext,
-    to_label: NodeLabel | None = None,
-    from_label: NodeLabel | None = None,
-    target_premise_idx: int | None = None,
-) -> tuple[NodeLabel | None, NodeLabel | None, int | None]:
+    relation_config: RelationConfig,
+) -> RelationConfig:
+    to_label = relation_config.to_label
+    from_label = relation_config.from_label
+    target_premise_idx = relation_config.target_premise_idx
+
     # Make sure only one relation is created
     if to_label and from_label:
         from_label = None  # Can't have both
@@ -79,7 +82,12 @@ def sanitize_relation_args_new_node(
         tc.issue("warning", msg, priority=1.0)
         target_premise_idx = None
 
-    return to_label, from_label, target_premise_idx
+    relation_config = relation_config.model_copy()
+    relation_config.to_label = to_label
+    relation_config.from_label = from_label
+    relation_config.target_premise_idx = target_premise_idx
+
+    return relation_config
 
 
 def validate_target_premise_idx(

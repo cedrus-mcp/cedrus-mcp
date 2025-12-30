@@ -190,9 +190,6 @@ def new_argument(
 
     # Add argument node to argument map
     arg_map.add_argument(argument_node)
-    msg = f"✓ Created new argument node `<{label}>`"
-    msg += f" with gist `{textwrap.shorten(gist or '', width=50)}`." if gist else "."
-    tc.issue("info", msg)
 
     # Create dialectical relation if specified
     relation_creation_fn = (
@@ -222,7 +219,8 @@ def new_argument(
     if refreshed_argument_node is None:
         raise RuntimeError(f"Failed to retrieve argument node `<{label}>` after creation.")
     argument_node = refreshed_argument_node
+    details = bool(premise_nodes or conclusion_node or tc.mode in ["review", "author"])
     tc.success(
         f"✓ Created new argument node `<{label}>`.",
-        result=render_argdown_node(arg_map, label, details=False),
+        result=render_argdown_node(arg_map, label, details=details),
     )

@@ -55,8 +55,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": label,
-                        "to_label": "EXISTING_ARGUMENT_LABEL",
+                        "source": label,
+                        "target": "Existing-Argument-Label",
                         "relation_options": relation_options
                     },
                     reason,
@@ -70,8 +70,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": label,
-                        "to_label": "EXISTING_ARGUMENT_LABEL",
+                        "source": label,
+                        "target": "Existing-Argument-Label",
                         "relation_options": relation_options
                     },
                     reason,
@@ -86,7 +86,7 @@ def add_suggestions_after_adding_node(
                         "label": "Concise-Argument_Label",
                         "gist": "Key point of new argument goes here",
                         "relation_options": {
-                            "to_label": label,
+                            "target": label,
                             "relation_type": "support",
                         }
                     },
@@ -100,7 +100,7 @@ def add_suggestions_after_adding_node(
                         "label": "Concise-Argument_Label",
                         "gist": "Key point of new argument goes here",
                         "relation_options": {
-                            "to_label": label,
+                            "target": label,
                             "relation_type": "attack",
                         }
                     },
@@ -113,8 +113,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": "EXISTING_ARGUMENT_LABEL",
-                        "to_label": label,
+                        "source": "EXISTING_ARGUMENT_LABEL",
+                        "target": label,
                         "relation_options": {
                             "relation_type": "support",
                         }
@@ -126,8 +126,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": "EXISTING_ARGUMENT_LABEL",
-                        "to_label": label,
+                        "source": "EXISTING_ARGUMENT_LABEL",
+                        "target": label,
                         "relation_options": {
                             "relation_type": "attack",
                         }
@@ -166,8 +166,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": label,
-                        "to_label": "CLAIM_OR_ARGUMENT_LABEL",
+                        "source": label,
+                        "target": "Claim-Or-Argument-Label",
                         "relation_options": {"relation_type": "SUPPORT_OR_ATTACK"}
                     },
                     "Explore whether any existing argument or claim is supported or attacked by this argument, and add a corresponding dialectical relation to the argument map.",
@@ -207,8 +207,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": argument_added.label,
-                        "to_label": "CLAIM_LABEL",
+                        "source": argument_added.label,
+                        "target": "Claim-Label",
                         "relation_options": {
                             "relation_type": "support",
                             "grounding_strategy": "copy_premise"
@@ -220,8 +220,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": argument_added.label,
-                        "to_label": "ARGUEMNT_LABEL",
+                        "source": argument_added.label,
+                        "target": "Argument-Label",
                         "relation_options": {
                             "relation_type": "support",
                             "target_premise_idx": "TARGET_PREMISE_IDX",
@@ -249,8 +249,8 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "connect",
                     {
-                        "from_label": "CLAIM_OR_ARGUMENT_LABEL",
-                        "to_label": label,
+                        "source": "CLAIM_OR_ARGUMENT_LABEL",
+                        "target": label,
                         "relation_options": {
                             "relation_type": "support",
                             "grounding_strategy": "copy_conclusion",

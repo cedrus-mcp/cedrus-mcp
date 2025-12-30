@@ -2,7 +2,7 @@
 
 from typing import Any, Literal, overload
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from koala.graph.argument_map import ArgumentMap
 from koala.models import NodeLabel
@@ -166,8 +166,8 @@ class EditToolArgs(BaseModel):
 class ConnectToolArgs(BaseModel):
     """Arguments for the connect tool."""
     
-    from_label: NodeLabel
-    to_label: NodeLabel
+    source: NodeLabel
+    target: NodeLabel
     relation_type: DialecticalRelationType | None = None
     target_premise_idx: int | None = None
     grounding_strategy: Literal["define_equivalence", "copy_premise", "copy_conclusion", "define_negation", "negate_premise", "negate_conclusion"] | None = None
@@ -180,14 +180,14 @@ class ConnectToolArgs(BaseModel):
                 "Assuming 'support' relation type as default.", priority=.2
             ).suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "attack"}},
+                {"source": self.source, "target": self.target, "relation_options": {"relation_type": "attack"}},
                 "Create an 'attack' relation instead.",
             )
             self.relation_type = "support"
         elif self.relation_type not in ["support", "attack"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "RELATION_TYPE"}},
+                {"source": self.source, "target": self.target, "relation_options": {"relation_type": "RELATION_TYPE"}},
                 "Create a relation of type RELATION_TYPE ('support' or 'attack').",
             )
             logger.error(f"relation_type must be either 'support' or 'attack', got '{self.relation_type}'.")
@@ -195,7 +195,7 @@ class ConnectToolArgs(BaseModel):
         if self.relation_type == "support" and self.grounding_strategy not in [None, "define_equivalence", "copy_premise", "copy_conclusion"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "support", "grounding_strategy": "GROUNDING_STRATEGY"}},
+                {"source": self.source, "target": self.target, "relation_options": {"relation_type": "support", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
             logger.error(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `support`.")
@@ -203,7 +203,7 @@ class ConnectToolArgs(BaseModel):
         if self.relation_type == "attack" and self.grounding_strategy not in [None, "define_negation", "negate_premise", "negate_conclusion"]:
             tc.suggest(
                 "connect",
-                {"from_label": self.from_label, "to_label": self.to_label, "relation_options": {"relation_type": "attack", "grounding_strategy": "GROUNDING_STRATEGY"}},
+                {"source": self.source, "target": self.target, "relation_options": {"relation_type": "attack", "grounding_strategy": "GROUNDING_STRATEGY"}},
                 "Create a relation with grounding strategy GROUNDING_STRATEGY.",
             )
             logger.error(f"grounding_strategy `{self.grounding_strategy}` is not compatible with relation_type `attack`.")

@@ -286,7 +286,7 @@ class ToolContext:
             "label": "New-Argument-Label",
             "gist": "Key point of new argument goes here",
             "relation_options": {
-                "to_label": label,
+                "target": label,
                 "relation_type": "support",
             }
         }
@@ -321,7 +321,7 @@ class ToolContext:
                 "label": "New-Argument-Label",
                 "gist": "Key point of new argument goes here",
                 "relation_options": {
-                    "to_label": label,
+                    "target": label,
                     "relation_type": "attack",
                     "target_premise_idx": target_premise_idx,
                 }
@@ -380,8 +380,8 @@ class ToolContext:
         return self.suggest(
             actual_tool,
             {
-                "from_label": from_label,
-                "to_label": to_label,
+                "source": from_label,
+                "target": to_label,
                 "relation_options": {
                     "relation_type": relation_type,
                 }

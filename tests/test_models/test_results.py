@@ -20,7 +20,7 @@ def test_next_action_with_action_type() -> None:
     """Test NextAction with action_type."""
     action = NextAction(
         tool="connect",
-        params={"from_label": "A1", "to_label": "C1"},
+        params={"source": "A1", "target": "C1"},
         reason="Connect nodes",
         action_type="expand"
     )
