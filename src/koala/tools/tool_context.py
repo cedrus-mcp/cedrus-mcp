@@ -216,6 +216,7 @@ class ToolContext:
             structuredContent={
                     "status": "failure",
                     "error": self._error,
+                    "message": self._message,
                     "issues": [i.model_dump() for i in self.issues] if self.issues else []
                 }
             self.content.append(

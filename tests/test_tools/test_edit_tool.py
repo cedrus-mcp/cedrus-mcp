@@ -89,13 +89,13 @@ async def test_edit_argument_conclusion(tool_context: Mock) -> None:
 
 def test_edit_nonexistent_node_fails(tool_context: Mock) -> None:
     """Test editing a non-existent node raises KeyError."""
-    with pytest.raises(KeyError):
-        edit(
+    result = edit(
             label="NONEXISTENT",
             field="proposition",
             ctx=tool_context,
             edit_options={"new_value": "Test"}
         )
+    assert result.structuredContent["status"] == "failure"
 
 
 async def test_edit_tags(tool_context: Mock) -> None:

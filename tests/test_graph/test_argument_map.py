@@ -234,3 +234,19 @@ def test_redundant_edges_with_subset() -> None:
     redundant = arg_map.redundant_edges(subset=subset)
     assert ("A1", "A2") not in redundant
 
+def test_most_similar_label() -> None:
+    """Test finding the most similar label."""
+    arg_map = ArgumentMap()
+    
+    # Add nodes
+    claim = ClaimNode(label="ClimateChange", proposition_id="P1")
+    arg = ArgumentNode(label="GlobalWarming", gist="Argument")
+    arg_map.add_claim(claim)
+    arg_map.add_argument(arg)
+    
+    similar_label, _ = next(arg_map.most_similar_labels("ClimateChnge"))
+    assert similar_label == "ClimateChange"
+    
+    similar_label, _ = next(arg_map.most_similar_labels("GlobaWarming"))
+    assert similar_label == "GlobalWarming"
+    

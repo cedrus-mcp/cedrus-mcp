@@ -367,12 +367,14 @@ def edit(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
+        if not arg_map.is_node(label):
+            most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
+            msg = f"Node '{label}' does not exist."
+            if most_similar_label:
+                msg += f" Did you mean '{most_similar_label}'?"
+            return tc.failure(msg, error="NonExistentNode").build()
+        
         node = arg_map.get_node(label)
-        if node is None:
-            return tc.failure(
-                f"Node '{label}' does not exist.",
-                error="NonExistentNode",
-            ).build()
 
         kwargs = edit_options or {}
         kwargs["field"] = field
@@ -703,12 +705,14 @@ def remove(
                 )
 
             if label:
+                if not arg_map.is_node(label):
+                    most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
+                    msg = f"Node '{label}' does not exist."
+                    if most_similar_label:
+                        msg += f" Did you mean '{most_similar_label}'?"
+                    return tc.failure(msg, error="NonExistentNode").build()
+
                 node = arg_map.get_node(label)
-                if node is None:
-                    return tc.failure(
-                        f"Node '{label}' does not exist.",
-                        error="NonExistentNode",
-                    ).build()
 
                 if isinstance(node, ClaimNode):
                     return node_deletion.delete_claim(
@@ -837,7 +841,7 @@ async def inspect_neighborhood(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        if arg_map.get_node(label) is None:
+        if not arg_map.is_node(label):
             most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
             msg = f"Node '{label}' does not exist."
             if most_similar_label:
@@ -877,7 +881,7 @@ async def inspect_node(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        if arg_map.get_node(label) is None:
+        if not arg_map.is_node(label):
             most_similar_label, _ = next(arg_map.most_similar_labels(label), (None, 0))
             msg = f"Node '{label}' does not exist."
             if most_similar_label:
