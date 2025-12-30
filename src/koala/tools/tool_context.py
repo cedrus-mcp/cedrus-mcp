@@ -240,22 +240,24 @@ class ToolContext:
         if self._result_data is not None:
             structured_content["result"] = self._result_data
         
+        if self.resources:
+            structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
+
         if self.issues:
             structured_content["issues"] = [i.model_dump() for i in self.issues]
 
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
 
-        if self.resources:
-            structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
-        
-        self.content.append(
-            TextContent(
-                type="text",
-                text=str(structured_content),
-                annotations=Annotations(audience=["assistant"], priority=1.0)
+        for key, value in structured_content.items():
+            if value is None:
+                continue
+            self.content.append(
+                TextContent(
+                    type="text",
+                    text=f"## {key}\n\n{value}\n\n",
+                )
             )
-        )
 
         return CallToolResult(
             content=self.content,
