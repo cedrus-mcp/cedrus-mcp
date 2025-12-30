@@ -18,13 +18,13 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-def test_connect_support_relation(tool_context: Mock) -> None:
+async def test_connect_support_relation(tool_context: Mock) -> None:
     """Test creating a support relation."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add two nodes
-    add_claim(label="C1", ctx=tool_context, proposition="Claim")
-    add_argument(label="A1", ctx=tool_context, gist="Arg")
+    await add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    await add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Connect them
     result = connect(
@@ -40,13 +40,13 @@ def test_connect_support_relation(tool_context: Mock) -> None:
     assert rel.relation_type == "support"
 
 
-def test_connect_attack_relation(tool_context: Mock) -> None:
+async def test_connect_attack_relation(tool_context: Mock) -> None:
     """Test creating an attack relation."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add two nodes
-    add_claim(label="C1", ctx=tool_context, proposition="Claim")
-    add_argument(label="A1", ctx=tool_context, gist="Arg")
+    await add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    await add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Connect them
     result = connect(
@@ -62,11 +62,11 @@ def test_connect_attack_relation(tool_context: Mock) -> None:
     assert rel.relation_type == "attack"
 
 
-def test_connect_with_grounding_in_sketch_mode(tool_context: Mock) -> None:
+async def test_connect_with_grounding_in_sketch_mode(tool_context: Mock) -> None:
     """Test that grounding is ignored in sketch mode."""
     # Add two nodes
-    add_claim(label="C1", ctx=tool_context, proposition="Claim")
-    add_argument(label="A1", ctx=tool_context, gist="Arg")
+    await add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    await add_argument(label="A1", ctx=tool_context, gist="Arg")
     
     # Try to connect with grounding strategy
     result = connect(

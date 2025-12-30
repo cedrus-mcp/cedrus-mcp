@@ -18,10 +18,10 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-def test_edit_claim_proposition(tool_context: Mock) -> None:
+async def test_edit_claim_proposition(tool_context: Mock) -> None:
     """Test editing a claim's proposition."""
     # Add a claim
-    add_claim(label="C1", ctx=tool_context, proposition="Original")
+    await add_claim(label="C1", ctx=tool_context, proposition="Original")
     
     # Edit it
     result = edit(
@@ -38,10 +38,10 @@ def test_edit_claim_proposition(tool_context: Mock) -> None:
     assert prop.content == "Updated"
 
 
-def test_edit_argument_gist(tool_context: Mock) -> None:
+async def test_edit_argument_gist(tool_context: Mock) -> None:
     """Test editing an argument's gist."""
     # Add an argument
-    add_argument(
+    await add_argument(
         label="A1",
         ctx=tool_context,
         gist="Original gist"
@@ -61,10 +61,10 @@ def test_edit_argument_gist(tool_context: Mock) -> None:
     assert node.gist == "Updated gist"
 
 
-def test_edit_argument_conclusion(tool_context: Mock) -> None:
+async def test_edit_argument_conclusion(tool_context: Mock) -> None:
     """Test editing an argument's conclusion."""
     # Add an argument
-    add_argument(
+    await add_argument(
         label="A1",
         ctx=tool_context,
         gist="Argument",
@@ -98,10 +98,10 @@ def test_edit_nonexistent_node_fails(tool_context: Mock) -> None:
         )
 
 
-def test_edit_tags(tool_context: Mock) -> None:
+async def test_edit_tags(tool_context: Mock) -> None:
     """Test editing tags on a node."""
     # Add a claim
-    add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Add a tag
     result = edit(
@@ -114,10 +114,10 @@ def test_edit_tags(tool_context: Mock) -> None:
     assert not result.isError
 
 
-def test_edit_metadata(tool_context: Mock) -> None:
+async def test_edit_metadata(tool_context: Mock) -> None:
     """Test editing metadata on a node."""
     # Add a claim
-    add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Add metadata
     result = edit(

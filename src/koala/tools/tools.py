@@ -111,7 +111,7 @@ logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 
 @mcp.tool()
-def add_claim(
+async def add_claim(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     proposition: str | None = None,
@@ -163,7 +163,8 @@ def add_claim(
                 f"Node with label '{label}' already exists.",
                 error="DuplicateLabel",
             )
-            tc.embed_resource(AnyUrl("argmap://graph/thin"), "Current Argument Map", 0.9)
+            argdown = await koala.resources.graph_views.graph_thin_resource()
+            tc.embed_resource(AnyUrl("argmap://graph/thin/argdown"), argdown, 0.9)
             params = {"label": f"Revised-{label}"}
             if proposition:
                 params["proposition"] = proposition
@@ -215,7 +216,7 @@ def add_claim(
 
 
 @mcp.tool()
-def add_argument(
+async def add_argument(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     gist: str | None = None,
@@ -275,7 +276,8 @@ def add_argument(
                 f"Node with label '{label}' already exists.",
                 error="DuplicateLabel",
             )
-            tc.embed_resource(AnyUrl("argmap://graph/thin"), "Current Argument Map", 0.9)
+            argdown = await koala.resources.graph_views.graph_thin_resource()
+            tc.embed_resource(AnyUrl("argmap://graph/thin/argdown"), argdown, 0.9)
             params = {"label": f"Revised-{label}"}
             if gist:
                 params["gist"] = gist
@@ -791,10 +793,10 @@ async def inspect_graph(
         try:
             if verbose:
                 text = await koala.resources.graph_views.graph_details_resource(format=format)
-                uri = AnyUrl("argmap://graph/details")
+                uri = AnyUrl(f"argmap://graph/details/{format}")
             else:
                 text = await koala.resources.graph_views.graph_thin_resource(format=format)
-                uri = AnyUrl("argmap://graph/thin")
+                uri = AnyUrl(f"argmap://graph/thin/{format}")
             tc.embed_resource(uri=uri, text=text)
         except Exception as e:
             logger.error(f"Error showing graph representation: {str(e)}")
@@ -805,7 +807,8 @@ async def inspect_graph(
         # embed statistics
         try:
             if verbose:
-                text = await koala.resources.summaries.statistics_resource()
+                stats = await koala.resources.summaries.statistics_resource()
+                text = f"# Graph Statistics\n\n{stats}"
                 tc.embed_resource(uri=AnyUrl("argmap://statistics"), text=text)
         except Exception as e:
             logger.error(f"Error showing graph statistics: {str(e)}")

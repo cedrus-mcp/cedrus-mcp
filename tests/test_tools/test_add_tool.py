@@ -1,7 +1,7 @@
 """Unit tests for add tool."""
 
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from koala.tools.tools import add_claim, add_argument
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -18,9 +18,9 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-def test_add_claim_basic(tool_context: Mock) -> None:
+async def test_add_claim_basic(tool_context: Mock) -> None:
     """Test adding a basic claim."""
-    result = add_claim(
+    result = await add_claim(
         label="C1",
         ctx=tool_context,
         proposition="Test claim"
@@ -36,9 +36,9 @@ def test_add_claim_basic(tool_context: Mock) -> None:
     assert prop.content == "Test claim"
 
 
-def test_add_argument_basic(tool_context: Mock) -> None:
+async def test_add_argument_basic(tool_context: Mock) -> None:
     """Test adding a basic argument."""
-    result = add_argument(
+    result = await add_argument(
         label="A1",
         ctx=tool_context,
         gist="Test argument"
@@ -51,15 +51,15 @@ def test_add_argument_basic(tool_context: Mock) -> None:
     assert node.gist == "Test argument"
 
 
-def test_add_with_relation(tool_context: Mock) -> None:
+async def test_add_with_relation(tool_context: Mock) -> None:
     """Test adding a node with simultaneous relation creation."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add first node
-    add_claim(label="C1", ctx=tool_context, proposition="Claim 1")
+    await add_claim(label="C1", ctx=tool_context, proposition="Claim 1")
     
     # Add second node with relation
-    result = add_argument(
+    result = await add_argument(
         label="A1",
         ctx=tool_context,
         gist="Argument",
@@ -70,26 +70,37 @@ def test_add_with_relation(tool_context: Mock) -> None:
     assert arg_map.get_dialectic_relation("A1", "C1") is not None
 
 
-def test_add_empty_label_fails(tool_context: Mock) -> None:
+async def test_add_empty_label_fails(tool_context: Mock) -> None:
     """Test that empty label raises ValueError."""
     with pytest.raises(ValueError, match="Label must be a non-empty string"):
-        add_claim(
+        await add_claim(
             label="",
             ctx=tool_context,
             proposition="Test"
         )
 
 
-def test_add_duplicate_label_gets_unique(tool_context: Mock) -> None:
+@patch("koala.resources.graph_views.mcp.get_context")
+async def test_add_duplicate_label_gets_unique(mock_get_context, tool_context: Mock) -> None:
     """Test that duplicate labels are made unique."""
+    # Mock the context returned by mcp.get_context
+    mock_context = Mock()
+    mock_request_context = Mock()
+    mock_lifespan_context = tool_context.request_context.lifespan_context
+
+    mock_request_context.lifespan_context = mock_lifespan_context
+    mock_context.request_context = mock_request_context
+    mock_get_context.return_value = mock_context
+
+    arg_map = tool_context.request_context.lifespan_context.arg_map
+
     # Add first node
-    add_claim(label="C1", ctx=tool_context, proposition="First")
-    
+    await add_claim(label="C1", ctx=tool_context, proposition="First")
+
     # Try to add with same label
-    result = add_claim(label="C1", ctx=tool_context, proposition="Second")
-    
+    result = await add_claim(label="C1", ctx=tool_context, proposition="Second")
+
     # Should succeed with modified label
     assert not result.isError
-    arg_map = tool_context.request_context.lifespan_context.arg_map
     # Original should still exist
     assert arg_map.get_node("C1") is not None

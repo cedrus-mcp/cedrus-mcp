@@ -18,12 +18,12 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-def test_remove_claim_node(tool_context: Mock) -> None:
+async def test_remove_claim_node(tool_context: Mock) -> None:
     """Test removing a claim node."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add a claim
-    add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim(label="C1", ctx=tool_context, proposition="Test")
     assert arg_map.get_node("C1") is not None
     
     # Remove it
@@ -34,12 +34,12 @@ def test_remove_claim_node(tool_context: Mock) -> None:
         arg_map.get_node("C1")
 
 
-def test_remove_argument_node(tool_context: Mock) -> None:
+async def test_remove_argument_node(tool_context: Mock) -> None:
     """Test removing an argument node."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add an argument
-    add_argument(
+    await add_argument(
         label="A1",
         ctx=tool_context,
         gist="Test"
@@ -54,13 +54,13 @@ def test_remove_argument_node(tool_context: Mock) -> None:
         arg_map.get_node("A1")
 
 
-def test_remove_relation(tool_context: Mock) -> None:
+async def test_remove_relation(tool_context: Mock) -> None:
     """Test removing a relation between nodes."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add nodes and connect them
-    add_claim(label="C1", ctx=tool_context, proposition="Claim")
-    add_argument(label="A1", ctx=tool_context, gist="Arg")
+    await add_claim(label="C1", ctx=tool_context, proposition="Claim")
+    await add_argument(label="A1", ctx=tool_context, gist="Arg")
     connect(
         from_label="A1",
         to_label="C1",
@@ -89,10 +89,10 @@ def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
     assert result.structuredContent["status"] == "failure"
 
 
-def test_remove_with_both_label_and_relation_prioritizes_label(tool_context: Mock) -> None:
+async def test_remove_with_both_label_and_relation_prioritizes_label(tool_context: Mock) -> None:
     """Test that providing both label and relation uses label."""
     # Add a node
-    add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim(label="C1", ctx=tool_context, proposition="Test")
     
     # Call remove with both (should remove node, not relation)
     result = remove(
