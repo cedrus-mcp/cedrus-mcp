@@ -7,6 +7,20 @@ from koala.models.nodes import ArgumentNode, ClaimNode
 from koala.models.relations import DialecticalRelationType
 
 
+def _get_next_indent_str(current_indent_str: str, child_index: int, total_children: int) -> str:
+    """Get the indent string for the next level based on the current indent string."""
+    base_indent_str = "".join([
+        "│" if c in ["│", "├"] else " "
+        for c in current_indent_str
+    ])
+    if base_indent_str:
+        base_indent_str = base_indent_str + "   "
+    if child_index == total_children - 1:
+        return base_indent_str + "└─ "
+    else:
+        return base_indent_str + "├─ "
+        
+
 def _render_node_recursive(
     arg_map: ArgumentMap,
     node: ClaimNode | ArgumentNode,
@@ -14,12 +28,13 @@ def _render_node_recursive(
     subset: list[NodeLabel] | None,
     lines: list[str],
     indent_level: int,
+    indent_str: str,
     nodes_visited: set[NodeLabel],
     label_only: bool,
     extra_tags: bool,
 ) -> None:
     """Recursively render a node and its successors."""
-    line = "    " * indent_level
+    line = indent_str # "    " * indent_level
     if relation_to_successor is not None:
         line += "<+ " if relation_to_successor == "support" else "<- "
     line += f"[{node.label}]" if isinstance(node, ClaimNode) else f"<{node.label}>"
@@ -42,7 +57,8 @@ def _render_node_recursive(
 
     lines.append(line)
 
-    # Render all successor nodes (children) that have not been visited yet
+    # Render all predecessor nodes (children) that have not been visited yet
+    support_nodes: list[ClaimNode | ArgumentNode] = []
     for support_id in arg_map.get_supporters(node.label):
         if subset is not None and support_id not in subset:
             continue
@@ -52,17 +68,9 @@ def _render_node_recursive(
             continue
         support_node = arg_map.get_node(support_id)
         if support_node is not None:
-            _render_node_recursive(
-                arg_map,
-                support_node,
-                relation_to_successor="support",
-                subset=subset,
-                lines=lines,
-                indent_level=indent_level + 1,
-                nodes_visited=nodes_visited | {node.label},
-                label_only=label_only,
-                extra_tags=extra_tags,
-            )
+            support_nodes.append(support_node)
+
+    attack_nodes: list[ClaimNode | ArgumentNode] = []
     for attack_id in arg_map.get_attackers(node.label):
         if subset is not None and attack_id not in subset:
             continue
@@ -72,17 +80,25 @@ def _render_node_recursive(
             continue
         attack_node = arg_map.get_node(attack_id)
         if attack_node is not None:
-            _render_node_recursive(
-                arg_map,
-                attack_node,
-                relation_to_successor="attack",
-                subset=subset,
-                lines=lines,
-                indent_level=indent_level + 1,
-                nodes_visited=nodes_visited | {node.label},
-                label_only=label_only,
-                extra_tags=extra_tags,
-            )
+            attack_nodes.append(attack_node)
+
+    for e, node in enumerate(support_nodes + attack_nodes):
+        relation_to_successor = "support" if e < len(support_nodes) else "attack"
+        next_indent_str = _get_next_indent_str(indent_str, e, len(support_nodes) + len(attack_nodes))
+        _render_node_recursive(
+            arg_map,
+            node,
+            relation_to_successor=relation_to_successor,
+            subset=subset,
+            lines=lines,
+            indent_level=indent_level + 1,
+            indent_str=next_indent_str,
+            nodes_visited=nodes_visited | {node.label},
+            label_only=label_only,
+            extra_tags=extra_tags,
+        )
+
+
 
 def render_argdown(
     arg_map: ArgumentMap,
@@ -104,6 +120,7 @@ def render_argdown(
             subset=subset,
             lines=lines,
             indent_level=0,
+            indent_str="",
             nodes_visited=set(),
             label_only=label_only,
             extra_tags=extra_tags,
