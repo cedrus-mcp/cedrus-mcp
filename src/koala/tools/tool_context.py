@@ -236,30 +236,33 @@ class ToolContext:
             "status": self._status,
             "message": self._message,
         }
+        plain_content: list[str] = []   
         
         if self._result_data is not None:
             structured_content["result"] = self._result_data
+            plain_content.append(f"RESULT:\n\n{self._result_data}")
         
         if self.resources:
             structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
+            text = "\n\n".join(f"{r.resource.uri}\n\n{r.resource.text}" for r in self.resources if isinstance(r.resource, TextResourceContents))
+            plain_content.append(f"EMBEDDED RESOURCES:\n\n{text}")
 
         if self.issues:
             structured_content["issues"] = [i.model_dump() for i in self.issues]
+            text = "\n\n".join(f"{i.severity}: {i.issue}" for i in self.issues)
+            plain_content.append(f"ISSUES:\n\n{text}")
 
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
+            text = "\n\n".join(f"{s.reason} ({s.action_type}): {s.tool}({s.params})" for s in self.suggestions)
+            plain_content.append(f"SUGGESTIONS:\n\n{[s.model_dump() for s in self.suggestions]}")
 
 
         # Cast structured_content as plain text for backwards compatibility
-        plain_content = "\n\n".join(
-            f"{key.upper()}:\n\n{value}"
-            for key, value in structured_content.items()
-            if value is not None
-        )
         content = [
             TextContent(
                 type="text",
-                text=plain_content,
+                text="\n\n".join(plain_content),
             )
         ] + self.content
 
