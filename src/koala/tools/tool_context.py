@@ -286,8 +286,10 @@ class ToolContext:
         Returns:
             Self for method chaining
         """
+        new_label = "New-Supporting-Argument"
         params: dict[str, Any] = {
-            "relation_target": label,
+            "target": label,
+            "source": new_label,
             "relation_type": "support"
         }
         if target_premise_idx is not None:
@@ -296,8 +298,8 @@ class ToolContext:
         self.suggest(
             "add_argument",
             {
-                "label": "New-Argument-Label",
-                "gist": "Key point of new argument goes here"
+                "label": new_label,
+                "gist": f"Key point of new argument <{new_label}> goes here"
             },
             f"{reason} (Step 1 of 2)",
             action_type="expand"
@@ -325,8 +327,10 @@ class ToolContext:
         Returns:
             Self for method chaining
         """
+        new_label = "New-Attacking-Argument"
         params: dict[str, Any] = {
             "target": label,
+            "source": new_label,
             "relation_type": "attack",
         }
         if target_premise_idx is not None:
@@ -335,8 +339,8 @@ class ToolContext:
         self.suggest(
             "add_argument",
             {
-                "label": "New-Argument-Label",
-                "gist": "Key point of new argument goes here",
+                "label": new_label,
+                "gist": f"Key point of new argument <{new_label}> goes here",
             },
             f"{reason} (Step 1 of 2)",
             action_type="expand"
