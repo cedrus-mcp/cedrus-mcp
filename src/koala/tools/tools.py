@@ -900,10 +900,40 @@ def mode(
 ) -> CallToolResult:
     """Switch the argument map editing mode.
 
+    Args:
+        mode: The mode to switch to ("sketch", "author", or "review").
+
     Example usage:
 
         mode("author")
     """
+
+    # TODO: Dynamically add and remove tools based on mode
+    # See also: https://github.com/modelcontextprotocol/python-sdk/issues/1429#issuecomment-3669447896
+    # For sketch mode:
+    # - add_claim(label, proposition)
+    # - add_argument(label, gist)
+    # - connect(source, target, relation_type)
+    # - remove(label, source, target)
+    #
+    # For author mode:
+    # - add_claim(label, proposition, tags)
+    # - add_argument(label, gist, premises, conclusion, tags)
+    # - edit(label, field, edit_options)
+    # - connect(source, target, relation_type, target_premise_idx, grounding_strategy)
+    # - remove(label, source, target)
+    # - inspect_node(label)
+    #
+    # For review mode:
+    # - validate(fix, max_issues)
+    # - inspect_node(label)
+    #
+    # Shared tools:
+    # - instructions()
+    # - inspect_graph(verbose, format)
+    # - inspect_neighborhood(label, k)
+    # - mode(mode)
+
 
     arg_map = ctx.request_context.lifespan_context.arg_map
     old_mode = ctx.request_context.lifespan_context.mode
