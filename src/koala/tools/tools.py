@@ -114,8 +114,8 @@ async def add_argument(
 ) -> CallToolResult:
     """Add a new argument node to your argumentation graph.
 
-    An argument represents a justification or an objection. Provide a 'gist' to summarize the
-    key idea of the argument. Use premises and conclusion to detail its structure. Be clear and
+    An argument represents a justification or an objection. In `sketch` mode, provide a 'gist' to summarize the
+    key idea of the argument. In `author` mode, use premises and conclusion to detail its structure. Be clear and
     concise in your descriptions. Provide a succinct and informative label that captures
     the essence of the argument and helps you to refer to it easily later on.
 
@@ -206,7 +206,7 @@ async def add_argument(
 @mcp.tool()
 def edit(
     label: NodeLabel,
-    field: str,
+    field: Literal["label", "proposition", "gist", "conclusion", "premises", "tags", "metadata"],
     ctx: Context[ServerSession, AppContext],
     edit_options: dict[str, Any] | None = None,
 ) -> CallToolResult:

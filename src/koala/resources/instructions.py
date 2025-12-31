@@ -1,12 +1,5 @@
 # resources/instructions.py
 
-from typing import Literal
-
-import json
-
-from mcp.server.fastmcp import Context
-from mcp.server.session import ServerSession
-
 from koala.models.results import NextAction
 from koala.server import AppContext, mcp
 
@@ -56,6 +49,7 @@ def instruction_author(app_ctx: AppContext) -> str:
         "Typical actions in author mode include:\n"
         f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "conclusion", "edit_options": {"new_value": "The proposition serving as the conclusion of this argument."}}, reason="Edit an existing argument to add more detail.", action_type="refine").model_dump()}\n'
+        f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "premises", "edit_options": {"new_value": "The proposition to be added as further premise of this argument.", "target_premise_idx": "3"}}, reason="Add a third premise to an existing argument with 2 premises.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
         "\n"
     )
