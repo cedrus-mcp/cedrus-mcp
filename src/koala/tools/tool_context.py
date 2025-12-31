@@ -249,18 +249,22 @@ class ToolContext:
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
 
-        for key, value in structured_content.items():
-            if value is None:
-                continue
-            self.content.append(
-                TextContent(
-                    type="text",
-                    text=f"## {key}\n\n{value}\n\n",
-                )
+
+        # Cast structured_content as plain text for backwards compatibility
+        plain_content = "\n\n".join(
+            f"{key.upper()}:\n\n{value}"
+            for key, value in structured_content.items()
+            if value is not None
+        )
+        content = [
+            TextContent(
+                type="text",
+                text=plain_content,
             )
+        ] + self.content
 
         return CallToolResult(
-            content=self.content,
+            content=content,
             structuredContent=structured_content
         )
     
