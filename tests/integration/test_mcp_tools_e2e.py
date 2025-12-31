@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 from mcp.types import CallToolResult
-from koala.tools.tools import add_claim, add_argument, edit, connect, remove, mode
+from koala.tools.tools import add_claim, add_argument, edit, connect, remove, set_mode
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -106,7 +106,7 @@ def test_mode_tool_switches_mode(mock_context: Mock) -> None:
     """Test switching mode via mode tool."""
     assert mock_context.request_context.lifespan_context.mode == "sketch"
     
-    result = mode(mode="author", ctx=mock_context)
+    result = set_mode(mode="author", ctx=mock_context)
     
     assert isinstance(result, CallToolResult)
     assert not result.isError

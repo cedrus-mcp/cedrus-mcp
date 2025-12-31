@@ -362,7 +362,7 @@ def connect(
                 tc.issue(
                     "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "mode",
+                    "set_mode",
                     {"mode": "author"},
                     "Switch to 'author' mode to use grounding strategies.",
                 )
@@ -371,7 +371,7 @@ def connect(
                 tc.issue(
                     "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "mode",
+                    "set_mode",
                     {"mode": "author"},
                     "Switch to 'author' mode to specify target premise index.",
                 )
@@ -380,7 +380,7 @@ def connect(
             tc.issue(
                 "info", "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
-                "mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
+                "set_mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
             ).suggest(
                 "validate",
                 {},
@@ -431,7 +431,7 @@ def connect(
                         error="RelationAlreadyExists",
                     )
                     .suggest(
-                        "mode",
+                        "set_mode",
                         {"mode": "author"},
                         "Switch to 'author' mode to ground existing relations.",
                     )
@@ -894,7 +894,7 @@ def validate(
 
 
 @mcp.tool()
-def mode(
+def set_mode(
     mode: Mode,
     ctx: Context[ServerSession, AppContext],
 ) -> CallToolResult:
@@ -905,7 +905,7 @@ def mode(
 
     Example usage:
 
-        mode("author")
+        set_mode("author")
     """
 
     # TODO: Dynamically add and remove tools based on mode
@@ -932,7 +932,7 @@ def mode(
     # - instructions()
     # - inspect_graph(verbose, format)
     # - inspect_neighborhood(label, k)
-    # - mode(mode)
+    # - set_mode(mode)
 
 
     arg_map = ctx.request_context.lifespan_context.arg_map

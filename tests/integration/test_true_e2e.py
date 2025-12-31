@@ -45,7 +45,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "inspect_node" in tool_names
             assert "validate" in tool_names
             #assert "export_svg" in tool_names
-            assert "mode" in tool_names
+            assert "set_mode" in tool_names
             
             # List available resources
             resources_result = await session.list_resources()
@@ -145,7 +145,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             # Call tool: switch mode
             mode_result: Any = await session.call_tool(
-                "mode",
+                "set_mode",
                 arguments={
                     "mode": "author"
                 }

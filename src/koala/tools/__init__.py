@@ -14,7 +14,7 @@ from .tools import (
     instructions,
     validate,
     #export_svg,
-    mode,
+    set_mode,
 )
 
 
@@ -31,7 +31,7 @@ ToolName = Literal[
     "instructions",
     "validate",
     #"export_svg",
-    "mode",
+    "set_mode",
 ]
 
 __all__ = [
@@ -46,7 +46,7 @@ __all__ = [
     "instructions",
     "validate",
     #"export_svg",
-    "mode",
+    "set_mode",
     "ToolName",
 ]
 
