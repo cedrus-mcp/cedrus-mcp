@@ -254,7 +254,7 @@ class ToolContext:
 
         if self.suggestions:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
-            text = "\n\n".join(f"{s.reason} ({s.action_type}): {s.tool}({s.params})" for s in self.suggestions)
+            text = "\n\n".join(f"{s.action_type.upper()} {s.reason} : `{s.tool}({s.params})`" for s in self.suggestions)
             plain_content.append(f"SUGGESTIONS:\n\n{text}")
 
 
