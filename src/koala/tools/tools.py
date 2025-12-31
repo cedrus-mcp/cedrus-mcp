@@ -121,17 +121,11 @@ async def add_argument(
 
     By adding an argument, you're not necessarily asserting its premises or conclusion as true.
 
-    When adding an argument, you can optionally create one dialectical relation (support or attack)
-    to or from an existing node in the argument map.
-
     Args:
         label: Succinct and informative title (serves as unique identifier for the argument)
         gist: A brief summary of the argument
         premises: List of premises supporting the argument
         conclusion: Conclusion drawn from the premises
-        relation_target: Optional target node label for relation (must be None if relation_source is provided)
-        relation_source: Optional source node label for relation (must be None if relation_target is provided)
-        relation_type: Optional type of relation (support or attack), default is support
         tags: Optional list of tags for the argument
 
     Example usage:

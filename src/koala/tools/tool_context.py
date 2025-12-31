@@ -293,7 +293,7 @@ class ToolContext:
         if target_premise_idx is not None:
             params["target_premise_idx"] = target_premise_idx
             
-        return self.suggest(
+        self.suggest(
             "add_argument",
             {
                 "label": "New-Argument-Label",
@@ -301,12 +301,14 @@ class ToolContext:
             },
             f"{reason} (Step 1 of 2)",
             action_type="expand"
-        ).suggest(
+        )
+        self.suggest(
             "connect",
             params,
             f"{reason} (Step 2 of 2)",
             action_type="expand"
         )
+        return self
     
     def suggest_attack_argument(
         self,
@@ -330,7 +332,7 @@ class ToolContext:
         if target_premise_idx is not None:
             params["target_premise_idx"] = target_premise_idx
 
-        return self.suggest(
+        self.suggest(
             "add_argument",
             {
                 "label": "New-Argument-Label",
@@ -338,12 +340,14 @@ class ToolContext:
             },
             f"{reason} (Step 1 of 2)",
             action_type="expand"
-        ).suggest(
+        )
+        self.suggest(
             "connect",
             params,
             f"{reason} (Step 2 of 2)",
             action_type="expand"
         )
+        return self
     
     def suggest_update_field(
         self,
