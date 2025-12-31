@@ -32,7 +32,7 @@ def check_grounding(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, ma
                 {
                     "source": from_label,
                     "target": to_label,
-                    "relation_options": {"type": "support"},
+                    "relation_type": "support"
                 },
                 f"Ensure that the support relation from {from_label} to {to_label} is grounded in internal premise conclusion structure of adjacent nodes.",
                 "fix",
@@ -50,7 +50,7 @@ def check_grounding(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, ma
                 {
                     "source": from_label,
                     "target": to_label,
-                    "relation_options": {"type": "attack"},
+                    "relation_type": "attack"
                 },
                 f"Ensure that the attack relation from {from_label} to {to_label} is grounded in internal premise conclusion structure of adjacent nodes.",
                 "fix",

@@ -52,39 +52,39 @@ def sanitize_relation_args_new_node(
     tc: ToolContext,
     relation_config: RelationConfig,
 ) -> RelationConfig:
-    to_label = relation_config.to_label
-    from_label = relation_config.from_label
+    target = relation_config.target
+    source = relation_config.source
     target_premise_idx = relation_config.target_premise_idx
 
     # Make sure only one relation is created
-    if to_label and from_label:
-        from_label = None  # Can't have both
-        tc.issue("info", 
-            "Note: Both 'to_label' and 'from_label' were provided. Will ignore 'from_label'.",
+    if target and source:
+        source = None  # Can't have both
+        tc.issue("warning", 
+            "Note: Both 'target' and 'source' were provided. Will ignore 'source'.",
             priority=1.0,
         )
 
-    # Check if to_label / from_label exist
-    if to_label is not None and arg_map.is_node(to_label) is False:
-        msg = f"Target node `{to_label}` does not exist in the argument map. Will create node without relation."
+    # Check if target / source exist
+    if target is not None and arg_map.is_node(target) is False:
+        msg = f"Target node `{target}` does not exist in the argument map. Will create node without relation."
         tc.issue("warning", msg, priority=1.0)
-        to_label = None
-    if from_label is not None and arg_map.is_node(from_label) is False:
-        msg = f"Source node `{from_label}` does not exist in the argument map. Will create node without relation."
+        target = None
+    if source is not None and arg_map.is_node(source) is False:
+        msg = f"Source node `{source}` does not exist in the argument map. Will create node without relation."
         tc.issue("warning", msg, priority=1.0)
-        from_label = None
+        source = None
 
     # Validate target_premise_idx
     if target_premise_idx is not None and (
-        not to_label or not validate_target_premise_idx(to_label, target_premise_idx, arg_map)
+        not target or not validate_target_premise_idx(target, target_premise_idx, arg_map)
     ):
-        msg = f"No premise at index {target_premise_idx} in target argument `{to_label}`. Ignoring `target_premise_idx`."
+        msg = f"No premise at index {target_premise_idx} in target argument `{target}`. Ignoring `target_premise_idx`."
         tc.issue("warning", msg, priority=1.0)
         target_premise_idx = None
 
     relation_config = relation_config.model_copy()
-    relation_config.to_label = to_label
-    relation_config.from_label = from_label
+    relation_config.target = target
+    relation_config.source = source
     relation_config.target_premise_idx = target_premise_idx
 
     return relation_config

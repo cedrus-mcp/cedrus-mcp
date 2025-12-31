@@ -96,9 +96,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
                 arguments={
                     "source": "A1",
                     "target": "C1",
-                    "relation_options": {
-                        "relation_type": "support"
-                    }
+                    "relation_type": "support"
                 }
             )
             
@@ -247,9 +245,7 @@ async def test_mcp_server_error_handling(tmp_path: Path) -> None:
                 arguments={
                     "source": "NONEXISTENT1",
                     "target": "NONEXISTENT2",
-                    "relation_options": {
-                        "relation_type": "support"
-                    }
+                    "relation_type": "support"
                 }
             )
             

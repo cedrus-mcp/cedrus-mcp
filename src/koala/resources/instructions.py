@@ -21,7 +21,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         "Typical actions in sketch mode include:\n"
         f'{NextAction(tool="add_claim", params={"label": "Claim Label", "proposition": "The proposition maintained by this claim."}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
         f'{NextAction(tool="add_argument", params={"label": "Argument Label", "gist": "The main idea of this argument."}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
-        f'{NextAction(tool="connect", params={"source": "Argument Label", "target": "Claim Label", "relation_options": {"relation_type": "support"}}, reason="Connect an argument to a claim with a support relation.", action_type="expand").model_dump()}\n'
+        f'{NextAction(tool="connect", params={"source": "Argument Label", "target": "Claim Label", "relation_type": "support"}, reason="Connect an argument to a claim with a support relation.", action_type="expand").model_dump()}\n'
         "\n"
     )
     if app_ctx.mode == "sketch":
@@ -56,7 +56,7 @@ def instruction_author(app_ctx: AppContext) -> str:
         "Typical actions in author mode include:\n"
         f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "conclusion", "edit_options": {"new_value": "The proposition serving as the conclusion of this argument."}}, reason="Edit an existing argument to add more detail.", action_type="refine").model_dump()}\n'
-        f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_options": {"relation_type": "attack", "target_premise_idx": "2"}}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
+        f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
         "\n"
     )
     if app_ctx.mode == "author":

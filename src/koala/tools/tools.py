@@ -14,7 +14,7 @@ from koala.models import (
     ArgumentNode,
 )
 from koala.models.base import Mode
-from koala.models.relations import RelationConfig
+from koala.models.relations import DialecticalRelationType, GroundingStrategy
 import koala.resources
 from koala.server import AppContext, mcp
 from koala.tools import relation_authoring, suggestions, utils
@@ -26,99 +26,12 @@ from koala.validation import validate_argument_map
 logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 
-# @mcp.tool()
-# def add(
-#     label: NodeLabel,
-#     ctx: Context[ServerSession, AppContext],
-#     node_options: dict[str, Any] | None = None,
-#     relation_options: dict[str, Any] | None = None,
-# ) -> CallToolResult:
-#     """Create a new node (claim or argument) in the argument map.
-
-#     To create an argument, provide a "gist" in node_options or set node_type to "argument".
-
-#     Args:
-#         label: Succinct and informative title (serves as unique identifier for the node)
-#         node_options: Node configuration (proposition, gist, conclusion, premises, node_type, tags, metadata)
-#         relation_options: Optional relation to create (to_label, from_label, relation_type, target_premise_idx)
-
-#     Example usage:
-
-#         add(
-#             label="MY-NEW-CLAIM",
-#             node_options={"proposition": "This is a new claim."},
-#             relation_options={"from_label": "EXISTING-ARGUMENT-TITLE", "relation_type": "support"}
-#         )
-
-#     Take care to use succinct and informative labels instead of placeholders like "CLAIM_1".
-#     """
-#     arg_map = ctx.request_context.lifespan_context.arg_map
-#     mode = ctx.request_context.lifespan_context.mode
-
-#     with tool_context(arg_map, mode) as tc:
-
-#         if not label or not label.strip():
-#             raise ValueError("Label must be a non-empty string.")
-
-#         # Ensure label is unique
-#         label = utils.ensure_label_is_unique(label, arg_map, tc)
-
-#         # Merge node_options and relation_options
-#         kwargs = {}
-#         if node_options:
-#             kwargs.update(node_options)
-#         if relation_options:
-#             kwargs.update(relation_options)
-
-#         args = parse_tool_args("add", tc, arg_map, **kwargs)
-
-#         try:
-#             if args.node_type == "claim":
-#                 # Adding a claim node
-#                 node_creation.new_claim(
-#                     label=label,
-#                     proposition=args.proposition,
-#                     to_label=args.to_label,
-#                     from_label=args.from_label,
-#                     relation_type=args.relation_type or "support",
-#                     target_premise_idx=args.target_premise_idx,
-#                     tags=args.tags,
-#                     metadata=args.metadata,
-#                     arg_map=arg_map,
-#                     tc=tc,
-#                 )
-#             elif args.node_type == "argument":
-#                 # Adding an argument node
-#                 node_creation.new_argument(
-#                     label=label,
-#                     gist=args.gist,
-#                     to_label=args.to_label,
-#                     from_label=args.from_label,
-#                     relation_type=args.relation_type or "support",
-#                     target_premise_idx=args.target_premise_idx,
-#                     premises=args.premises,
-#                     conclusion=args.conclusion,
-#                     tags=args.tags,
-#                     metadata=args.metadata,
-#                     arg_map=arg_map,
-#                     tc=tc,
-#                 )
-#         except Exception as e:
-#             return tc.failure(
-#                 f"✗ Failed to create {args.node_type} `{label}`: {str(e)}", error=str(e)
-#             ).build()
-#         suggestions.add_suggestions_after_adding_node(label, arg_map, tc)
-#         return tc.build()
-
-
 @mcp.tool()
 async def add_claim(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     proposition: str | None = None,
-    relation_options: dict[str, Any] | None = None,
     tags: list[str] | None = None,
-    metadata: dict[str, Any] | None = None,
 ) -> CallToolResult:
     """Add a new claim node to your argumentation graph.
 
@@ -130,30 +43,19 @@ async def add_claim(
     Args:
         label: Succinct and informative title (serves as unique identifier for the claim)
         proposition: The content of the claim
-        relation_options: Optional relation to create (source, target, type, target_premise_idx)
         tags: Optional list of tags for the claim
-        metadata: Optional dictionary of metadata for the claim
 
     Example usage:
 
-        # Basic
-        add_claim(
-            label="My-New-Claim",
-            proposition="The Earth is round."
-        )
-
-        # Advanced
         add_claim(
             label="My-New-Claim",
             proposition="The Earth is round.",
-            relation_options={"target": "Existing-Argument-Title", "type": "support"},
-            tags=["geography", "science"],
-            metadata={"reference": "common knowledge"}
+            tags=["geography", "science"]
         )
+
     """
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
-    relation_config = RelationConfig(**(relation_options or {}))
 
     with tool_context(arg_map, mode) as tc:
         if not label or not label.strip():
@@ -176,30 +78,16 @@ async def add_claim(
                 action_type="expand",
             )
 
-        # Validate relation arguments
-        relation_config = utils.sanitize_relation_args_new_node(
-            arg_map=arg_map, tc=tc, relation_config=relation_config
-        )
-        if relation_config.target or relation_config.source: # pyright: ignore[reportAttributeAccessIssue]
-            if relation_config.relation_type is None:
-                tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
-                relation_config.relation_type = "support"
-            if relation_config.relation_type not in ["support", "attack"]:
-                return tc.failure(
-                    f"Invalid relation type '{relation_config.relation_type}'. Must be 'support' or 'attack'.",
-                    error="InvalidRelationType",
-                ).build()
-
         try:
             node_creation.new_claim(
                 label=label,
                 proposition=proposition,
-                to_label=relation_config.to_label,  
-                from_label=relation_config.from_label,
-                relation_type=relation_config.relation_type,
-                target_premise_idx=relation_config.target_premise_idx,
+                to_label=None,
+                from_label=None,
+                relation_type="support",
+                target_premise_idx=None,
                 tags=tags,
-                metadata=metadata,
+                metadata=None,
                 arg_map=arg_map,
                 tc=tc,
             )
@@ -222,9 +110,7 @@ async def add_argument(
     gist: str | None = None,
     premises: list[str] | None = None,
     conclusion: str | None = None,
-    relation_options: dict[str, Any] | None = None,
     tags: list[str] | None = None,
-    metadata: dict[str, Any] | None = None,
 ) -> CallToolResult:
     """Add a new argument node to your argumentation graph.
 
@@ -235,14 +121,18 @@ async def add_argument(
 
     By adding an argument, you're not necessarily asserting its premises or conclusion as true.
 
+    When adding an argument, you can optionally create one dialectical relation (support or attack)
+    to or from an existing node in the argument map.
+
     Args:
         label: Succinct and informative title (serves as unique identifier for the argument)
         gist: A brief summary of the argument
         premises: List of premises supporting the argument
         conclusion: Conclusion drawn from the premises
-        relation_options: Optional relation to create (target, source, type, target_premise_idx)
+        relation_target: Optional target node label for relation (must be None if relation_source is provided)
+        relation_source: Optional source node label for relation (must be None if relation_target is provided)
+        relation_type: Optional type of relation (support or attack), default is support
         tags: Optional list of tags for the argument
-        metadata: Optional dictionary of metadata for the argument
 
     Example usage:
 
@@ -257,15 +147,13 @@ async def add_argument(
             label="My-New-Argument",
             gist="This is a brief summary of the argument.",
             premises=["Premise 1", "Premise 2"],
-            conclusion="Therefore, the conclusion follows.",
-            relation_options={"target": "Supported-Claim-Title", "type": "support"},
+            conclusion="This statement can be concluded.",
             tags=["some topic"]
         )
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
     mode = ctx.request_context.lifespan_context.mode
-    relation_config = RelationConfig(**(relation_options or {}))
 
     with tool_context(arg_map, mode) as tc:
         if not label or not label.strip():
@@ -289,35 +177,21 @@ async def add_argument(
             )
             return tc.build()
 
-        # Validate relation arguments
-        relation_config = utils.sanitize_relation_args_new_node(
-            arg_map=arg_map, tc=tc, relation_config=relation_config
-        )
-        if relation_config.to_label or relation_config.from_label:
-            if relation_config.relation_type is None:
-                tc.issue("info", "Assuming 'support' relation type as default.", priority=0.2)
-                relation_config.relation_type = "support"
-            if relation_config.relation_type not in ["support", "attack"]:
-                return tc.failure(
-                    f"Invalid relation type '{relation_config.relation_type}'. Must be 'support' or 'attack'.",
-                    error="InvalidRelationType",
-                ).build()
-
         kwargs = {
             "gist": gist,
             "premises": premises,
             "conclusion": conclusion,
-            "to_label": relation_config.to_label,
-            "from_label": relation_config.from_label,
-            "relation_type": relation_config.relation_type,
-            "target_premise_idx": relation_config.target_premise_idx,
+            "to_label": None,
+            "from_label": None,
+            "relation_type": "support",
+            "target_premise_idx": None,
             "tags": tags,
-            "metadata": metadata,
         }
         try:
             node_creation.new_argument(
                 label=label,
                 **kwargs,
+                metadata=None,
                 arg_map=arg_map,
                 tc=tc,
             )
@@ -360,6 +234,12 @@ def edit(
             field="proposition",
             edit_options={"new_value": "This is the updated claim content."}
         )
+
+        edit(
+            label="Existing-Argument",
+            field="premises",
+            edit_options={"premise_idx": 1, "new_value": "This is the revised first premise."}
+        )
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -372,7 +252,7 @@ def edit(
             if most_similar_label:
                 msg += f" Did you mean '{most_similar_label}'?"
             return tc.failure(msg, error="NonExistentNode").build()
-        
+
         node = arg_map.get_node(label)
 
         kwargs = edit_options or {}
@@ -447,14 +327,18 @@ def connect(
     source: str,
     target: str,
     ctx: Context[ServerSession, AppContext],
-    relation_options: dict[str, Any] | None = None,
+    relation_type: DialecticalRelationType = "support",
+    target_premise_idx: int | None = None,
+    grounding_strategy: GroundingStrategy | None = None,
 ) -> CallToolResult:
     """Create a new dialectical relation between two existing nodes.
 
     Args:
         source: Source node label
         target: Target node label
-        relation_options: Relation configuration (type, target_premise_idx, grounding_strategy)
+        relation_type: Type of relation (support or attack). Default is support.
+        target_premise_idx: (Optional) Index of the premise in the target argument (will be used to "ground" the relation)
+        grounding_strategy: (Optional) Strategy for grounding the relation in the internal logical structure of the nodes
 
     Example usage:
 
@@ -462,18 +346,16 @@ def connect(
         connect(
             source="Existing-Argument-Title",
             target="Existing-Claim-Title",
-            relation_options={"type": "support"}
+            relation_type="support"
         )
 
         # Advanced usage (with grounding strategy):
         connect(
             source="Some-Argument",
             target="Another-Argument",
-            relation_options={
-                "type": "attack",
-                "target_premise_idx": 2,
-                "grounding_strategy": "define_negation"
-            }
+            relation_type="attack",
+            target_premise_idx=2,
+            grounding_strategy="define_negation"  # Declares that the source argument's conclusion negates the 2nd premise of the target argument
         )
     """
 
@@ -481,12 +363,8 @@ def connect(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        kwargs = relation_options or {}
-        if "type" in kwargs:
-            kwargs["relation_type"] = kwargs.pop("type")
-
         if mode == "sketch":
-            if kwargs.get("grounding_strategy") is not None:
+            if grounding_strategy is not None:
                 tc.issue(
                     "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
                 ).suggest(
@@ -494,8 +372,8 @@ def connect(
                     {"mode": "author"},
                     "Switch to 'author' mode to use grounding strategies.",
                 )
-                kwargs["grounding_strategy"] = None
-            if kwargs.get("target_premise_idx") is not None:
+                grounding_strategy = None
+            if target_premise_idx is not None:
                 tc.issue(
                     "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
                 ).suggest(
@@ -503,7 +381,7 @@ def connect(
                     {"mode": "author"},
                     "Switch to 'author' mode to specify target premise index.",
                 )
-                kwargs["target_premise_idx"] = None
+                target_premise_idx = None
         elif mode == "review":
             tc.issue(
                 "info", "Creating new relations in 'review' mode. Consider switching mode."
@@ -516,7 +394,14 @@ def connect(
             )
 
         args = parse_tool_args(
-            "connect", tc, arg_map, source=source, target=target, **kwargs
+            "connect",
+            tc,
+            arg_map,
+            source=source,
+            target=target,
+            relation_type=relation_type,
+            target_premise_idx=target_premise_idx,
+            grounding_strategy=grounding_strategy,
         )
 
         try:
@@ -561,7 +446,7 @@ def connect(
             else:
                 match args.relation_type:
                     case "support":
-                        for grounding_strategy in [
+                        for try_grounding_strategy in [
                             "define_equivalence",
                             "copy_conclusion",
                             "copy_premise",
@@ -570,14 +455,14 @@ def connect(
                                 return relation_authoring.ground_support_relation(
                                     from_label=args.source,
                                     to_label=args.target,
-                                    strategy=grounding_strategy,  # type: ignore
+                                    strategy=try_grounding_strategy,  # type: ignore
                                     arg_map=arg_map,
                                     tc=tc,
                                 )
                             except Exception as e:
                                 tc.issue(
                                     "warning",
-                                    f"Failed to ground with strategy '{grounding_strategy}': {str(e)}",
+                                    f"Failed to ground with strategy '{try_grounding_strategy}': {str(e)}",
                                     priority=0.1,
                                 )
                         return tc.failure(
@@ -585,7 +470,7 @@ def connect(
                             error="GroundingFailed",
                         ).build()
                     case "attack":
-                        for grounding_strategy in [
+                        for try_grounding_strategy in [
                             "define_negation",
                             "negate_conclusion",
                             "negate_premise",
@@ -594,14 +479,14 @@ def connect(
                                 return relation_authoring.ground_attack_relation(
                                     from_label=args.source,
                                     to_label=args.target,
-                                    strategy=grounding_strategy,  # type: ignore
+                                    strategy=try_grounding_strategy,  # type: ignore
                                     arg_map=arg_map,
                                     tc=tc,
                                 )
                             except Exception as e:
                                 tc.issue(
                                     "warning",
-                                    f"Failed to ground with strategy '{grounding_strategy}': {str(e)}",
+                                    f"Failed to ground with strategy '{try_grounding_strategy}': {str(e)}",
                                     priority=0.1,
                                 )
                         return tc.failure(
@@ -633,17 +518,19 @@ def connect(
 @mcp.tool()
 def remove(
     ctx: Context[ServerSession, AppContext],
-    label: str | None = None,
-    relation: dict[str, str] | None = None,
+    label: NodeLabel | None = None,
+    source: NodeLabel | None = None,
+    target: NodeLabel | None = None,
 ) -> CallToolResult:
     """Remove an existing node or relation from the argument map.
 
-    Provide either `label` (to remove a node) OR `relation` (to remove a relation),
-    but not both.
+    Provide either `label` (to remove a node) OR `source` and `target` (to remove a relation),
+    but not all.
 
     Args:
         label: Label of the node to remove (for node removal).
-        relation: Dictionary with `source` and `target` keys (for relation removal).
+        source: Source node label of the relation to remove (for relation removal).
+        target: Target node label of the relation to remove (for relation removal).
         ctx: Tool context (auto-injected).
 
     Example usage:
@@ -652,7 +539,7 @@ def remove(
         remove(label="Existing-Node-Title")
 
         # Remove a relation
-        remove(relation={"source": "Existing-Argument", "target": "Existing-Claim"})
+        remove(source="Existing-Argument", target="Existing-Claim")
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -660,16 +547,18 @@ def remove(
 
     with tool_context(arg_map, mode) as tc:
         # Validate mutually exclusive parameters
-        if label and label.strip() and relation:
-            tc.issue("info", "Ignoring relation when removing a node.", priority=0.2)
-            relation = None
+        if label and label.strip() and (source or target):
+            return tc.failure(
+                "Provide either 'label' (to remove a node) OR 'source' and 'target' (to remove a relation), but not all.",
+                error="InvalidParameters",
+            ).suggest(
+                "remove",
+                {
+                    "label": label,
+                },
+                f"Remove the node `{label}` by specifying its label.",
+            ).build()
 
-        # Extract relation parameters if provided
-        target = None
-        source = None
-        if relation:
-            source = relation.get("source")
-            target = relation.get("target")
         try:
             # Validate that we have exactly one operation
             if label and label.strip():
@@ -682,7 +571,7 @@ def remove(
                 return (
                     tc.issue(
                         "error",
-                        "To remove a node, provide a non-empty 'label'. To remove a relation, provide a 'relation' dict with non-empty 'source' and 'target'.",
+                        "To remove a node, provide a non-empty 'label'. To remove a relation, provide non-empty 'source' and 'target'.",
                     )
                     .suggest(
                         "remove",
@@ -694,10 +583,8 @@ def remove(
                     .suggest(
                         "remove",
                         {
-                            "relation": {
-                                "source": "SOURCE_NODE_LABEL",
-                                "target": "TARGET_NODE_LABEL",
-                            }
+                            "source": "SOURCE_NODE_LABEL",
+                            "target": "TARGET_NODE_LABEL"
                         },
                         "Remove a relation by specifying source and target node labels in relation dict.",
                     )
@@ -770,6 +657,7 @@ async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResul
     tc.success("✓ Printed instructions.")
     return tc.build()
 
+
 @mcp.tool()
 async def inspect_graph(
     ctx: Context[ServerSession, AppContext],
@@ -792,7 +680,7 @@ async def inspect_graph(
                 f"Invalid format '{format}'. Supported formats are 'argdown' and 'tree'.",
                 error="InvalidFormat",
             ).build()
-        
+
         # embed graph
         try:
             if verbose:
@@ -816,10 +704,7 @@ async def inspect_graph(
                 tc.embed_resource(uri=AnyUrl("argmap://statistics"), text=text)
         except Exception as e:
             logger.error(f"Error showing graph statistics: {str(e)}")
-            tc.issue(
-                "warning",
-                f"✗ Failed to show graph statistics: {str(e)}", error=str(e)
-            )            
+            tc.issue("warning", f"✗ Failed to show graph statistics: {str(e)}", error=str(e))
 
     tc.success("✓ Printed graph representation.")
     return tc.build()
@@ -862,9 +747,10 @@ async def inspect_neighborhood(
             return tc.failure(
                 f"✗ Failed to show neighborhood of node '{label}': {str(e)}", error=str(e)
             ).build()
-        
+
     tc.success(f"✓ Printed {k}-neighborhood of node '{label}'.")
     return tc.build()
+
 
 @mcp.tool()
 async def inspect_node(
@@ -900,7 +786,6 @@ async def inspect_node(
 
     tc.success(f"✓ Printed details of node '{label}'.")
     return tc.build()
-
 
 
 ###############################################

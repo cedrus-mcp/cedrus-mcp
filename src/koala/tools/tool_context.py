@@ -287,20 +287,24 @@ class ToolContext:
             Self for method chaining
         """
         params: dict[str, Any] = {
-            "label": "New-Argument-Label",
-            "gist": "Key point of new argument goes here",
-            "relation_options": {
-                "target": label,
-                "relation_type": "support",
-            }
+            "relation_target": label,
+            "relation_type": "support"
         }
         if target_premise_idx is not None:
-            params["relation_options"]["target_premise_idx"] = target_premise_idx
+            params["target_premise_idx"] = target_premise_idx
             
         return self.suggest(
             "add_argument",
+            {
+                "label": "New-Argument-Label",
+                "gist": "Key point of new argument goes here"
+            },
+            f"{reason} (Step 1 of 2)",
+            action_type="expand"
+        ).suggest(
+            "connect",
             params,
-            reason,
+            f"{reason} (Step 2 of 2)",
             action_type="expand"
         )
     
@@ -319,18 +323,25 @@ class ToolContext:
         Returns:
             Self for method chaining
         """
+        params: dict[str, Any] = {
+            "target": label,
+            "relation_type": "attack",
+        }
+        if target_premise_idx is not None:
+            params["target_premise_idx"] = target_premise_idx
+
         return self.suggest(
             "add_argument",
             {
                 "label": "New-Argument-Label",
                 "gist": "Key point of new argument goes here",
-                "relation_options": {
-                    "target": label,
-                    "relation_type": "attack",
-                    "target_premise_idx": target_premise_idx,
-                }
             },
-            reason,
+            f"{reason} (Step 1 of 2)",
+            action_type="expand"
+        ).suggest(
+            "connect",
+            params,
+            f"{reason} (Step 2 of 2)",
             action_type="expand"
         )
     
@@ -386,9 +397,7 @@ class ToolContext:
             {
                 "source": from_label,
                 "target": to_label,
-                "relation_options": {
-                    "relation_type": relation_type,
-                }
+                "relation_type": relation_type,
             },
             f"Connect `{from_label}` to existing node via {relation_type}.",
             action_type="connect"

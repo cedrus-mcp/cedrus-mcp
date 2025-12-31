@@ -57,7 +57,7 @@ def add_suggestions_after_adding_node(
                     {
                         "source": label,
                         "target": "Existing-Argument-Label",
-                        "relation_options": relation_options
+                        **relation_options
                     },
                     reason,
                     action_type="connect",
@@ -72,7 +72,7 @@ def add_suggestions_after_adding_node(
                     {
                         "source": label,
                         "target": "Existing-Argument-Label",
-                        "relation_options": relation_options
+                        **relation_options
                     },
                     reason,
                 )
@@ -83,28 +83,39 @@ def add_suggestions_after_adding_node(
                 tc.suggest(
                     "add_argument",
                     {
-                        "label": "Concise-Argument_Label",
-                        "gist": "Key point of new argument goes here",
-                        "relation_options": {
-                            "target": label,
-                            "relation_type": "support",
-                        }
+                        "label": "Supporting-Argument-Label",
+                        "gist": "Key point of new supporting argument goes here",
                     },
-                    f"Explore pros and cons by adding a new supporting argument for claim `[{label}]`.",
+                    f"Explore pros and cons. Step 1: Add a new supporting argument for claim `[{label}]`.",
+                    action_type="expand",
+                ).suggest(
+                    "connect",
+                    {
+                        "source": "Supporting-Argument-Label",
+                        "target": label,
+                        "relation_type": "support"
+                    },
+                    f"Explore pros and cons. Step 2: Connect the new supporting argument to claim `[{label}]`.",
                     action_type="expand",
                 )
+
             if not arg_map.get_attackers(label):
                 tc.suggest(
                     "add_argument",
                     {
-                        "label": "Concise-Argument_Label",
-                        "gist": "Key point of new argument goes here",
-                        "relation_options": {
-                            "target": label,
-                            "relation_type": "attack",
-                        }
+                        "label": "Attacking-Argument-Label",
+                        "gist": "Key point of new attacking argument goes here",
                     },
-                    f"Explore pros and cons by adding a new argument attacking claim `[{label}]`.",
+                    f"Explore pros and cons. Step 1: Add a new attacking argument against claim `[{label}]`.",
+                    action_type="expand",
+                ).suggest(
+                    "connect",
+                    {
+                        "source": "Attacking-Argument-Label",
+                        "target": label,
+                        "relation_type": "attack"
+                    },
+                    f"Explore pros and cons. Step 2: Connect the new attacking argument to claim `[{label}]`.",
                     action_type="expand",
                 )
 
@@ -115,11 +126,9 @@ def add_suggestions_after_adding_node(
                     {
                         "source": "EXISTING_ARGUMENT_LABEL",
                         "target": label,
-                        "relation_options": {
-                            "relation_type": "support",
-                        }
+                        "relation_type": "support"
                     },
-                    f"Investigate whether any argument supports claim `[{label}]`, and connect the two nodes correspondingly.",
+                    f"Having investigated whether any argument supports claim `[{label}]`: connect the two nodes correspondingly.",
                     action_type="expand",
                 )
             if arg_map.has_non_attacking_arguments():
@@ -128,11 +137,9 @@ def add_suggestions_after_adding_node(
                     {
                         "source": "EXISTING_ARGUMENT_LABEL",
                         "target": label,
-                        "relation_options": {
-                            "relation_type": "attack",
-                        }
+                        "relation_type": "attack"
                     },
-                    f"Investigate whether any argument attacks claim `[{label}]` and connect the two nodes correspondingly.",
+                    f"Having investigated whether any argument attacks claim `[{label}]`: connect the two nodes correspondingly.",
                     action_type="expand",
                 )
 
@@ -168,7 +175,7 @@ def add_suggestions_after_adding_node(
                     {
                         "source": label,
                         "target": "Claim-Or-Argument-Label",
-                        "relation_options": {"relation_type": "SUPPORT_OR_ATTACK"}
+                        "relation_type": "SUPPORT_OR_ATTACK"
                     },
                     "Explore whether any existing argument or claim is supported or attacked by this argument, and add a corresponding dialectical relation to the argument map.",
                 )
@@ -209,10 +216,8 @@ def add_suggestions_after_adding_node(
                     {
                         "source": argument_added.label,
                         "target": "Claim-Label",
-                        "relation_options": {
-                            "relation_type": "support",
-                            "grounding_strategy": "copy_premise"
-                        }
+                        "relation_type": "support",
+                        "grounding_strategy": "copy_premise"
                     },
                     f"Specify the conclusion of this newly added argument <{argument_added.label}> by connecting it to a corresponding existing claim.",
                     "consolidate"
@@ -222,11 +227,9 @@ def add_suggestions_after_adding_node(
                     {
                         "source": argument_added.label,
                         "target": "Argument-Label",
-                        "relation_options": {
-                            "relation_type": "support",
-                            "target_premise_idx": "TARGET_PREMISE_IDX",
-                            "grounding_strategy": "copy_premise"
-                        }
+                        "relation_type": "support",
+                        "target_premise_idx": "TARGET_PREMISE_IDX",
+                        "grounding_strategy": "copy_premise"
                     },
                     f"Specify the conclusion of this newly added argument <{argument_added.label}> by connecting it to a corresponding existing argument (whose premise at the given target idx will serve as conclusion).",
                     "consolidate"
@@ -251,10 +254,8 @@ def add_suggestions_after_adding_node(
                     {
                         "source": "CLAIM_OR_ARGUMENT_LABEL",
                         "target": label,
-                        "relation_options": {
-                            "relation_type": "support",
-                            "grounding_strategy": "copy_conclusion",
-                        }
+                        "relation_type": "support",
+                        "grounding_strategy": "copy_conclusion",
                     },
                     f"Specify a premise of <{argument_added.label}> by connecting an existing claim or argument (whose proposition or conclusion will serve as premise).",
                     "consolidate"

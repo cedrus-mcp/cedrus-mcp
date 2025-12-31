@@ -64,15 +64,15 @@ async def test_remove_relation(tool_context: Mock) -> None:
     connect(
         source="A1",
         target="C1",
+        relation_type="support",
         ctx=tool_context,
-        relation_options={"type": "support"}
     )
     
     assert arg_map.get_dialectic_relation("A1", "C1") is not None
     
     # Remove the relation
     result = remove(
-        relation={"source": "A1", "target": "C1"},
+        source="A1", target="C1",
         ctx=tool_context
     )
     
@@ -94,12 +94,12 @@ async def test_remove_with_both_label_and_relation_prioritizes_label(tool_contex
     # Add a node
     await add_claim(label="C1", ctx=tool_context, proposition="Test")
     
-    # Call remove with both (should remove node, not relation)
+    # Call remove with both (should fail)
     result = remove(
         label="C1",
-        relation={"source": "A1", "target": "C2"},
+        source="A1", target="C2",
         ctx=tool_context
     )
     
-    # Should succeed (removes node)
-    assert not result.isError
+    # Should fail
+    assert result.structuredContent["status"] == "failure"

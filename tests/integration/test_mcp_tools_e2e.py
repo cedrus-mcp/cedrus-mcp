@@ -57,8 +57,8 @@ async def test_connect_tool_creates_relation(mock_context: Mock) -> None:
     result = connect(
         source="A1",
         target="C1",
+        relation_type="support",
         ctx=mock_context,
-        relation_options={"type": "support"}
     )
     
     assert isinstance(result, CallToolResult)
@@ -125,7 +125,7 @@ async def test_tool_chain_workflow(mock_context: Mock) -> None:
     await add_argument(label="A1", ctx=mock_context, gist="Argument")
     
     # 3. Connect them
-    connect(source="A1", target="C1", ctx=mock_context, relation_options={"type": "support"})
+    connect(source="A1", target="C1", ctx=mock_context, relation_type="support")
     
     # 4. Edit a claim
     edit(label="C1", field="proposition", ctx=mock_context, edit_options={"new_value": "Updated Claim 1"})

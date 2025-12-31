@@ -52,7 +52,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                             {
                                 "source": from_label,
                                 "target": to_label,
-                                "relation_options": {"type": "support"},
+                                "relation_type": "support"
                             },
                             f"Add a support relation from {from_label} to {to_label} that reflects the internal premise-conclusion structure.",
                             "fix",
@@ -82,7 +82,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                             {
                                 "source": from_label,
                                 "target": to_label,
-                                "relation_options": {"type": "attack"},
+                                "relation_type": "attack"
                             },
                             f"Add an attack relation from {from_label} to {to_label} that reflects the internal premise-conclusion structure.",
                             "fix",

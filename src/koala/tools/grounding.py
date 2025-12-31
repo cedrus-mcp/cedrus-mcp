@@ -5,21 +5,13 @@ from typing import TYPE_CHECKING, Literal
 
 from koala.graph import ArgumentMap
 from koala.models import ClaimNode, NodeLabel, Proposition
-from koala.models.relations import DialecticalRelationType
+from koala.models.relations import DialecticalRelationType, GroundingStrategy
 from koala.utils.relations import is_grounded_relation
 
 
 if TYPE_CHECKING:
     from koala.tools.tool_context import ToolContext
 
-GroundingStrategy = Literal[
-    "define_negation",
-    "define_equivalence",
-    "copy_premise",
-    "negate_premise",
-    "copy_conclusion",
-    "negate_conclusion",
-]
 
 
 def validate_grounding_strategy(
