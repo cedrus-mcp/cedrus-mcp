@@ -81,6 +81,7 @@ See Also:
 """
 
 from typing import Any, Literal
+from textwrap import dedent
 
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
@@ -1333,7 +1334,20 @@ def _register_tool_variants():
         name="add_claim",
         internal_name="add_claim_sketch",
         modes=["sketch"],
-        description="Add a new claim node (sketch mode - no tags)"
+        description=dedent(
+            """Add a new claim node to your argumentation graph.
+
+            A claim represents a single proposition. By adding a claim, you're not ascertaining its
+            truth, but rather introducing it as a point for discussion within your argument map.
+            Try to keep claims clear, unambiguous, and focused on a single idea. Provide a succinct 
+            and informative label that captures the essence of the claim and helps you to refer to
+            it easily later on.
+            
+            Args:
+                label: Succinct and informative title for the claim (serving as unique identifier).
+                proposition: The content of the claim (what is being asserted).            
+            """
+        )
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
@@ -1341,7 +1355,22 @@ def _register_tool_variants():
         name="add_claim",
         internal_name="add_claim_author",
         modes=["author"],
-        description="Add a new claim node (author mode - with tags)"
+        description=dedent(
+            """Add a new claim node to your argumentation graph.
+
+            A claim represents a single proposition. By adding a claim, you're not ascertaining its
+            truth, but rather introducing it as a point for discussion within your argument map.
+            Claims are also useful for highlighting shared premises among multiple arguments.
+            Try to keep claims clear, unambiguous, and focused on a single idea. Provide a succinct 
+            and informative label that captures the essence of the claim and helps you to refer to
+            it easily later on. You can also optionally add tags to categorize or annotate the claim.
+
+            Args:
+                label: Succinct and informative title for the claim (serving as unique identifier).
+                proposition: The content of the claim (what is being asserted).
+                tags: Optional list of tags for the claim (e.g., "important", "to-review").
+            """
+        )
     ))
     
     # add_argument variants (sketch and author)
@@ -1350,7 +1379,21 @@ def _register_tool_variants():
         name="add_argument",
         internal_name="add_argument_sketch",
         modes=["sketch"],
-        description="Add a new argument node (sketch mode - gist only)"
+        description=dedent(
+            """Add a new argument node to your argumentation graph.
+
+            An argument represents a justification or an objection. Provide a 'gist' to summarize the
+            key idea of the argument. Be clear and concise in your descriptions. Provide a succinct and 
+            informative label that captures the essence of the argument and helps you to refer to it 
+            easily later on.
+
+            By adding an argument, you're not necessarily asserting it.
+
+            Args:
+                label: Succinct and informative title for the argument (serving as unique identifier).
+                gist: A brief summary of the argument's key idea.
+            """
+        )
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
@@ -1358,7 +1401,26 @@ def _register_tool_variants():
         name="add_argument",
         internal_name="add_argument_author",
         modes=["author"],
-        description="Add a new argument node (author mode - full structure)"
+        description=dedent(
+            """Add a new argument node to your argumentation graph.
+
+            An argument consists of a set of premises that jointly support the conclusion.
+            
+            Besides premises and conclusion, you can provide a 'gist' that summarizes the key idea of 
+            the argument. Be clear and concise in your descriptions. Provide a succinct and 
+            informative label that captures the essence of the argument and helps you to refer to it 
+            easily later on.
+
+            By adding an argument, you're not necessarily asserting its premises or conclusion as true.
+
+            Args:
+                label: Succinct and informative title for the argument (serving as unique identifier).
+                gist: A brief summary of the argument's key idea.
+                conclusion: The main claim that the argument is supporting or attacking.
+                premises: List of premises supporting the conclusion.
+                tags: Optional list of tags for the argument (e.g., "needs-backup", "to-review").
+            """
+        )
     ))
     
     # connect variants (sketch and author)
@@ -1367,7 +1429,15 @@ def _register_tool_variants():
         name="connect",
         internal_name="connect_sketch",
         modes=["sketch"],
-        description="Create a dialectical relation (sketch mode - no grounding)"
+        description=dedent(
+            """Connect two nodes in your argumentation graph
+
+            Args:
+                source: Label of the source node (argument or claim).
+                target: Label of the target node (argument or claim).
+                relation_type: Type of relation ("supports" or "attacks").            
+            """
+        )
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
@@ -1375,7 +1445,38 @@ def _register_tool_variants():
         name="connect",
         internal_name="connect_author",
         modes=["author"],
-        description="Create a dialectical relation (author mode - with grounding)"
+        description=dedent(
+            """Connect two nodes in your argumentation graph and optionally ground the dialectical relation.
+
+            A dialectical relation (support or attack) is grounded in case it reflects the actual structure of the
+            adjacent nodes. Available grounding strategies are
+
+            for `support` relations:
+
+                'define_equivalence': The conclusion of the supporting argument is defined as equivalent to the
+                premise (target_premise_idx) of the supported argument.
+                'copy_premise': A copy of the premise (target_premise_idx) of the supported argument is used as
+                conclusion of the supporting argument.
+                'copy_conclusion': A copy of the conclusion of the supporting argument is used as premise of the
+                supported argument.
+
+            for `attack` relations:
+
+                'define_negation': The conclusion of the attacking argument is defined as the negation of the
+                premise (target_premise_idx) of the attacked argument.
+                'negate_premise': A negation of the premise (target_premise_idx) of the attacked argument is used
+                as conclusion of the attacking argument.
+                'negate_conclusion': The negation of the conclusion of the attacking argument is used as premise
+                of the attacked argument.
+
+            Args:
+                source: Label of the source node (argument or claim).
+                target: Label of the target node (argument or claim).
+                relation_type: Type of relation ("supports" or "attacks").
+                target_premise_idx: (For arguments as targets) Index of the premise being supported/attacked.
+                grounding_strategy: Strategy for grounding the relation .
+            """
+        )
     ))
     
     # edit - author mode only
@@ -1384,7 +1485,31 @@ def _register_tool_variants():
         name="edit",
         internal_name="edit",
         modes=["author"],
-        description="Edit an existing node in the argument map"
+        description=dedent("""Edit an existing node in the argument map.
+
+            Args:
+                label: Node identifier to edit
+                field: Field to edit (label, proposition, gist, conclusion, premises, tags, metadata)
+                edit_options: Field-specific configuration:
+                    - For label/proposition/gist/conclusion: new_value
+                    - For premises: new_value, premise_idx
+                    - For tags: new_value (to add), old_value (to remove), or both
+                    - For metadata: key, new_value
+
+            Example usage:
+
+                edit(
+                    label="Existing-Claim",
+                    field="proposition",
+                    edit_options={"new_value": "This is the updated claim content."}
+                )
+
+                edit(
+                    label="Existing-Argument",
+                    field="premises",
+                    edit_options={"premise_idx": 1, "new_value": "This is the revised first premise."}
+                )"""
+        )
     ))
     
     # remove - sketch and author modes
@@ -1393,7 +1518,27 @@ def _register_tool_variants():
         name="remove",
         internal_name="remove",
         modes=["sketch", "author"],
-        description="Remove an existing node or relation from the argument map"
+        description=dedent(
+            """Remove an existing node or relation from the argument map.
+
+            Provide either `label` (to remove a node) OR `source` and `target` (to remove a relation),
+            but not all.
+
+            Args:
+                label: Label of the node to remove (for node removal).
+                source: Source node label of the relation to remove (for relation removal).
+                target: Target node label of the relation to remove (for relation removal).
+                ctx: Tool context (auto-injected).
+
+            Example usage:
+
+                # Remove a node
+                remove(label="Existing-Node-Title")
+
+                # Remove a relation
+                remove(source="Existing-Argument", target="Existing-Claim")
+            """            
+        )
     ))
     
     # inspect_node - author and review modes
@@ -1402,7 +1547,13 @@ def _register_tool_variants():
         name="inspect_node",
         internal_name="inspect_node",
         modes=["author", "review"],
-        description="Show detailed information about a specific node"
+        description=dedent(
+            """Show detailed information about a specific node in the argument map.
+            
+            Args:
+                label: The label of the node to inspect.
+            """
+        )
     ))
     
     # validate - review mode only
