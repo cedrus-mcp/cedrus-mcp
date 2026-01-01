@@ -1,4 +1,84 @@
-"""Authoring tools: new_claim, new_argument, new_support, new_attack."""
+"""MCP tool implementations with mode-aware dynamic registration.
+
+This module defines all MCP tools for the KOALA argument mapping server.
+Tools are organized into mode-specific variants that expose different signatures
+based on the current editing mode (sketch, author, review).
+
+Tool Organization:
+    **Core Implementations**: Private functions (_*_impl) that contain the
+    actual business logic. These accept all possible parameters and are called
+    by mode-specific wrappers.
+    
+    **Mode-Specific Wrappers**: Public async functions that provide simplified
+    signatures for each mode. For example:
+    
+    - add_argument_sketch(label, gist) - Minimal parameters for quick prototyping
+    - add_argument_author(label, gist, premises, conclusion, tags) - Full detail
+    
+    **Shared Tools**: Tools available in all modes with consistent signatures
+    (e.g., instructions, inspect_graph).
+
+Mode System:
+    - **sketch**: Rapid prototyping with minimal detail
+      Tools: add_claim, add_argument, connect, remove + shared
+      Simple parameters, no tags, no grounding
+    
+    - **author**: Detailed argumentation with full structure
+      Tools: add_claim, add_argument, connect, edit, remove, inspect_node + shared
+      Full parameters including tags, premises, conclusion, grounding strategies
+    
+    - **review**: Validation and quality assurance
+      Tools: validate, inspect_node + shared
+      Focus on checking consistency and completeness
+
+Dynamic Tool Management:
+    Tools are registered and swapped dynamically when the mode changes:
+    
+    1. Mode-specific variants are registered in _register_tool_variants()
+    2. Initial tools are registered at server startup (server.py)
+    3. When set_mode() is called:
+       a. Tools exclusive to old mode are removed via mcp.remove_tool()
+       b. Tools exclusive to new mode are added via mcp.add_tool()
+       c. Client is notified via ctx.session.send_tool_list_changed()
+
+Implementation Pattern:
+    For tools with mode-specific variants:
+    
+        # 1. Core implementation with all parameters
+        async def _my_tool_impl(
+            required_arg: str,
+            ctx: Context,
+            optional_arg: str | None = None,
+        ) -> CallToolResult:
+            # Implementation here
+        
+        # 2. Mode-specific wrappers with subset of parameters
+        async def my_tool_sketch(
+            required_arg: str,
+            ctx: Context,
+        ) -> CallToolResult:
+            return await _my_tool_impl(required_arg, ctx)
+        
+        async def my_tool_author(
+            required_arg: str,
+            ctx: Context,
+            optional_arg: str | None = None,
+        ) -> CallToolResult:
+            return await _my_tool_impl(required_arg, ctx, optional_arg)
+        
+        # 3. Register variants in _register_tool_variants()
+        TOOL_REGISTRY.register_variant(ToolVariant(
+            fn=my_tool_sketch,
+            name="my_tool",  # Same external name
+            internal_name="my_tool_sketch",
+            modes=["sketch"]
+        ))
+
+See Also:
+    - koala.tools.tool_registry: Registry infrastructure for tool variants
+    - koala.server: Server initialization and startup tool registration
+    - koala.models.base: Mode type definition
+"""
 
 from typing import Any, Literal
 
@@ -16,18 +96,29 @@ from koala.models import (
 from koala.models.base import Mode
 from koala.models.relations import DialecticalRelationType, GroundingStrategy
 import koala.resources
-from koala.server import AppContext, mcp
-from koala.tools import relation_authoring, suggestions, utils
+from koala.server import AppContext
+from koala.tools import relation_authoring, suggestions
 from koala.tools import node_creation, node_updates, node_deletion
 from koala.tools.tool_args import parse_tool_args
 from koala.tools.tool_context import tool_context
+from koala.tools.tool_registry import TOOL_REGISTRY, ToolVariant
 from koala.validation import validate_argument_map
 
 logger = get_logger("koala.tools")  # Creates 'FastMCP.koala' logger
 
 
-@mcp.tool()
-async def add_claim(
+##############################################
+# Core tool implementations (private)
+##############################################
+# These functions contain the actual business logic for tools.
+# They accept ALL possible parameters for maximum flexibility.
+# Mode-specific wrappers (below) call these with appropriate subsets.
+#
+# Naming convention: _<tool_name>_impl
+# Example: _add_claim_impl, _add_argument_impl, _connect_impl
+
+
+async def _add_claim_impl(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     proposition: str | None = None,
@@ -103,8 +194,7 @@ async def add_claim(
         return tc.build()
 
 
-@mcp.tool()
-async def add_argument(
+async def _add_argument_impl(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     gist: str | None = None,
@@ -203,7 +293,336 @@ async def add_argument(
         return tc.build()
 
 
-@mcp.tool()
+async def _connect_impl(
+    source: str,
+    target: str,
+    ctx: Context[ServerSession, AppContext],
+    relation_type: DialecticalRelationType = "support",
+    target_premise_idx: int | None = None,
+    grounding_strategy: GroundingStrategy | None = None,
+) -> CallToolResult:
+    """Core implementation for creating dialectical relations.
+    
+    Creates a support or attack relation between two nodes in the argument map.
+    Handles relation grounding (connecting to specific premises of target arguments)
+    when appropriate parameters are provided.
+    
+    Args:
+        source: Label of the source node (supporter/attacker).
+        target: Label of the target node (being supported/attacked).
+        ctx: FastMCP context (auto-injected).
+        relation_type: Type of dialectical relation ("support" or "attack").
+        target_premise_idx: Index of specific premise to ground to (author mode only).
+        grounding_strategy: Strategy for automatic grounding (author mode only).
+    
+    Returns:
+        CallToolResult with success/failure status and created relation details.
+    
+    Mode Variants:
+        - **Sketch**: ``connect_sketch(source, target, relation_type)`` - no grounding
+        - **Author**: ``connect_author(source, target, relation_type, target_premise_idx, grounding_strategy)`` - with grounding
+    
+    Grounding Behavior:
+        - If target is an ArgumentNode and grounding parameters provided:
+          
+          - ``target_premise_idx``: Ground to specific premise
+          - ``grounding_strategy``: Use heuristic to find best premise match
+        
+        - Otherwise: Create ungrounded relation
+    
+    Example:
+        Called by sketch mode wrapper::
+        
+            return await _connect_impl(source, target, ctx, relation_type=relation_type)
+        
+        Called by author mode wrapper::
+        
+            return await _connect_impl(
+                source, target, ctx,
+                relation_type=relation_type,
+                target_premise_idx=target_premise_idx,
+                grounding_strategy=grounding_strategy
+            )
+    """
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        if mode == "sketch":
+            if grounding_strategy is not None:
+                tc.issue(
+                    "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
+                ).suggest(
+                    "set_mode",
+                    {"mode": "author"},
+                    "Switch to 'author' mode to use grounding strategies.",
+                )
+                grounding_strategy = None
+            if target_premise_idx is not None:
+                tc.issue(
+                    "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
+                ).suggest(
+                    "set_mode",
+                    {"mode": "author"},
+                    "Switch to 'author' mode to specify target premise index.",
+                )
+                target_premise_idx = None
+        elif mode == "review":
+            tc.issue(
+                "info", "Creating new relations in 'review' mode. Consider switching mode."
+            ).suggest(
+                "set_mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
+            ).suggest(
+                "validate",
+                {},
+                "Run 'validate' to check the argument map.",
+            )
+
+        args = parse_tool_args(
+            "connect",
+            tc,
+            arg_map,
+            source=source,
+            target=target,
+            relation_type=relation_type,
+            target_premise_idx=target_premise_idx,
+            grounding_strategy=grounding_strategy,
+        )
+
+        try:
+            if not arg_map.get_dialectic_relation(args.source, args.target):
+                match args.relation_type:
+                    case "support":
+                        return relation_authoring.new_support_relation(
+                            from_label=args.source,
+                            to_label=args.target,
+                            target_premise_idx=args.target_premise_idx,
+                            grounding_strategy=args.grounding_strategy,  # type: ignore
+                            arg_map=arg_map,
+                            tc=tc,
+                        )
+                    case "attack":
+                        return relation_authoring.new_attack_relation(
+                            from_label=args.source,
+                            to_label=args.target,
+                            target_premise_idx=args.target_premise_idx,
+                            grounding_strategy=args.grounding_strategy,  # type: ignore
+                            arg_map=arg_map,
+                            tc=tc,
+                        )
+                    case _:
+                        return tc.failure(
+                            f"Invalid relation type '{args.relation_type}'.",
+                            error="InvalidRelationType",
+                        ).build()
+            elif mode != "author":
+                return (
+                    tc.failure(
+                        f"Cannot ground existing relation from `{args.source}` to `{args.target}` in '{mode}' mode.",
+                        error="RelationAlreadyExists",
+                    )
+                    .suggest(
+                        "set_mode",
+                        {"mode": "author"},
+                        "Switch to 'author' mode to ground existing relations.",
+                    )
+                    .build()
+                )
+            else:
+                match args.relation_type:
+                    case "support":
+                        for try_grounding_strategy in [
+                            "define_equivalence",
+                            "copy_conclusion",
+                            "copy_premise",
+                        ]:
+                            try:
+                                return relation_authoring.ground_support_relation(
+                                    from_label=args.source,
+                                    to_label=args.target,
+                                    strategy=try_grounding_strategy,  # type: ignore
+                                    arg_map=arg_map,
+                                    tc=tc,
+                                )
+                            except Exception:
+                                pass
+                        return tc.failure(
+                            f"✗ Failed to ground support relation from `{args.source}` to `{args.target}`.",
+                            error="GroundingFailed",
+                        ).build()
+                    case "attack":
+                        for try_grounding_strategy in [
+                            "define_negation",
+                            "negate_conclusion",
+                            "negate_premise",
+                        ]:
+                            try:
+                                return relation_authoring.ground_attack_relation(
+                                    from_label=args.source,
+                                    to_label=args.target,
+                                    strategy=try_grounding_strategy,  # type: ignore
+                                    arg_map=arg_map,
+                                    tc=tc,
+                                )
+                            except Exception:
+                                pass
+                        return tc.failure(
+                            f"✗ Failed to ground attack relation from `{args.source}` to `{args.target}`.",
+                            error="GroundingFailed",
+                        ).build()
+                    case _:
+                        return tc.failure(
+                            f"Invalid relation type '{args.relation_type}'.",
+                            error="InvalidRelationType",
+                        ).build()
+        except Exception as e:
+            logger.error(
+                f"Error creating {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}"
+            )
+            return tc.failure(
+                f"✗ Failed to create {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}",
+                error=str(e),
+            ).build()
+
+        logger.error(
+            f"Unhandled case when creating relation from `{args.source}` to `{args.target}`."
+        )
+        raise RuntimeError(
+            f"Internal Error: Unhandled case when creating relation from `{args.source}` to `{args.target}`."
+        )
+
+
+##############################################
+# Mode-specific tool wrappers
+##############################################
+# These functions provide mode-appropriate signatures for core implementations.
+# Each wrapper calls its corresponding _*_impl function with a subset of parameters.
+#
+# Pattern for variants:
+#   - <tool>_sketch: Minimal parameters for rapid prototyping
+#   - <tool>_author: Full parameters for detailed authoring
+#
+# These wrappers are registered with TOOL_REGISTRY under the SAME external name
+# (e.g., both add_claim_sketch and add_claim_author register as "add_claim").
+# When mode changes, the registry swaps which variant is active.
+
+# add_claim variants
+async def add_claim_sketch(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    proposition: str | None = None,
+) -> CallToolResult:
+    """Add a new claim node (sketch mode - no tags).
+
+    Args:
+        label: Succinct and informative title
+        proposition: The content of the claim
+    """
+    return await _add_claim_impl(label, ctx, proposition=proposition, tags=None)
+
+
+async def add_claim_author(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    proposition: str | None = None,
+    tags: list[str] | None = None,
+) -> CallToolResult:
+    """Add a new claim node (author mode - with tags).
+
+    Args:
+        label: Succinct and informative title
+        proposition: The content of the claim
+        tags: Optional list of tags for the claim
+    """
+    return await _add_claim_impl(label, ctx, proposition=proposition, tags=tags)
+
+
+# add_argument variants
+async def add_argument_sketch(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    gist: str | None = None,
+) -> CallToolResult:
+    """Add a new argument node (sketch mode - gist only).
+
+    Args:
+        label: Succinct and informative title
+        gist: A brief summary of the argument
+    """
+    return await _add_argument_impl(label, ctx, gist=gist)
+
+
+async def add_argument_author(
+    label: NodeLabel,
+    ctx: Context[ServerSession, AppContext],
+    gist: str | None = None,
+    premises: list[str] | None = None,
+    conclusion: str | None = None,
+    tags: list[str] | None = None,
+) -> CallToolResult:
+    """Add a new argument node (author mode - full structure).
+
+    Args:
+        label: Succinct and informative title
+        gist: A brief summary of the argument
+        premises: List of premises supporting the argument
+        conclusion: Conclusion drawn from the premises
+        tags: Optional list of tags for the argument
+    """
+    return await _add_argument_impl(
+        label, ctx, gist=gist, premises=premises, conclusion=conclusion, tags=tags
+    )
+
+
+# connect variants
+async def connect_sketch(
+    source: str,
+    target: str,
+    ctx: Context[ServerSession, AppContext],
+    relation_type: DialecticalRelationType = "support",
+) -> CallToolResult:
+    """Create a relation (sketch mode - no grounding).
+
+    Args:
+        source: Source node label
+        target: Target node label
+        relation_type: Type of relation (support or attack)
+    """
+    return await _connect_impl(source, target, ctx, relation_type=relation_type)
+
+
+async def connect_author(
+    source: str,
+    target: str,
+    ctx: Context[ServerSession, AppContext],
+    relation_type: DialecticalRelationType = "support",
+    target_premise_idx: int | None = None,
+    grounding_strategy: GroundingStrategy | None = None,
+) -> CallToolResult:
+    """Create a relation (author mode - with grounding).
+
+    Args:
+        source: Source node label
+        target: Target node label
+        relation_type: Type of relation (support or attack)
+        target_premise_idx: Index of the premise to ground to
+        grounding_strategy: Strategy for grounding the relation
+    """
+    return await _connect_impl(
+        source, target, ctx,
+        relation_type=relation_type,
+        target_premise_idx=target_premise_idx,
+        grounding_strategy=grounding_strategy
+    )
+
+
+##############################################
+# Tools that remain the same across modes
+##############################################
+# These tools have consistent signatures across all modes (or specific subsets).
+# They don't need variants - the same function is used regardless of mode.
+# Examples: edit (author only), validate (review only), instructions (all modes)
+
 def edit(
     label: NodeLabel,
     field: Literal["label", "proposition", "gist", "conclusion", "premises", "tags", "metadata"],
@@ -316,200 +735,6 @@ def edit(
         ).build()
 
 
-@mcp.tool()
-def connect(
-    source: str,
-    target: str,
-    ctx: Context[ServerSession, AppContext],
-    relation_type: DialecticalRelationType = "support",
-    target_premise_idx: int | None = None,
-    grounding_strategy: GroundingStrategy | None = None,
-) -> CallToolResult:
-    """Create a new dialectical relation between two existing nodes.
-
-    Args:
-        source: Source node label
-        target: Target node label
-        relation_type: Type of relation (support or attack). Default is support.
-        target_premise_idx: (Optional) Index of the premise in the target argument (will be used to "ground" the relation)
-        grounding_strategy: (Optional) Strategy for grounding the relation in the internal logical structure of the nodes
-
-    Example usage:
-
-        # Basic usage:
-        connect(
-            source="Existing-Argument-Title",
-            target="Existing-Claim-Title",
-            relation_type="support"
-        )
-
-        # Advanced usage (with grounding strategy):
-        connect(
-            source="Some-Argument",
-            target="Another-Argument",
-            relation_type="attack",
-            target_premise_idx=2,
-            grounding_strategy="define_negation"  # Declares that the source argument's conclusion negates the 2nd premise of the target argument
-        )
-    """
-
-    arg_map = ctx.request_context.lifespan_context.arg_map
-    mode = ctx.request_context.lifespan_context.mode
-
-    with tool_context(arg_map, mode) as tc:
-        if mode == "sketch":
-            if grounding_strategy is not None:
-                tc.issue(
-                    "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
-                ).suggest(
-                    "set_mode",
-                    {"mode": "author"},
-                    "Switch to 'author' mode to use grounding strategies.",
-                )
-                grounding_strategy = None
-            if target_premise_idx is not None:
-                tc.issue(
-                    "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
-                ).suggest(
-                    "set_mode",
-                    {"mode": "author"},
-                    "Switch to 'author' mode to specify target premise index.",
-                )
-                target_premise_idx = None
-        elif mode == "review":
-            tc.issue(
-                "info", "Creating new relations in 'review' mode. Consider switching mode."
-            ).suggest(
-                "set_mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
-            ).suggest(
-                "validate",
-                {},
-                "Run 'validate' to check the argument map.",
-            )
-
-        args = parse_tool_args(
-            "connect",
-            tc,
-            arg_map,
-            source=source,
-            target=target,
-            relation_type=relation_type,
-            target_premise_idx=target_premise_idx,
-            grounding_strategy=grounding_strategy,
-        )
-
-        try:
-            if not arg_map.get_dialectic_relation(args.source, args.target):
-                match args.relation_type:
-                    case "support":
-                        return relation_authoring.new_support_relation(
-                            from_label=args.source,
-                            to_label=args.target,
-                            target_premise_idx=args.target_premise_idx,
-                            grounding_strategy=args.grounding_strategy,  # type: ignore
-                            arg_map=arg_map,
-                            tc=tc,
-                        )
-                    case "attack":
-                        return relation_authoring.new_attack_relation(
-                            from_label=args.source,
-                            to_label=args.target,
-                            target_premise_idx=args.target_premise_idx,
-                            grounding_strategy=args.grounding_strategy,  # type: ignore
-                            arg_map=arg_map,
-                            tc=tc,
-                        )
-                    case _:
-                        return tc.failure(
-                            f"Invalid relation type '{args.relation_type}'.",
-                            error="InvalidRelationType",
-                        ).build()
-            elif mode != "author":
-                return (
-                    tc.failure(
-                        f"Cannot ground existing relation from `{args.source}` to `{args.target}` in '{mode}' mode.",
-                        error="RelationAlreadyExists",
-                    )
-                    .suggest(
-                        "set_mode",
-                        {"mode": "author"},
-                        "Switch to 'author' mode to ground existing relations.",
-                    )
-                    .build()
-                )
-            else:
-                match args.relation_type:
-                    case "support":
-                        for try_grounding_strategy in [
-                            "define_equivalence",
-                            "copy_conclusion",
-                            "copy_premise",
-                        ]:
-                            try:
-                                return relation_authoring.ground_support_relation(
-                                    from_label=args.source,
-                                    to_label=args.target,
-                                    strategy=try_grounding_strategy,  # type: ignore
-                                    arg_map=arg_map,
-                                    tc=tc,
-                                )
-                            except Exception as e:
-                                tc.issue(
-                                    "warning",
-                                    f"Failed to ground with strategy '{try_grounding_strategy}': {str(e)}",
-                                    priority=0.1,
-                                )
-                        return tc.failure(
-                            f"✗ Failed to ground support relation from `{args.source}` to `{args.target}`.",
-                            error="GroundingFailed",
-                        ).build()
-                    case "attack":
-                        for try_grounding_strategy in [
-                            "define_negation",
-                            "negate_conclusion",
-                            "negate_premise",
-                        ]:
-                            try:
-                                return relation_authoring.ground_attack_relation(
-                                    from_label=args.source,
-                                    to_label=args.target,
-                                    strategy=try_grounding_strategy,  # type: ignore
-                                    arg_map=arg_map,
-                                    tc=tc,
-                                )
-                            except Exception as e:
-                                tc.issue(
-                                    "warning",
-                                    f"Failed to ground with strategy '{try_grounding_strategy}': {str(e)}",
-                                    priority=0.1,
-                                )
-                        return tc.failure(
-                            f"✗ Failed to ground attack relation from `{args.source}` to `{args.target}`.",
-                            error="GroundingFailed",
-                        ).build()
-                    case _:
-                        return tc.failure(
-                            f"Invalid relation type '{args.relation_type}'.",
-                            error="InvalidRelationType",
-                        ).build()
-        except Exception as e:
-            logger.error(
-                f"Error creating {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}"
-            )
-            return tc.failure(
-                f"✗ Failed to create {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}",
-                error=str(e),
-            ).build()
-
-        logger.error(
-            f"Unhandled case when creating relation from `{args.source}` to `{args.target}`."
-        )
-        raise RuntimeError(
-            f"Internal Error: Unhandled case when creating relation from `{args.source}` to `{args.target}`."
-        )
-
-
-@mcp.tool()
 def remove(
     ctx: Context[ServerSession, AppContext],
     label: NodeLabel | None = None,
@@ -626,7 +851,6 @@ def remove(
 ##############################################
 
 
-@mcp.tool()
 async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResult:
     """Show instructions for current mode.
 
@@ -652,7 +876,6 @@ async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResul
     return tc.build()
 
 
-@mcp.tool()
 async def inspect_graph(
     ctx: Context[ServerSession, AppContext],
     verbose: bool = False,
@@ -704,7 +927,6 @@ async def inspect_graph(
     return tc.build()
 
 
-@mcp.tool()
 async def inspect_neighborhood(
     ctx: Context[ServerSession, AppContext],
     label: NodeLabel,
@@ -746,7 +968,6 @@ async def inspect_neighborhood(
     return tc.build()
 
 
-@mcp.tool()
 async def inspect_node(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
@@ -787,7 +1008,6 @@ async def inspect_node(
 ###############################################
 
 
-@mcp.tool()
 def validate(
     ctx: Context[ServerSession, AppContext],
     fix: bool = False,
@@ -893,8 +1113,7 @@ def validate(
 #             ).build()
 
 
-@mcp.tool()
-def set_mode(
+async def set_mode(
     mode: Mode,
     ctx: Context[ServerSession, AppContext],
 ) -> CallToolResult:
@@ -908,33 +1127,6 @@ def set_mode(
         set_mode("author")
     """
 
-    # TODO: Dynamically add and remove tools based on mode
-    # See also: https://github.com/modelcontextprotocol/python-sdk/issues/1429#issuecomment-3669447896
-    # For sketch mode:
-    # - add_claim(label, proposition)
-    # - add_argument(label, gist)
-    # - connect(source, target, relation_type)
-    # - remove(label, source, target)
-    #
-    # For author mode:
-    # - add_claim(label, proposition, tags)
-    # - add_argument(label, gist, premises, conclusion, tags)
-    # - edit(label, field, edit_options)
-    # - connect(source, target, relation_type, target_premise_idx, grounding_strategy)
-    # - remove(label, source, target)
-    # - inspect_node(label)
-    #
-    # For review mode:
-    # - validate(fix, max_issues)
-    # - inspect_node(label)
-    #
-    # Shared tools:
-    # - instructions()
-    # - inspect_graph(verbose, format)
-    # - inspect_neighborhood(label, k)
-    # - set_mode(mode)
-
-
     arg_map = ctx.request_context.lifespan_context.arg_map
     old_mode = ctx.request_context.lifespan_context.mode
 
@@ -945,7 +1137,17 @@ def set_mode(
                 error="InvalidMode",
             ).build()
 
+        # Update mode first
         ctx.request_context.lifespan_context.mode = mode
+        
+        # Perform dynamic tool swapping if mode actually changed
+        if old_mode != mode:
+            try:
+                await _update_tools_for_mode(ctx, old_mode, mode)
+            except Exception as e:
+                logger.error(f"Error updating tools for mode switch: {str(e)}")
+                tc.issue("warning", f"Tool list may not be fully updated: {str(e)}")
+        
         tc.success(f"✓ Switched mode from '{old_mode}' to '{mode}'.")
         tc.suggest(
             "instructions",
@@ -954,3 +1156,279 @@ def set_mode(
             action_type="help",
         )
         return tc.build()
+
+
+async def _update_tools_for_mode(
+    ctx: Context[ServerSession, AppContext],
+    old_mode: Mode,
+    new_mode: Mode,
+) -> None:
+    """Update available tools when switching modes.
+    
+    Performs the dynamic tool swapping by calculating the difference between
+    modes and adding/removing tools accordingly. Also sends a notification
+    to the MCP client that the tool list has changed.
+    
+    Algorithm:
+        1. Get tool name sets for old and new modes from TOOL_REGISTRY
+        2. Calculate set differences:
+           
+           - ``tools_to_remove = old_tools - new_tools``
+           - ``tools_to_add = new_tools - old_tools``
+        
+        3. Remove old tools via ``mcp_server.remove_tool()``
+        4. Add new tools via ``mcp_server.add_tool()``
+        5. Send ``tools/list_changed`` notification to client
+    
+    Args:
+        ctx: FastMCP context providing access to server and session.
+        old_mode: The mode being switched from.
+        new_mode: The mode being switched to.
+    
+    Raises:
+        Exception: Propagates exceptions from tool add/remove operations.
+                  Individual failures are logged as warnings but don't stop
+                  the overall process.
+    
+    Example:
+        Switching from sketch to author mode::
+        
+            # Sketch tools: {add_claim, add_argument, connect, remove, ...shared}
+            # Author tools: {add_claim, add_argument, connect, edit, remove, inspect_node, ...shared}
+            
+            tools_to_remove = {}  # Author is superset of sketch
+            tools_to_add = {"edit", "inspect_node"}
+            
+            # Add edit and inspect_node
+            # Send notification to client
+    
+    Notes:
+        - For tools with variants (e.g., add_argument), the tool is neither
+          added nor removed—only the underlying function is swapped internally
+          by MCP when we re-register under the same name.
+        - Failures to add/remove individual tools are logged as warnings but
+          don't stop the overall mode switch.
+        - Client notification failures are also logged but non-fatal.
+    """
+    mcp_server = ctx.fastmcp
+    
+    # Get tool names for each mode
+    old_tools = TOOL_REGISTRY.get_tool_names_for_mode(old_mode)
+    new_tools = TOOL_REGISTRY.get_tool_names_for_mode(new_mode)
+    
+    # Remove tools that are only in old mode
+    tools_to_remove = old_tools - new_tools
+    for tool_name in tools_to_remove:
+        try:
+            mcp_server.remove_tool(tool_name)
+            logger.debug(f"Removed tool '{tool_name}' when switching from '{old_mode}' to '{new_mode}'")
+        except Exception as e:
+            logger.warning(f"Failed to remove tool '{tool_name}': {e}")
+    
+    # Add tools that are only in new mode
+    tools_to_add = new_tools - old_tools
+    for tool_name in tools_to_add:
+        variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
+        if variant:
+            try:
+                mcp_server.add_tool(
+                    variant.fn,
+                    name=variant.name,
+                    description=variant.description,
+                    **variant.metadata
+                )
+                logger.debug(f"Added tool '{tool_name}' when switching to '{new_mode}'")
+            except Exception as e:
+                logger.warning(f"Failed to add tool '{tool_name}': {e}")
+    
+    # Notify client of tool list changes
+    try:
+        await ctx.session.send_tool_list_changed()
+        logger.debug(f"Sent tool_list_changed notification for mode switch to '{new_mode}'")
+    except Exception as e:
+        logger.warning(f"Failed to send tool_list_changed notification: {e}")
+
+
+##############################################
+# Tool variant registration
+##############################################
+
+# Register tool variants for each mode
+def _register_tool_variants():
+    """Register all tool variants with the tool registry.
+    
+    Called once at module load time to populate TOOL_REGISTRY with all
+    available tool variants and their mode associations.
+    
+    Tool Distribution by Mode:
+        **Sketch Mode** (rapid prototyping):
+            - add_claim (simplified: label, proposition)
+            - add_argument (simplified: label, gist)
+            - connect (simplified: source, target, relation_type)
+            - remove (full)
+            - *All shared tools*
+        
+        **Author Mode** (detailed authoring):
+            - add_claim (full: label, proposition, tags)
+            - add_argument (full: label, gist, premises, conclusion, tags)
+            - connect (full: source, target, relation_type, target_premise_idx, grounding_strategy)
+            - edit (full)
+            - remove (full)
+            - inspect_node (full)
+            - *All shared tools*
+        
+        **Review Mode** (validation):
+            - validate (full: fix, max_issues)
+            - inspect_node (full)
+            - *All shared tools*
+        
+        **Shared Tools** (all modes):
+            - instructions
+            - inspect_graph
+            - inspect_neighborhood
+            - set_mode
+    
+    Registration Pattern:
+        Each tool variant is registered with:
+        
+        - ``fn``: The actual function to call
+        - ``name``: External name exposed to clients (e.g., "add_argument")
+        - ``internal_name``: Internal identifier (e.g., "add_argument_sketch")
+        - ``modes``: List of modes where this variant is available
+        - ``description``: User-facing description of what the tool does
+    
+    Notes:
+        - Tools with the same ``name`` but different ``modes`` create variants
+          that swap when modes change.
+        - Tools with ``modes=["sketch", "author", "review"]`` are shared across
+          all modes and never swapped.
+        - This function is idempotent and safe to call multiple times (though
+          currently only called once at module import).
+    
+    Example:
+        A tool with mode-specific variants::
+        
+            # Sketch variant
+            TOOL_REGISTRY.register_variant(ToolVariant(
+                fn=add_argument_sketch,
+                name="add_argument",        # Same name
+                internal_name="add_argument_sketch",
+                modes=["sketch"],
+                description="Add argument (sketch mode - gist only)"
+            ))
+            
+            # Author variant
+            TOOL_REGISTRY.register_variant(ToolVariant(
+                fn=add_argument_author,
+                name="add_argument",        # Same name
+                internal_name="add_argument_author",
+                modes=["author"],
+                description="Add argument (author mode - full structure)"
+            ))
+    """
+    
+    # add_claim variants (sketch and author)
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=add_claim_sketch,
+        name="add_claim",
+        internal_name="add_claim_sketch",
+        modes=["sketch"],
+        description="Add a new claim node (sketch mode - no tags)"
+    ))
+    
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=add_claim_author,
+        name="add_claim",
+        internal_name="add_claim_author",
+        modes=["author"],
+        description="Add a new claim node (author mode - with tags)"
+    ))
+    
+    # add_argument variants (sketch and author)
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=add_argument_sketch,
+        name="add_argument",
+        internal_name="add_argument_sketch",
+        modes=["sketch"],
+        description="Add a new argument node (sketch mode - gist only)"
+    ))
+    
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=add_argument_author,
+        name="add_argument",
+        internal_name="add_argument_author",
+        modes=["author"],
+        description="Add a new argument node (author mode - full structure)"
+    ))
+    
+    # connect variants (sketch and author)
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=connect_sketch,
+        name="connect",
+        internal_name="connect_sketch",
+        modes=["sketch"],
+        description="Create a dialectical relation (sketch mode - no grounding)"
+    ))
+    
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=connect_author,
+        name="connect",
+        internal_name="connect_author",
+        modes=["author"],
+        description="Create a dialectical relation (author mode - with grounding)"
+    ))
+    
+    # edit - author mode only
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=edit,
+        name="edit",
+        internal_name="edit",
+        modes=["author"],
+        description="Edit an existing node in the argument map"
+    ))
+    
+    # remove - sketch and author modes
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=remove,
+        name="remove",
+        internal_name="remove",
+        modes=["sketch", "author"],
+        description="Remove an existing node or relation from the argument map"
+    ))
+    
+    # inspect_node - author and review modes
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=inspect_node,
+        name="inspect_node",
+        internal_name="inspect_node",
+        modes=["author", "review"],
+        description="Show detailed information about a specific node"
+    ))
+    
+    # validate - review mode only
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=validate,
+        name="validate",
+        internal_name="validate",
+        modes=["review"],
+        description="Validate the current argument map for consistency and completeness"
+    ))
+    
+    # Shared tools (all modes)
+    for shared_tool_fn, tool_name, description in [
+        (instructions, "instructions", "Show instructions for current mode"),
+        (inspect_graph, "inspect_graph", "Show an overview of the argumentation graph"),
+        (inspect_neighborhood, "inspect_neighborhood", "Show k-neighborhood of a node"),
+        (set_mode, "set_mode", "Switch the argument map editing mode"),
+    ]:
+        TOOL_REGISTRY.register_variant(ToolVariant(
+            fn=shared_tool_fn,
+            name=tool_name,
+            internal_name=tool_name,
+            modes=["sketch", "author", "review"],
+            description=description
+        ))
+
+
+# Register all tool variants on module load
+_register_tool_variants()
