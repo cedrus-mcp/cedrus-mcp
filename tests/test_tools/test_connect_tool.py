@@ -110,9 +110,9 @@ async def test_connect_author_with_grounding(tool_context_author: Mock) -> None:
     assert not result.isError
 
 
-def test_connect_nonexistent_nodes_fails(tool_context_sketch: Mock) -> None:
+async def test_connect_nonexistent_nodes_fails(tool_context_sketch: Mock) -> None:
     """Test connecting non-existent nodes returns error status."""
-    result = connect_sketch(
+    result = await connect_sketch(
         source="NONEXISTENT1",
         target="NONEXISTENT2",
         relation_type="support",

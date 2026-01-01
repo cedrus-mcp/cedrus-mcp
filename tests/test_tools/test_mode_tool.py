@@ -77,4 +77,4 @@ async def test_mode_switch_same_mode_no_tools_updated(tool_context: Mock) -> Non
     # No tool changes should be made when mode doesn't actually change
     tool_context.fastmcp.add_tool.assert_not_called()
     tool_context.fastmcp.remove_tool.assert_not_called()
-    ctx.session.send_tool_list_changed.assert_not_called()
+    tool_context.session.send_tool_list_changed.assert_not_called()

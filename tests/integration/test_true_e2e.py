@@ -31,20 +31,26 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             # Initialize the connection
             await session.initialize()
             
-            # List available tools
+            # List available tools (server starts in sketch mode by default)
             tools_result = await session.list_tools()
             tool_names: list[str] = [tool.name for tool in tools_result.tools]
             
+            # Sketch mode tools
             assert "add_claim" in tool_names
             assert "add_argument" in tool_names
-            assert "edit" in tool_names
             assert "connect" in tool_names
             assert "remove" in tool_names
+            # edit is author-only, so it should NOT be in sketch mode
+            assert "edit" not in tool_names
+            # validate is review-only
+            assert "validate" not in tool_names
+            # inspect_node is author/review-only
+            assert "inspect_node" not in tool_names
+            
+            # Shared tools (available in all modes)
             assert "inspect_graph" in tool_names
             assert "inspect_neighborhood" in tool_names
-            assert "inspect_node" in tool_names
-            assert "validate" in tool_names
-            #assert "export_svg" in tool_names
+            assert "instructions" in tool_names
             assert "set_mode" in tool_names
             
             # List available resources
@@ -129,7 +135,17 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             node_text: str = node_resource.contents[0].text
             assert "C1" in node_text
             
-            # Call tool: edit a claim
+            # Call tool: switch mode to author (needed for edit tool)
+            mode_result: Any = await session.call_tool(
+                "set_mode",
+                arguments={
+                    "mode": "author"
+                }
+            )
+            
+            assert not mode_result.isError
+            
+            # Call tool: edit a claim (only available in author mode)
             edit_result: Any = await session.call_tool(
                 "edit",
                 arguments={
@@ -142,16 +158,6 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             )
             
             assert not edit_result.isError
-            
-            # Call tool: switch mode
-            mode_result: Any = await session.call_tool(
-                "set_mode",
-                arguments={
-                    "mode": "author"
-                }
-            )
-            
-            assert not mode_result.isError
             
             # Read instructions resource for author mode
             instructions_resource: Any = await session.read_resource(

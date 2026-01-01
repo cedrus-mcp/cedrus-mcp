@@ -3,7 +3,14 @@
 import pytest
 from unittest.mock import Mock
 from mcp.types import CallToolResult
-from koala.tools.tools import add_claim, add_argument, edit, connect, remove, set_mode
+from koala.tools.tools import (
+    add_claim_sketch,
+    add_argument_sketch,
+    edit,
+    connect_sketch,
+    remove,
+    set_mode,
+)
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -21,7 +28,7 @@ def mock_context(empty_arg_map: ArgumentMap) -> Mock:
 
 async def test_add_tool_creates_claim(mock_context: Mock) -> None:
     """Test adding a claim via add tool."""
-    result = await add_claim(
+    result = await add_claim_sketch(
         label="C1",
         ctx=mock_context,
         proposition="Test claim"
@@ -34,7 +41,7 @@ async def test_add_tool_creates_claim(mock_context: Mock) -> None:
 
 async def test_add_tool_creates_argument(mock_context: Mock) -> None:
     """Test adding an argument via add tool."""
-    result = await add_argument(
+    result = await add_argument_sketch(
         label="A1",
         ctx=mock_context,
         gist="Test argument"
@@ -50,11 +57,11 @@ async def test_connect_tool_creates_relation(mock_context: Mock) -> None:
     arg_map = mock_context.request_context.lifespan_context.arg_map
     
     # Add nodes first
-    await add_claim(label="C1", ctx=mock_context, proposition="Claim 1")
-    await add_argument(label="A1", ctx=mock_context, gist="Arg 1")
+    await add_claim_sketch(label="C1", ctx=mock_context, proposition="Claim 1")
+    await add_argument_sketch(label="A1", ctx=mock_context, gist="Arg 1")
     
     # Connect them
-    result = connect(
+    result = await connect_sketch(
         source="A1",
         target="C1",
         relation_type="support",
@@ -68,10 +75,13 @@ async def test_connect_tool_creates_relation(mock_context: Mock) -> None:
 
 async def test_edit_tool_updates_claim(mock_context: Mock) -> None:
     """Test editing a claim via edit tool."""
-    # Add a claim first
-    await add_claim(label="C1", ctx=mock_context, proposition="Original")
+    # Add a claim first in sketch mode
+    await add_claim_sketch(label="C1", ctx=mock_context, proposition="Original")
     
-    # Edit it
+    # Switch to author mode for editing
+    mock_context.request_context.lifespan_context.mode = "author"
+    
+    # Edit it (edit is a shared tool, and is synchronous)
     result = edit(
         label="C1",
         field="proposition",
@@ -90,9 +100,9 @@ async def test_edit_tool_updates_claim(mock_context: Mock) -> None:
 async def test_remove_tool_deletes_node(mock_context: Mock) -> None:
     """Test removing a node via remove tool."""
     # Add a claim first
-    await add_claim(label="C1", ctx=mock_context, proposition="Test")
+    await add_claim_sketch(label="C1", ctx=mock_context, proposition="Test")
     
-    # Remove it
+    # Remove it (remove is a shared tool, and is synchronous)
     result = remove(label="C1", ctx=mock_context)
     
     assert isinstance(result, CallToolResult)
@@ -102,11 +112,11 @@ async def test_remove_tool_deletes_node(mock_context: Mock) -> None:
         mock_context.request_context.lifespan_context.arg_map.get_node("C1")
 
 
-def test_mode_tool_switches_mode(mock_context: Mock) -> None:
+async def test_mode_tool_switches_mode(mock_context: Mock) -> None:
     """Test switching mode via mode tool."""
     assert mock_context.request_context.lifespan_context.mode == "sketch"
     
-    result = set_mode(mode="author", ctx=mock_context)
+    result = await set_mode(mode="author", ctx=mock_context)
     
     assert isinstance(result, CallToolResult)
     assert not result.isError
@@ -117,17 +127,18 @@ async def test_tool_chain_workflow(mock_context: Mock) -> None:
     """Test a complete workflow: add → connect → edit."""
     arg_map = mock_context.request_context.lifespan_context.arg_map
     
-    # 1. Add two claims
-    await add_claim(label="C1", ctx=mock_context, proposition="Claim 1")
-    await add_claim(label="C2", ctx=mock_context, proposition="Claim 2")
+    # 1. Add two claims in sketch mode
+    await add_claim_sketch(label="C1", ctx=mock_context, proposition="Claim 1")
+    await add_claim_sketch(label="C2", ctx=mock_context, proposition="Claim 2")
     
     # 2. Add an argument
-    await add_argument(label="A1", ctx=mock_context, gist="Argument")
+    await add_argument_sketch(label="A1", ctx=mock_context, gist="Argument")
     
     # 3. Connect them
-    connect(source="A1", target="C1", ctx=mock_context, relation_type="support")
+    await connect_sketch(source="A1", target="C1", ctx=mock_context, relation_type="support")
     
-    # 4. Edit a claim
+    # 4. Switch to author mode and edit a claim (edit is a shared, synchronous tool)
+    mock_context.request_context.lifespan_context.mode = "author"
     edit(label="C1", field="proposition", ctx=mock_context, edit_options={"new_value": "Updated Claim 1"})
     
     # Verify final state
