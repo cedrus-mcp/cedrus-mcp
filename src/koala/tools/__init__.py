@@ -2,21 +2,8 @@
 
 from typing import Literal
 
-from .tools import (
-    add_claim,
-    add_argument,
-    edit,
-    remove,
-    connect,
-    inspect_graph,
-    inspect_neighborhood,
-    inspect_node,
-    instructions,
-    validate,
-    #export_svg,
-    set_mode,
-)
-
+# Trigger tool registration
+from . import tools   # noqa: F401
 
 # This generates the literal type values
 ToolName = Literal[
@@ -35,18 +22,6 @@ ToolName = Literal[
 ]
 
 __all__ = [
-    "add_claim",
-    "add_argument",
-    "edit",
-    "remove",
-    "connect",
-    "inspect_graph",
-    "inspect_neighborhood",
-    "inspect_node",
-    "instructions",
-    "validate",
-    #"export_svg",
-    "set_mode",
     "ToolName",
 ]
 
