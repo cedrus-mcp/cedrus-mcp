@@ -1,7 +1,7 @@
 """Unit tests for mode tool."""
 
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, AsyncMock
 from koala.tools.tools import set_mode
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -15,42 +15,66 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
         arg_map=empty_arg_map,
         mode="sketch"
     )
+    # Mock FastMCP server for tool add/remove operations
+    ctx.fastmcp = Mock()
+    ctx.fastmcp.add_tool = Mock()
+    ctx.fastmcp.remove_tool = Mock()
+    # Mock session for tool_list_changed notification
+    ctx.session = Mock()
+    ctx.session.send_tool_list_changed = AsyncMock()
     return ctx
 
 
-def test_mode_switch_to_author(tool_context: Mock) -> None:
+async def test_mode_switch_to_author(tool_context: Mock) -> None:
     """Test switching to author mode."""
     assert tool_context.request_context.lifespan_context.mode == "sketch"
     
-    result = set_mode(mode="author", ctx=tool_context)
+    result = await set_mode(mode="author", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "author"
+    # Verify tool_list_changed notification was sent
+    tool_context.session.send_tool_list_changed.assert_called_once()
 
 
-def test_mode_switch_to_review(tool_context: Mock) -> None:
+async def test_mode_switch_to_review(tool_context: Mock) -> None:
     """Test switching to review mode."""
-    result = set_mode(mode="review", ctx=tool_context)
+    result = await set_mode(mode="review", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "review"
+    tool_context.session.send_tool_list_changed.assert_called_once()
 
 
-def test_mode_switch_to_sketch(tool_context: Mock) -> None:
+async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
     """Test switching to sketch mode."""
     tool_context.request_context.lifespan_context.mode = "author"
     
-    result = set_mode(mode="sketch", ctx=tool_context)
+    result = await set_mode(mode="sketch", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "sketch"
+    tool_context.session.send_tool_list_changed.assert_called_once()
 
 
-def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
+async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
     """Test that invalid mode returns error status."""
-    result = set_mode(mode="invalid", ctx=tool_context)
+    result = await set_mode(mode="invalid", ctx=tool_context)
     
     # Check that error is indicated in structured content
     assert result.structuredContent["status"] == "failure"
     # Mode should remain unchanged
     assert tool_context.request_context.lifespan_context.mode == "sketch"
+    # No notification should be sent for failed mode switch
+    tool_context.session.send_tool_list_changed.assert_not_called()
+
+
+async def test_mode_switch_same_mode_no_tools_updated(tool_context: Mock) -> None:
+    """Test that switching to the same mode doesn't trigger tool updates."""
+    result = await set_mode(mode="sketch", ctx=tool_context)
+    
+    assert not result.isError
+    # No tool changes should be made when mode doesn't actually change
+    tool_context.fastmcp.add_tool.assert_not_called()
+    tool_context.fastmcp.remove_tool.assert_not_called()
+    ctx.session.send_tool_list_changed.assert_not_called()

@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add_claim, add_argument, connect, remove
+from koala.tools.tools import add_claim_sketch, add_argument_sketch, connect_sketch, remove
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -23,7 +23,7 @@ async def test_remove_claim_node(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add a claim
-    await add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
     assert arg_map.get_node("C1") is not None
     
     # Remove it
@@ -39,7 +39,7 @@ async def test_remove_argument_node(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add an argument
-    await add_argument(
+    await add_argument_sketch(
         label="A1",
         ctx=tool_context,
         gist="Test"
@@ -59,9 +59,9 @@ async def test_remove_relation(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Add nodes and connect them
-    await add_claim(label="C1", ctx=tool_context, proposition="Claim")
-    await add_argument(label="A1", ctx=tool_context, gist="Arg")
-    connect(
+    await add_claim_sketch(label="C1", ctx=tool_context, proposition="Claim")
+    await add_argument_sketch(label="A1", ctx=tool_context, gist="Arg")
+    await connect_sketch(
         source="A1",
         target="C1",
         relation_type="support",
@@ -92,7 +92,7 @@ def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
 async def test_remove_with_both_label_and_relation_prioritizes_label(tool_context: Mock) -> None:
     """Test that providing both label and relation uses label."""
     # Add a node
-    await add_claim(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
     
     # Call remove with both (should fail)
     result = remove(

@@ -2,14 +2,19 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.tools.tools import add_claim, add_argument
+from koala.tools.tools import (
+    add_claim_sketch,
+    add_claim_author,
+    add_argument_sketch,
+    add_argument_author,
+)
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture
-def tool_context(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for tool testing."""
+def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
+    """Create mock context for sketch mode testing."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
@@ -18,16 +23,27 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-async def test_add_claim_basic(tool_context: Mock) -> None:
-    """Test adding a basic claim."""
-    result = await add_claim(
+@pytest.fixture
+def tool_context_author(empty_arg_map: ArgumentMap) -> Mock:
+    """Create mock context for author mode testing."""
+    ctx = Mock()
+    ctx.request_context.lifespan_context = AppContext(
+        arg_map=empty_arg_map,
+        mode="author"
+    )
+    return ctx
+
+
+async def test_add_claim_sketch(tool_context_sketch: Mock) -> None:
+    """Test adding a claim in sketch mode."""
+    result = await add_claim_sketch(
         label="C1",
-        ctx=tool_context,
+        ctx=tool_context_sketch,
         proposition="Test claim"
     )
     
     assert not result.isError
-    arg_map = tool_context.request_context.lifespan_context.arg_map
+    arg_map = tool_context_sketch.request_context.lifespan_context.arg_map
     node = arg_map.get_node("C1")
     assert node is not None
     # Get the proposition from the graph
@@ -36,19 +52,56 @@ async def test_add_claim_basic(tool_context: Mock) -> None:
     assert prop.content == "Test claim"
 
 
-async def test_add_argument_basic(tool_context: Mock) -> None:
-    """Test adding a basic argument."""
-    result = await add_argument(
+async def test_add_claim_author(tool_context_author: Mock) -> None:
+    """Test adding a claim in author mode with tags."""
+    result = await add_claim_author(
+        label="C1",
+        ctx=tool_context_author,
+        proposition="Test claim",
+        tags=["tag1", "tag2"]
+    )
+    
+    assert not result.isError
+    arg_map = tool_context_author.request_context.lifespan_context.arg_map
+    node = arg_map.get_node("C1")
+    assert node is not None
+    assert node.tags == ["tag1", "tag2"]
+
+
+async def test_add_argument_sketch(tool_context_sketch: Mock) -> None:
+    """Test adding an argument in sketch mode."""
+    result = await add_argument_sketch(
         label="A1",
-        ctx=tool_context,
+        ctx=tool_context_sketch,
         gist="Test argument"
     )
     
     assert not result.isError
-    arg_map = tool_context.request_context.lifespan_context.arg_map
+    arg_map = tool_context_sketch.request_context.lifespan_context.arg_map
     node = arg_map.get_node("A1")
     assert node is not None
     assert node.gist == "Test argument"
+
+
+async def test_add_argument_author(tool_context_author: Mock) -> None:
+    """Test adding an argument in author mode with full structure."""
+    result = await add_argument_author(
+        label="A1",
+        ctx=tool_context_author,
+        gist="Test argument",
+        premises=["Premise 1", "Premise 2"],
+        conclusion="Conclusion",
+        tags=["tag1"]
+    )
+    
+    assert not result.isError
+    arg_map = tool_context_author.request_context.lifespan_context.arg_map
+    node = arg_map.get_node("A1")
+    assert node is not None
+    assert node.gist == "Test argument"
+    # Check premises were created (stored as separate proposition objects)
+    assert len(node.premises) == 2
+    assert node.tags == ["tag1"]
 
 
 # async def test_add_with_relation(tool_context: Mock) -> None:
@@ -80,35 +133,35 @@ async def test_add_argument_basic(tool_context: Mock) -> None:
 #     assert not result.isError
 
 
-async def test_add_empty_label_fails(tool_context: Mock) -> None:
+async def test_add_empty_label_fails(tool_context_sketch: Mock) -> None:
     """Test that empty label raises ValueError."""
     with pytest.raises(ValueError, match="Label must be a non-empty string"):
-        await add_claim(
+        await add_claim_sketch(
             label="",
-            ctx=tool_context,
+            ctx=tool_context_sketch,
             proposition="Test"
         )
 
 
 @patch("koala.resources.graph_views.mcp.get_context")
-async def test_add_duplicate_label_gets_unique(mock_get_context, tool_context: Mock) -> None:
+async def test_add_duplicate_label_gets_unique(mock_get_context, tool_context_sketch: Mock) -> None:
     """Test that duplicate labels are made unique."""
     # Mock the context returned by mcp.get_context
     mock_context = Mock()
     mock_request_context = Mock()
-    mock_lifespan_context = tool_context.request_context.lifespan_context
+    mock_lifespan_context = tool_context_sketch.request_context.lifespan_context
 
     mock_request_context.lifespan_context = mock_lifespan_context
     mock_context.request_context = mock_request_context
     mock_get_context.return_value = mock_context
 
-    arg_map = tool_context.request_context.lifespan_context.arg_map
+    arg_map = tool_context_sketch.request_context.lifespan_context.arg_map
 
     # Add first node
-    await add_claim(label="C1", ctx=tool_context, proposition="First")
+    await add_claim_sketch(label="C1", ctx=tool_context_sketch, proposition="First")
 
     # Try to add with same label
-    result = await add_claim(label="C1", ctx=tool_context, proposition="Second")
+    result = await add_claim_sketch(label="C1", ctx=tool_context_sketch, proposition="Second")
 
     # Should succeed with modified label
     assert not result.isError
