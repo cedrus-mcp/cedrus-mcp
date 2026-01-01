@@ -37,6 +37,13 @@ def check_core_content(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                 issues_found += 1
                 message = f"Claim node {label} is missing a proposition."
                 tc.issue("warning", message, label=label)
+                if tc.mode == "sketch":
+                    tc.suggest(
+                        "set_mode",
+                        {"mode": "author"},
+                        f"Switch to author mode to add a proposition to claim node {label}.",
+                        "fix",  
+                    )
                 tc.suggest(
                     "edit",
                     {
@@ -55,6 +62,13 @@ def check_core_content(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                 issues_found += 1
                 message = f"Argument node {label} is missing a gist."
                 tc.issue("warning", message, label=label)
+                if tc.mode == "sketch":
+                    tc.suggest(
+                        "set_mode",
+                        {"mode": "author"},
+                        f"Switch to author mode to add a gist to argument node {label}.",
+                        "fix",  
+                    )
                 tc.suggest(
                     "edit",
                     {
@@ -105,6 +119,13 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
             issues_found += 1
             message = f"Argument node {label} is missing a conclusion."
             tc.issue("warning", message, label=label)
+            if tc.mode == "sketch":
+                tc.suggest(
+                    "set_mode",
+                    {"mode": "author"},
+                    f"Switch to author mode to add a conclusion to argument node {label} (1/2).",
+                    "fix",  
+                )
             tc.suggest(
                 "edit",
                 {
@@ -114,7 +135,7 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
                         "new_value": "Add a conclusion here."
                     },
                 },
-                f"Add a conclusion to argument node {label}.",
+                f"Add a conclusion to argument node {label} (2/2).",
                 "fix",
             )
         if max_issues is not None and issues_found >= max_issues:
@@ -124,6 +145,13 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
             issues_found += 1
             message = f"Argument node {label} has no premises."
             tc.issue("warning", message, label=label)
+            if tc.mode == "sketch":
+                tc.suggest(
+                    "set_mode",
+                    {"mode": "author"},
+                    f"Switch to author mode to add premises to argument node {label}. (1/2)",
+                    "fix",  
+                )
             tc.suggest(
                 "edit",
                 {
@@ -133,7 +161,7 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
                         "new_value": "Add a premise here."
                     },
                 },
-                f"Add a premise to argument node {label}. Repeat as necessary.",
+                f"Add a premise to argument node {label}. Repeat as necessary. (2/2)",
                 "fix",
             )
 
