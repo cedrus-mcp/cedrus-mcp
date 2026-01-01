@@ -21,22 +21,22 @@ class NextAction(BaseModel):
     action_type: str = "improve"
 
     def model_post_init(self, context: Any) -> None:
-        """runtime validation of suggested tool and params."""
+        """Runtime validation of suggested tool against dynamic tool registry.
+        
+        Validates that the suggested tool exists in the tool registry.
+        Parameter validation is skipped as tools have mode-specific variants
+        with different signatures, and we don't have mode context here.
+        """
         super().model_post_init(context)
-        # validate that suggested tool is defined in koala.tools
-        from koala import tools  # Import here to avoid circular import
-        if not hasattr(tools, self.tool):
-            raise ValueError(f"Suggested tool '{self.tool}' is not defined in koala.tools.")
-        # check function signature matches params
-        from inspect import signature, Parameter
-        sig = signature(getattr(tools, self.tool))
-        # Check if function accepts **kwargs
-        has_var_keyword = any(p.kind == Parameter.VAR_KEYWORD for p in sig.parameters.values())
-        # Only validate params if function doesn't accept **kwargs
-        if not has_var_keyword:
-            for param in self.params:
-                if param not in sig.parameters:
-                    raise ValueError(f"Parameter '{param}' is not valid for tool '{self.tool}'.")
+        
+        # Validate that suggested tool exists in the dynamic tool registry
+        from koala.tools.tool_registry import TOOL_REGISTRY  # Import here to avoid circular import
+        
+        if self.tool not in TOOL_REGISTRY._variants:
+            raise ValueError(
+                f"Suggested tool '{self.tool}' is not defined in koala.tools. "
+                f"Available tools: {', '.join(sorted(TOOL_REGISTRY._variants.keys()))}"
+            )
 
 
 class ActionableResult(BaseModel):
