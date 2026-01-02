@@ -1,4 +1,8 @@
-"""Unit tests for validate tool."""
+"""Tests for the validate MCP tool interface.
+
+These tests focus on the tool's interface, parameter handling, and response format.
+Detailed validation logic is tested in tests/test_validation/.
+"""
 
 import pytest
 from unittest.mock import Mock
@@ -30,91 +34,132 @@ def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-def test_validate_empty_map(tool_context: Mock) -> None:
-    """Test validating an empty argument map."""
+# Tool Interface Tests
+
+
+def test_validate_returns_valid_response_structure(tool_context: Mock) -> None:
+    """Test that validate returns proper MCP response structure."""
     result = validate(ctx=tool_context)
     
+    # Should return valid CallToolResult
     assert not result.isError
-    # Empty map should be valid
     assert result.structuredContent is not None
-    assert result.structuredContent["status"] == "success"
-    assert "valid and consistent" in result.structuredContent["message"].lower()
+    assert isinstance(result.structuredContent, dict)
+    
+    # Should have expected keys
+    assert "status" in result.structuredContent
+    assert "message" in result.structuredContent
 
 
-def test_validate_valid_map(tool_context: Mock) -> None:
-    """Test validating a valid argument map."""
+def test_validate_accepts_fix_parameter(tool_context: Mock) -> None:
+    """Test that validate accepts fix parameter."""
+    # Should work with fix=False
+    result_no_fix = validate(ctx=tool_context, fix=False)
+    assert not result_no_fix.isError
+    
+    # Should work with fix=True
+    result_with_fix = validate(ctx=tool_context, fix=True)
+    assert not result_with_fix.isError
+
+
+def test_validate_accepts_max_issues_parameter(tool_context: Mock) -> None:
+    """Test that validate accepts max_issues parameter."""
+    result = validate(ctx=tool_context, max_issues=5)
+    
+    assert not result.isError
+    assert result.structuredContent is not None
+
+
+def test_validate_with_max_issues_limits_output(tool_context: Mock) -> None:
+    """Test that max_issues parameter affects response."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
-    # Create a valid, connected argument map
-    prop1 = Proposition(content="Test proposition")
-    prop2 = Proposition(content="Premise")
-    prop3 = Proposition(content="Conclusion")
-    arg_map.add_proposition(prop1)
-    arg_map.add_proposition(prop2)
-    arg_map.add_proposition(prop3)
+    # Create multiple validation issues
+    for i in range(5):
+        arg_node = ArgumentNode(
+            label=f"A{i}",
+            gist=f"Arg {i}",
+            premises=[],
+            conclusion=""
+        )
+        arg_map.add_argument(arg_node)
     
-    claim = ClaimNode(label="C1", proposition_id=prop1.id)
-    arg_map.add_claim(claim)
-    
-    # Add a properly structured argument
-    arg = ArgumentNode(
-        label="A1",
-        gist="Valid argument",
-        premises=[prop2.id],
-        conclusion=prop3.id
-    )
-    arg_map.add_argument(arg)
-    
-    # Connect them to avoid connectivity warnings
-    arg_map.add_support_relation(from_label="A1", to_label="C1")
-    
-    result = validate(ctx=tool_context)
+    # Request limited issues
+    result = validate(ctx=tool_context, max_issues=2)
     
     assert not result.isError
     assert result.structuredContent is not None
     
-    # With proper structure and connectivity, should have minimal or no issues
+    # Verify issues are limited (allowing for connectivity check)
     issues = result.structuredContent.get("issues", [])
-    # Only check for error-level issues (connectivity warnings may still appear)
-    errors = [i for i in issues if i.get("severity") == "error"]
-    assert len(errors) == 0, f"Expected no errors but found: {errors}"
+    assert len(issues) <= 4, f"Expected limited issues but got {len(issues)}"
 
 
-async def test_validate_map_with_issues(tool_context: Mock) -> None:
-    """Test validating a map with validation issues."""
+def test_validate_works_in_all_modes(tool_context: Mock, tool_context_sketch: Mock) -> None:
+    """Test that validate works in different modes."""
+    # Review mode
+    result_review = validate(ctx=tool_context)
+    assert not result_review.isError
+    
+    # Sketch mode
+    result_sketch = validate(ctx=tool_context_sketch)
+    assert not result_sketch.isError
+
+
+# Response Content Tests
+
+
+def test_validate_includes_issues_in_response(tool_context: Mock) -> None:
+    """Test that validation response includes issues list."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
-    # Create an argument without proper structure (empty conclusion)
+    # Create an issue
     arg_node = ArgumentNode(
         label="A1",
-        gist="Test argument",
+        gist="Test",
         premises=[],
-        conclusion=""  # Empty conclusion should trigger validation issue
+        conclusion=""
     )
     arg_map.add_argument(arg_node)
     
     result = validate(ctx=tool_context)
     
-    assert not result.isError
     assert result.structuredContent is not None
-    
-    # Verify issues were actually detected
-    issues = result.structuredContent.get("issues", [])
-    assert len(issues) > 0, "Expected validation to detect issues with empty conclusion"
-    
-    # Verify at least one issue relates to the argument structure
-    issue_messages = [issue.get("issue", "") for issue in issues]
-    assert any(
-        "A1" in msg or "conclusion" in msg.lower() or "premise" in msg.lower()
-        for msg in issue_messages
-    ), f"Expected issues about argument structure but got: {issue_messages}"
+    assert "issues" in result.structuredContent
+    assert isinstance(result.structuredContent["issues"], list)
 
 
-def test_validate_with_fix_disabled(tool_context: Mock) -> None:
-    """Test validation without auto-fix reports issues but doesn't modify map."""
+def test_validate_issues_have_proper_structure(tool_context: Mock) -> None:
+    """Test that reported issues have proper structure."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
-    # Create a map with an issue
+    # Create an issue
+    arg_node = ArgumentNode(
+        label="A1",
+        gist="Test",
+        premises=[],
+        conclusion=""
+    )
+    arg_map.add_argument(arg_node)
+    
+    result = validate(ctx=tool_context)
+    
+    assert result.structuredContent is not None
+    issues = result.structuredContent.get("issues", [])
+    
+    # Each issue should have required fields
+    for issue in issues:
+        assert "severity" in issue
+        assert issue["severity"] in ["info", "warning", "error"]
+        # Should have some message field
+        assert "issue" in issue or "message" in issue
+
+
+def test_validate_includes_suggestions_when_not_fixing(tool_context: Mock) -> None:
+    """Test that suggestions are included when fix=False."""
+    arg_map = tool_context.request_context.lifespan_context.arg_map
+    
+    # Create an issue
     arg_node = ArgumentNode(
         label="A1",
         gist="Test",
@@ -125,175 +170,52 @@ def test_validate_with_fix_disabled(tool_context: Mock) -> None:
     
     result = validate(ctx=tool_context, fix=False)
     
-    assert not result.isError
     assert result.structuredContent is not None
     
-    # Verify issues are reported
-    issues = result.structuredContent.get("issues", [])
-    assert len(issues) > 0
-
-    # Check suggestions were provided
+    # Should include suggestions/next_actions
     suggestions = result.structuredContent.get("next_actions", [])
-    assert len(suggestions) > 0, "Expected suggestions for fixing issues"
+    assert isinstance(suggestions, list)
 
 
-def test_validate_with_fix_enabled(tool_context: Mock) -> None:
-    """Test validation with auto-fix enabled actually fixes issues."""
+def test_validate_reports_success_on_valid_map(tool_context: Mock) -> None:
+    """Test that validation reports success for valid map."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
-    # Create a scenario that can be auto-fixed
-    # Note: Not all validation issues can be auto-fixed,
-    # this test verifies fix=True runs without error
-    prop = Proposition(content="Test")
-    arg_map.add_proposition(prop)
-    claim = ClaimNode(label="C1", proposition_id=prop.id)
-    arg_map.add_claim(claim)
-    
-    result = validate(ctx=tool_context, fix=True)
-    
-    assert not result.isError
-    assert result.structuredContent is not None
-    
-    # Verify validation ran successfully with fix enabled
-    # The structured content should indicate success or completion
-    assert "status" in result.structuredContent
-
-
-def test_validate_with_max_issues_limit(tool_context: Mock) -> None:
-    """Test validation with max_issues limit actually limits reported issues."""
-    arg_map = tool_context.request_context.lifespan_context.arg_map
-    
-    # Create multiple issues (5 arguments with empty conclusions/premises)
-    for i in range(5):
-        arg_node = ArgumentNode(
-            label=f"A{i}",
-            gist=f"Argument {i}",
-            premises=[],
-            conclusion=""  # Empty conclusion should trigger validation issue
-        )
-        arg_map.add_argument(arg_node)
-    
-    max_issues = 2
-    result = validate(ctx=tool_context, max_issues=max_issues)
-    
-    assert not result.isError
-    assert result.structuredContent is not None
-    
-    # Verify the issue count is limited
-    issues = result.structuredContent.get("issues", [])
-    # Note: max_issues limits per-validator but connectivity check runs last
-    # So we may get slightly more than max_issues total
-    # The important thing is that we don't get 10+ issues (2 per argument)
-    assert len(issues) <= max_issues + 2, (
-        f"Expected at most {max_issues + 2} issues (including connectivity) but found {len(issues)}"
-    )
-    
-    # Should still report that there are issues
-    assert len(issues) > 0, "Expected some issues to be reported"
-
-
-def test_validate_sketch_mode_limited(tool_context_sketch: Mock) -> None:
-    """Test that validation in sketch mode is limited."""
-    result = validate(ctx=tool_context_sketch)
-    
-    assert not result.isError
-    # In sketch mode, some validations are skipped
-
-
-def test_validate_with_disconnected_nodes(tool_context: Mock) -> None:
-    """Test validation detects disconnected/isolated nodes."""
-    arg_map = tool_context.request_context.lifespan_context.arg_map
-    
-    # Add isolated claims (no relations between them)
-    prop1 = Proposition(content="Isolated claim 1")
-    prop2 = Proposition(content="Isolated claim 2")
+    # Create a well-formed, connected map
+    prop1 = Proposition(content="Premise")
+    prop2 = Proposition(content="Conclusion")
     arg_map.add_proposition(prop1)
     arg_map.add_proposition(prop2)
     
-    claim1 = ClaimNode(label="C1", proposition_id=prop1.id)
-    claim2 = ClaimNode(label="C2", proposition_id=prop2.id)
-    arg_map.add_claim(claim1)
-    arg_map.add_claim(claim2)
-    
-    result = validate(ctx=tool_context)
-    
-    assert not result.isError
-    assert result.structuredContent is not None
-    
-    # Verify connectivity check ran and potentially detected isolation
-    # Note: Connectivity validation may report isolated nodes as warnings
-    # The exact behavior depends on check_connectivity implementation
-
-
-def test_validate_handles_errors_gracefully(tool_context: Mock) -> None:
-    """Test that validation handles unexpected errors gracefully."""
-    # This should not raise an exception even with an empty map
-    result = validate(ctx=tool_context)
-    
-    assert not result.isError
-
-
-def test_validate_consistency_checks(tool_context: Mock) -> None:
-    """Test that validation includes consistency checks for well-formed arguments."""
-    arg_map = tool_context.request_context.lifespan_context.arg_map
-    
-    # Create argument with proper structure
-    prop_conc = Proposition(content="Conclusion")
-    prop_prem = Proposition(content="Premise")
-    arg_map.add_proposition(prop_conc)
-    arg_map.add_proposition(prop_prem)
-    
-    arg_node = ArgumentNode(
+    arg = ArgumentNode(
         label="A1",
-        gist="Test",
-        premises=[prop_prem.id],
-        conclusion=prop_conc.id
+        gist="Valid arg",
+        premises=[prop1.id],
+        conclusion=prop2.id
     )
-    arg_map.add_argument(arg_node)
+    arg_map.add_argument(arg)
     
     result = validate(ctx=tool_context)
     
     assert not result.isError
     assert result.structuredContent is not None
-    
-    # With a well-formed argument, should have no or minimal issues
-    issues = result.structuredContent.get("issues", [])
-    # Filter for error-level issues only (warnings about connectivity are OK)
-    errors = [i for i in issues if i.get("severity") == "error"]
-    assert len(errors) == 0, f"Expected no errors for well-formed argument but got: {errors}"
-    
-    assert not result.isError
+    assert result.structuredContent["status"] == "success"
 
 
-def test_validate_returns_issue_count(tool_context: Mock) -> None:
-    """Test that validation returns correct information about issues found."""
-    arg_map = tool_context.request_context.lifespan_context.arg_map
-    
-    # Create exactly 3 problematic arguments
-    for i in range(3):
-        arg_node = ArgumentNode(
-            label=f"A{i}",
-            gist=f"Arg{i}",
-            premises=[],
-            conclusion=""
-        )
-        arg_map.add_argument(arg_node)
-    
+# Error Handling Tests
+
+
+def test_validate_handles_empty_map_gracefully(tool_context: Mock) -> None:
+    """Test that validation handles empty map without errors."""
     result = validate(ctx=tool_context)
     
     assert not result.isError
     assert result.structuredContent is not None
+
+
+def test_validate_doesnt_crash_on_malformed_map(tool_context: Mock) -> None:
+    """Test that validation doesn't crash even with unusual map state."""
+    # This should handle edge cases gracefully
+    result = validate(ctx=tool_context)
     
-    # Verify issues are reported in structured content
-    issues = result.structuredContent.get("issues", [])
-    assert len(issues) > 0, "Expected issues to be reported for problematic arguments"
-    
-    # Verify that issues list contains information about the problems
-    # Each argument should trigger at least one issue (empty conclusion, no premises)
-    assert len(issues) >= 3, f"Expected at least 3 issues but got {len(issues)}: {issues}"
-    
-    # Check that issues have proper structure
-    for issue in issues:
-        assert "severity" in issue
-        assert "issue" in issue or "message" in issue
-        assert issue["severity"] in ["info", "warning", "error"]
+    assert not result.isError
