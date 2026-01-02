@@ -561,8 +561,16 @@ class ArgumentMap:
             self.delete_proposition(prop_id)
 
     def _get_equivalence_graph(self) -> nx.Graph[PropositionID]:
-        """Get equivalence graph."""
+        """Get equivalence graph.
+        
+        Returns a graph where nodes are all propositions and edges represent
+        equivalence relations. Isolated nodes represent singleton equivalence classes.
+        """
         equiv_graph: nx.Graph[PropositionID] = nx.Graph()
+        # Add all proposition nodes first
+        for node in self.proposition_graph.nodes():
+            equiv_graph.add_node(node)
+        # Then add equivalence edges
         for u, v, data in self.proposition_graph.edges(data=True):
             if data["_type"] == "equivalence":
                 equiv_graph.add_edge(u, v)
