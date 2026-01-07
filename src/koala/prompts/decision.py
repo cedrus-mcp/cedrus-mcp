@@ -1,10 +1,16 @@
 """Prompt templates for decision-making tasks."""
 
+from textwrap import dedent
 from koala.server import mcp
 
 
-@mcp.prompt()
-def simple_decision(decision_problem: str) -> str:
+@mcp.prompt(
+    name="deliberate_decision",
+    description=dedent("""
+        A prompt template for deliberating decision problems and making reasoned choices.
+    """).strip()
+)
+def deliberate_decision(decision_problem: str) -> str:
     """A simple decision prompt template for making deliberate choices.
     
     Args:
