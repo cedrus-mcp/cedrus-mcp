@@ -20,9 +20,9 @@ def sketch_context(empty_map: ArgumentMap) -> ToolContext:
 
 
 @pytest.fixture
-def author_context(empty_map: ArgumentMap) -> ToolContext:
-    """Create a tool context in author mode."""
-    tc = ToolContext(arg_map=empty_map, mode="author")
+def elaborate_context(empty_map: ArgumentMap) -> ToolContext:
+    """Create a tool context in elaborate mode."""
+    tc = ToolContext(arg_map=empty_map, mode="elaborate")
     return tc
 
 

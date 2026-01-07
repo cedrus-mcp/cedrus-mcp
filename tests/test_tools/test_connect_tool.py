@@ -4,11 +4,11 @@ import pytest
 from unittest.mock import Mock
 from koala.tools.tools import (
     add_claim_sketch,
-    add_claim_author,
+    add_claim_elaborate,
     add_argument_sketch,
-    add_argument_author,
+    add_argument_elaborate,
     connect_sketch,
-    connect_author,
+    connect_elaborate,
 )
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -26,12 +26,12 @@ def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
 
 
 @pytest.fixture
-def tool_context_author(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for author mode testing."""
+def tool_context_elaborate(empty_arg_map: ArgumentMap) -> Mock:
+    """Create mock context for elaborate mode testing."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
-        mode="author"
+        mode="elaborate"
     )
     return ctx
 
@@ -80,27 +80,27 @@ async def test_connect_attack_relation_sketch(tool_context_sketch: Mock) -> None
     assert rel.relation_type == "attack"
 
 
-async def test_connect_author_with_grounding(tool_context_author: Mock) -> None:
-    """Test creating a relation with grounding in author mode."""
-    arg_map = tool_context_author.request_context.lifespan_context.arg_map
+async def test_connect_elaborate_with_grounding(tool_context_elaborate: Mock) -> None:
+    """Test creating a relation with grounding in elaborate mode."""
+    arg_map = tool_context_elaborate.request_context.lifespan_context.arg_map
     
     # Add two nodes
-    await add_claim_author(label="C1", ctx=tool_context_author, proposition="Claim")
-    await add_argument_author(
+    await add_claim_elaborate(label="C1", ctx=tool_context_elaborate, proposition="Claim")
+    await add_argument_elaborate(
         label="A1",
-        ctx=tool_context_author,
+        ctx=tool_context_elaborate,
         gist="Arg",
         premises=["P1", "P2"],
         conclusion="C"
     )
     
     # Connect with grounding strategy
-    result = await connect_author(
+    result = await connect_elaborate(
         source="C1",
         target="A1",
         relation_type="support",
         grounding_strategy="copy_conclusion",
-        ctx=tool_context_author,
+        ctx=tool_context_elaborate,
     )
     
     # Should succeed and create grounded relation

@@ -6,7 +6,7 @@ from datetime import datetime
 
 PropositionID = str
 NodeLabel = str
-Mode = Literal["sketch", "author", "review"]
+Mode = Literal["sketch", "elaborate", "review"]
 
 class Issue(BaseModel):
     """Validation issue found in result."""

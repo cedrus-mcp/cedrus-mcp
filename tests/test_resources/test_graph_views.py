@@ -51,18 +51,18 @@ async def test_graph_details_mode_variation(sample_arg_map: ArgumentMap) -> None
     with patch.object(mcp, 'get_context', return_value=ctx_sketch):
         result_sketch = await graph_details_resource()
     
-    # Test in author mode
-    ctx_author = Mock()
-    ctx_author.request_context.lifespan_context = AppContext(
-        arg_map=sample_arg_map, mode="author"
+    # Test in elaborate mode
+    ctx_elaborate = Mock()
+    ctx_elaborate.request_context.lifespan_context = AppContext(
+        arg_map=sample_arg_map, mode="elaborate"
     )
     
-    with patch.object(mcp, 'get_context', return_value=ctx_author):
-        result_author = await graph_details_resource()
+    with patch.object(mcp, 'get_context', return_value=ctx_elaborate):
+        result_elaborate = await graph_details_resource()
     
     # Both should be valid argdown
     assert "```argdown" in result_sketch
-    assert "```argdown" in result_author
+    assert "```argdown" in result_elaborate
 
 
 @pytest.mark.asyncio

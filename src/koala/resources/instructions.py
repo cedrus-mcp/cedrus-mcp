@@ -23,7 +23,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
     return instructions
 
-def instruction_author(app_ctx: AppContext) -> str:
+def instruction_elaborate(app_ctx: AppContext) -> str:
     instructions = (
         "### Authoring Instructions\n"
         "\n"
@@ -42,21 +42,21 @@ def instruction_author(app_ctx: AppContext) -> str:
         "- An argument A1 supports an argument A2 if A1's conclusion is used as a premise in A2's reconstruction.\n"
         "- An argument A1 attacks an argument A2 if A1's conclusion negates a premise in A2's reconstruction.\n"
         "\n"
-        "In the `author` mode, you'd typically work on individual arguments, clarifying their conclusions and unfolding their premises. "
+        "In the `elaborate` mode, you'd typically work on individual arguments, clarifying their conclusions and unfolding their premises. "
         "You iteratively improve the argument reconstructions, trying to ground more and more dialectical relations in order to"
         "obtain an ever more coherent and well-structured argument map.\n"
         "\n"
-        "Typical actions in author mode include:\n"
+        "Typical actions in elaborate mode include:\n"
         f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "conclusion", "edit_options": {"new_value": "The proposition serving as the conclusion of this argument."}}, reason="Edit an existing argument to add more detail.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "premises", "edit_options": {"new_value": "The proposition to be added as further premise of this argument.", "target_premise_idx": "3"}}, reason="Add a third premise to an existing argument with 2 premises.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
         "\n"
     )
-    if app_ctx.mode == "author":
-        instructions += "Currently active mode: `author` mode."
+    if app_ctx.mode == "elaborate":
+        instructions += "Currently active mode: `elaborate` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `author` mode call {NextAction(tool='mode', params={'mode': 'author'}, reason='Switch to author mode.').model_dump()}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
     return instructions
 
 def instruction_review(app_ctx: AppContext) -> str:
@@ -94,12 +94,12 @@ async def instruction_resource() -> str:
     match mode:
         case "sketch":
             return instructions_sketch(app_ctx)
-        case "author":
-            return instruction_author(app_ctx)
+        case "elaborate":
+            return instruction_elaborate(app_ctx)
         case "review":
             return instruction_review(app_ctx)
         case _:
-            return f"Unknown mode {mode}. Available modes: sketch, author, review."
+            return f"Unknown mode {mode}. Available modes: sketch, elaborate, review."
 
 
 # @mcp.resource("argmap://instructions/grounding")

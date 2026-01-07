@@ -50,15 +50,15 @@ async def test_node_details_mode_variation(sample_arg_map: ArgumentMap) -> None:
     with patch.object(mcp, 'get_context', return_value=ctx_sketch):
         result_sketch = await node_details_resource(label="C1")
     
-    # Test in author mode
-    ctx_author = Mock()
-    ctx_author.request_context.lifespan_context = AppContext(
-        arg_map=sample_arg_map, mode="author"
+    # Test in elaborate mode
+    ctx_elaborate = Mock()
+    ctx_elaborate.request_context.lifespan_context = AppContext(
+        arg_map=sample_arg_map, mode="elaborate"
     )
     
-    with patch.object(mcp, 'get_context', return_value=ctx_author):
-        result_author = await node_details_resource(label="C1")
+    with patch.object(mcp, 'get_context', return_value=ctx_elaborate):
+        result_elaborate = await node_details_resource(label="C1")
     
     # Both should be valid
     assert isinstance(result_sketch, str)
-    assert isinstance(result_author, str)
+    assert isinstance(result_elaborate, str)

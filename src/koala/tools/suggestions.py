@@ -37,7 +37,7 @@ def add_suggestions_after_adding_node(
         if any(issue.severity in ["warning", "error"] for issue in tc.issues):
             return
 
-        if tc.mode in ["sketch", "author"]:
+        if tc.mode in ["sketch", "elaborate"]:
             if len(arg_map.list_node_labels()) > 1:
                 tc.suggest(
                     "inspect_graph",
@@ -49,7 +49,7 @@ def add_suggestions_after_adding_node(
             if not arg_map.get_supported(label) and not arg_map.get_attacked(label) and len(arg_map.list_arguments()) > 1:
                 relation_options = {"relation_type": "support"}
                 reason = f"Try to identify an existing argument that is supported by claim `[{label}]`, and declare a corresponding support relation."
-                if tc.mode == "author":
+                if tc.mode == "elaborate":
                     relation_options["target_premise_idx"] = "TARGET_PREMISE_IDX"
                     reason += " Optionally specify the target premise index to connect to the appropriate premise of the argument."
                 tc.suggest(
@@ -64,7 +64,7 @@ def add_suggestions_after_adding_node(
                 )
                 relation_options = {"relation_type": "attack"}
                 reason = f"Try to identify an existing argument that is attacked by claim `[{label}]`, and declare a corresponding attack relation."
-                if tc.mode == "author":
+                if tc.mode == "elaborate":
                     relation_options["target_premise_idx"] = "TARGET_PREMISE_IDX"
                     reason += " Optionally specify the target premise index to connect to the appropriate premise (negated by the claim) of the argument."
                 tc.suggest(
@@ -147,7 +147,7 @@ def add_suggestions_after_adding_node(
 
     elif argument_added := arg_map.get_argument(label):
         # Add suggestions only if no critical issues
-        if any(issue.severity in ["warning", "error"] for issue in tc.issues) and tc.mode in ["sketch", "author"]:
+        if any(issue.severity in ["warning", "error"] for issue in tc.issues) and tc.mode in ["sketch", "elaborate"]:
             return
         
         if len(arg_map.list_node_labels()) > 1:
@@ -198,7 +198,7 @@ def add_suggestions_after_adding_node(
                         reason += f" argument <{target_node.label}>."
                     tc.suggest_support_argument(label=target_node.label, reason=reason)
             
-        if tc.mode == "author":
+        if tc.mode == "elaborate":
 
             tc.suggest(
                 "inspect_node",

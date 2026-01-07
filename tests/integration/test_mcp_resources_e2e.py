@@ -88,14 +88,14 @@ async def test_instructions_resource_sketch(mock_mcp_context: Mock, mode = "sket
 
 
 @pytest.mark.asyncio
-async def test_instructions_resource_author(mock_mcp_context: Mock, mode = "author") -> None:
-    """Test instruction resource for author mode."""
+async def test_instructions_resource_elaborate(mock_mcp_context: Mock, mode = "elaborate") -> None:
+    """Test instruction resource for elaborate mode."""
     with patch.object(mcp, 'get_context', return_value=mock_mcp_context):
         mcp.get_context().request_context.lifespan_context.mode = mode
         result = await instruction_resource()
         
         assert isinstance(result, str)
-        assert "author" in result.lower()
+        assert "elaborate" in result.lower()
 
 
 @pytest.mark.asyncio

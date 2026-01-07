@@ -78,8 +78,8 @@ async def test_edit_tool_updates_claim(mock_context: Mock) -> None:
     # Add a claim first in sketch mode
     await add_claim_sketch(label="C1", ctx=mock_context, proposition="Original")
     
-    # Switch to author mode for editing
-    mock_context.request_context.lifespan_context.mode = "author"
+    # Switch to elaborate mode for editing
+    mock_context.request_context.lifespan_context.mode = "elaborate"
     
     # Edit it (edit is a shared tool, and is synchronous)
     result = edit(
@@ -116,11 +116,11 @@ async def test_mode_tool_switches_mode(mock_context: Mock) -> None:
     """Test switching mode via mode tool."""
     assert mock_context.request_context.lifespan_context.mode == "sketch"
     
-    result = await set_mode(mode="author", ctx=mock_context)
+    result = await set_mode(mode="elaborate", ctx=mock_context)
     
     assert isinstance(result, CallToolResult)
     assert not result.isError
-    assert mock_context.request_context.lifespan_context.mode == "author"
+    assert mock_context.request_context.lifespan_context.mode == "elaborate"
 
 
 async def test_tool_chain_workflow(mock_context: Mock) -> None:
@@ -137,8 +137,8 @@ async def test_tool_chain_workflow(mock_context: Mock) -> None:
     # 3. Connect them
     await connect_sketch(source="A1", target="C1", ctx=mock_context, relation_type="support")
     
-    # 4. Switch to author mode and edit a claim (edit is a shared, synchronous tool)
-    mock_context.request_context.lifespan_context.mode = "author"
+    # 4. Switch to elaborate mode and edit a claim (edit is a shared, synchronous tool)
+    mock_context.request_context.lifespan_context.mode = "elaborate"
     edit(label="C1", field="proposition", ctx=mock_context, edit_options={"new_value": "Updated Claim 1"})
     
     # Verify final state

@@ -31,14 +31,14 @@ async def test_instructions_in_sketch_mode(mock_context: Mock) -> None:
 
 
 @pytest.mark.asyncio
-async def test_instruction_author_mode(mock_context: Mock) -> None:
-    """Test instruction resource for author mode."""
+async def test_instruction_elaborate_mode(mock_context: Mock) -> None:
+    """Test instruction resource for elaborate mode."""
     with patch.object(mcp, 'get_context', return_value=mock_context):
-        mcp.get_context().request_context.lifespan_context.mode = "author"
+        mcp.get_context().request_context.lifespan_context.mode = "elaborate"
         result = await instruction_resource()
         
         assert isinstance(result, str)
-        assert "author" in result.lower()
+        assert "elaborate" in result.lower()
 
 
 @pytest.mark.asyncio
@@ -65,12 +65,12 @@ async def test_instruction_all_modes_different() -> None:
         
         mcp.get_context().request_context.lifespan_context.mode = "sketch"
         sketch = await instruction_resource()
-        mcp.get_context().request_context.lifespan_context.mode = "author"
-        author = await instruction_resource()
+        mcp.get_context().request_context.lifespan_context.mode = "elaborate"
+        elaborate = await instruction_resource()
         mcp.get_context().request_context.lifespan_context.mode = "review"
         review = await instruction_resource()
     
     # Each should be different
-    assert sketch != author
-    assert author != review
+    assert sketch != elaborate
+    assert elaborate != review
     assert sketch != review

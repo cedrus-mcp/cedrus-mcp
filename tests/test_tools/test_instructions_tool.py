@@ -19,12 +19,12 @@ def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
 
 
 @pytest.fixture
-def tool_context_author(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for author mode testing."""
+def tool_context_elaborate(empty_arg_map: ArgumentMap) -> Mock:
+    """Create mock context for elaborate mode testing."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
-        mode="author"
+        mode="elaborate"
     )
     return ctx
 
@@ -53,9 +53,9 @@ async def test_instructions_sketch_mode(tool_context_sketch: Mock) -> None:
     assert len(text_content.text) > 0
 
 
-async def test_instructions_author_mode(tool_context_author: Mock) -> None:
-    """Test instructions tool in author mode."""
-    result = await instructions(ctx=tool_context_author)
+async def test_instructions_elaborate_mode(tool_context_elaborate: Mock) -> None:
+    """Test instructions tool in elaborate mode."""
+    result = await instructions(ctx=tool_context_elaborate)
     
     assert not result.isError
     assert result.content
@@ -106,22 +106,22 @@ async def test_instructions_success_message(tool_context_sketch: Mock) -> None:
 
 async def test_instructions_different_per_mode(
     tool_context_sketch: Mock,
-    tool_context_author: Mock,
+    tool_context_elaborate: Mock,
     tool_context_review: Mock
 ) -> None:
     """Test that instructions may vary by mode."""
     result_sketch = await instructions(ctx=tool_context_sketch)
-    result_author = await instructions(ctx=tool_context_author)
+    result_elaborate = await instructions(ctx=tool_context_elaborate)
     result_review = await instructions(ctx=tool_context_review)
     
     # All should succeed
     assert not result_sketch.isError
-    assert not result_author.isError
+    assert not result_elaborate.isError
     assert not result_review.isError
     
     # All should have content
     assert result_sketch.content
-    assert result_author.content
+    assert result_elaborate.content
     assert result_review.content
 
 
@@ -147,12 +147,12 @@ async def test_instructions_handles_errors_gracefully(
 
 async def test_instructions_available_in_all_modes(
     tool_context_sketch: Mock,
-    tool_context_author: Mock,
+    tool_context_elaborate: Mock,
     tool_context_review: Mock
 ) -> None:
     """Test that instructions is available in all modes."""
     # Instructions is a shared tool, should work in all modes
-    modes = [tool_context_sketch, tool_context_author, tool_context_review]
+    modes = [tool_context_sketch, tool_context_elaborate, tool_context_review]
     
     for ctx in modes:
         result = await instructions(ctx=ctx)

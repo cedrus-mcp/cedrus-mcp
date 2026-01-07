@@ -2,7 +2,7 @@
 
 This module defines all MCP tools for the KOALA argument mapping server.
 Tools are organized into mode-specific variants that expose different signatures
-based on the current editing mode (sketch, author, review).
+based on the current editing mode (sketch, elaborate, review).
 
 Tool Organization:
     **Core Implementations**: Private functions (_*_impl) that contain the
@@ -13,7 +13,7 @@ Tool Organization:
     signatures for each mode. For example:
     
     - add_argument_sketch(label, gist) - Minimal parameters for quick prototyping
-    - add_argument_author(label, gist, premises, conclusion, tags) - Full detail
+    - add_argument_elaborate(label, gist, premises, conclusion, tags) - Full detail
     
     **Shared Tools**: Tools available in all modes with consistent signatures
     (e.g., instructions, inspect_graph).
@@ -23,7 +23,7 @@ Mode System:
       Tools: add_claim, add_argument, connect, remove + shared
       Simple parameters, no tags, no grounding
     
-    - **author**: Detailed argumentation with full structure
+    - **elaborate**: Detailed argumentation with full structure
       Tools: add_claim, add_argument, connect, edit, remove, inspect_node + shared
       Full parameters including tags, premises, conclusion, grounding strategies
     
@@ -59,7 +59,7 @@ Implementation Pattern:
         ) -> CallToolResult:
             return await _my_tool_impl(required_arg, ctx)
         
-        async def my_tool_author(
+        async def my_tool_elaborate(
             required_arg: str,
             ctx: Context,
             optional_arg: str | None = None,
@@ -80,7 +80,7 @@ See Also:
     - koala.models.base: Mode type definition
 """
 
-from typing import Any, Literal
+from typing import Any, Callable, Literal, cast
 from textwrap import dedent
 
 from mcp.server.fastmcp import Context
@@ -98,7 +98,7 @@ from koala.models.base import Mode
 from koala.models.relations import DialecticalRelationType, GroundingStrategy
 import koala.resources
 from koala.server import AppContext
-from koala.tools import relation_authoring, suggestions
+from koala.tools import relation_elaborating, suggestions
 from koala.tools import node_creation, node_updates, node_deletion
 from koala.tools.tool_args import parse_tool_args
 from koala.tools.tool_context import tool_context
@@ -206,7 +206,7 @@ async def _add_argument_impl(
     """Add a new argument node to your argumentation graph.
 
     An argument represents a justification or an objection. In `sketch` mode, provide a 'gist' to summarize the
-    key idea of the argument. In `author` mode, use premises and conclusion to detail its structure. Be clear and
+    key idea of the argument. In `elaborate` mode, use premises and conclusion to detail its structure. Be clear and
     concise in your descriptions. Provide a succinct and informative label that captures
     the essence of the argument and helps you to refer to it easily later on.
 
@@ -262,26 +262,23 @@ async def _add_argument_impl(
             )
             return tc.build()
 
-        kwargs = {
-            "gist": gist,
-            "premises": premises,
-            "conclusion": conclusion,
-            "to_label": None,
-            "from_label": None,
-            "relation_type": "support",
-            "target_premise_idx": None,
-            "tags": tags,
-        }
         try:
             node_creation.new_argument(
                 label=label,
-                **kwargs,
+                gist=gist,
+                premises=premises,
+                conclusion=conclusion,
+                to_label=None,
+                from_label=None,
+                relation_type="support",
+                target_premise_idx=None,
+                tags=tags,
                 metadata=None,
                 arg_map=arg_map,
                 tc=tc,
             )
         except Exception as e:
-            logger.error(f"Error creating argument `{label}` ({kwargs}): {str(e)}")
+            logger.error(f"Error creating argument `{label}` (gist={gist}, premises={premises}, conclusion={conclusion}): {str(e)}")
             return tc.failure(
                 f"✗ Failed to create argument `{label}`: {str(e)}", error=str(e)
             ).build()
@@ -313,15 +310,15 @@ async def _connect_impl(
         target: Label of the target node (being supported/attacked).
         ctx: FastMCP context (auto-injected).
         relation_type: Type of dialectical relation ("support" or "attack").
-        target_premise_idx: Index of specific premise to ground to (author mode only).
-        grounding_strategy: Strategy for automatic grounding (author mode only).
+        target_premise_idx: Index of specific premise to ground to (elaborate mode only).
+        grounding_strategy: Strategy for automatic grounding (elaborate mode only).
     
     Returns:
         CallToolResult with success/failure status and created relation details.
     
     Mode Variants:
         - **Sketch**: ``connect_sketch(source, target, relation_type)`` - no grounding
-        - **Author**: ``connect_author(source, target, relation_type, target_premise_idx, grounding_strategy)`` - with grounding
+        - **Author**: ``connect_elaborate(source, target, relation_type, target_premise_idx, grounding_strategy)`` - with grounding
     
     Grounding Behavior:
         - If target is an ArgumentNode and grounding parameters provided:
@@ -336,7 +333,7 @@ async def _connect_impl(
         
             return await _connect_impl(source, target, ctx, relation_type=relation_type)
         
-        Called by author mode wrapper::
+        Called by elaborate mode wrapper::
         
             return await _connect_impl(
                 source, target, ctx,
@@ -355,8 +352,8 @@ async def _connect_impl(
                     "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
                 ).suggest(
                     "set_mode",
-                    {"mode": "author"},
-                    "Switch to 'author' mode to use grounding strategies.",
+                    {"mode": "elaborate"},
+                    "Switch to 'elaborate' mode to use grounding strategies.",
                 )
                 grounding_strategy = None
             if target_premise_idx is not None:
@@ -364,15 +361,15 @@ async def _connect_impl(
                     "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
                 ).suggest(
                     "set_mode",
-                    {"mode": "author"},
-                    "Switch to 'author' mode to specify target premise index.",
+                    {"mode": "elaborate"},
+                    "Switch to 'elaborate' mode to specify target premise index.",
                 )
                 target_premise_idx = None
         elif mode == "review":
             tc.issue(
                 "info", "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
-                "set_mode", {"mode": "author"}, "Switch to 'author' mode to create new relations."
+                "set_mode", {"mode": "elaborate"}, "Switch to 'elaborate' mode to create new relations."
             ).suggest(
                 "validate",
                 {},
@@ -394,7 +391,7 @@ async def _connect_impl(
             if not arg_map.get_dialectic_relation(args.source, args.target):
                 match args.relation_type:
                     case "support":
-                        return relation_authoring.new_support_relation(
+                        return relation_elaborating.new_support_relation(
                             from_label=args.source,
                             to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
@@ -403,7 +400,7 @@ async def _connect_impl(
                             tc=tc,
                         )
                     case "attack":
-                        return relation_authoring.new_attack_relation(
+                        return relation_elaborating.new_attack_relation(
                             from_label=args.source,
                             to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
@@ -416,7 +413,7 @@ async def _connect_impl(
                             f"Invalid relation type '{args.relation_type}'.",
                             error="InvalidRelationType",
                         ).build()
-            elif mode != "author":
+            elif mode != "elaborate":
                 return (
                     tc.failure(
                         f"Cannot ground existing relation from `{args.source}` to `{args.target}` in '{mode}' mode.",
@@ -424,8 +421,8 @@ async def _connect_impl(
                     )
                     .suggest(
                         "set_mode",
-                        {"mode": "author"},
-                        "Switch to 'author' mode to ground existing relations.",
+                        {"mode": "elaborate"},
+                        "Switch to 'elaborate' mode to ground existing relations.",
                     )
                     .build()
                 )
@@ -438,7 +435,7 @@ async def _connect_impl(
                             "copy_premise",
                         ]:
                             try:
-                                return relation_authoring.ground_support_relation(
+                                return relation_elaborating.ground_support_relation(
                                     from_label=args.source,
                                     to_label=args.target,
                                     strategy=try_grounding_strategy,  # type: ignore
@@ -458,7 +455,7 @@ async def _connect_impl(
                             "negate_premise",
                         ]:
                             try:
-                                return relation_authoring.ground_attack_relation(
+                                return relation_elaborating.ground_attack_relation(
                                     from_label=args.source,
                                     to_label=args.target,
                                     strategy=try_grounding_strategy,  # type: ignore
@@ -501,10 +498,10 @@ async def _connect_impl(
 #
 # Pattern for variants:
 #   - <tool>_sketch: Minimal parameters for rapid prototyping
-#   - <tool>_author: Full parameters for detailed authoring
+#   - <tool>_elaborate: Full parameters for detailed elaborating
 #
 # These wrappers are registered with TOOL_REGISTRY under the SAME external name
-# (e.g., both add_claim_sketch and add_claim_author register as "add_claim").
+# (e.g., both add_claim_sketch and add_claim_elaborate register as "add_claim").
 # When mode changes, the registry swaps which variant is active.
 
 # add_claim variants
@@ -522,13 +519,13 @@ async def add_claim_sketch(
     return await _add_claim_impl(label, ctx, proposition=proposition, tags=None)
 
 
-async def add_claim_author(
+async def add_claim_elaborate(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     proposition: str | None = None,
     tags: list[str] | None = None,
 ) -> CallToolResult:
-    """Add a new claim node (author mode - with tags).
+    """Add a new claim node (elaborate mode - with tags).
 
     Args:
         label: Succinct and informative title
@@ -553,7 +550,7 @@ async def add_argument_sketch(
     return await _add_argument_impl(label, ctx, gist=gist)
 
 
-async def add_argument_author(
+async def add_argument_elaborate(
     label: NodeLabel,
     ctx: Context[ServerSession, AppContext],
     gist: str | None = None,
@@ -561,7 +558,7 @@ async def add_argument_author(
     conclusion: str | None = None,
     tags: list[str] | None = None,
 ) -> CallToolResult:
-    """Add a new argument node (author mode - full structure).
+    """Add a new argument node (elaborate mode - full structure).
 
     Args:
         label: Succinct and informative title
@@ -592,7 +589,7 @@ async def connect_sketch(
     return await _connect_impl(source, target, ctx, relation_type=relation_type)
 
 
-async def connect_author(
+async def connect_elaborate(
     source: str,
     target: str,
     ctx: Context[ServerSession, AppContext],
@@ -600,7 +597,7 @@ async def connect_author(
     target_premise_idx: int | None = None,
     grounding_strategy: GroundingStrategy | None = None,
 ) -> CallToolResult:
-    """Create a relation (author mode - with grounding).
+    """Create a relation (elaborate mode - with grounding).
 
     Args:
         source: Source node label
@@ -622,7 +619,7 @@ async def connect_author(
 ##############################################
 # These tools have consistent signatures across all modes (or specific subsets).
 # They don't need variants - the same function is used regardless of mode.
-# Examples: edit (author only), validate (review only), instructions (all modes)
+# Examples: edit (elaborate only), validate (review only), instructions (all modes)
 
 def edit(
     label: NodeLabel,
@@ -834,7 +831,7 @@ def remove(
                         tc=tc,
                     )
             elif source and target:
-                return relation_authoring.delete_relation(
+                return relation_elaborating.delete_relation(
                     from_label=source,
                     to_label=target,
                     arg_map=arg_map,
@@ -1121,20 +1118,20 @@ async def set_mode(
     """Switch the argument map editing mode.
 
     Args:
-        mode: The mode to switch to ("sketch", "author", or "review").
+        mode: The mode to switch to ("sketch", "elaborate", or "review").
 
     Example usage:
 
-        set_mode("author")
+        set_mode("elaborate")
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
     old_mode = ctx.request_context.lifespan_context.mode
 
     with tool_context(arg_map, mode) as tc:
-        if mode not in ["sketch", "author", "review"]:
+        if mode not in ["sketch", "elaborate", "review"]:
             return tc.failure(
-                f"Invalid mode '{mode}'. Valid modes are 'sketch', 'author', and 'review'.",
+                f"Invalid mode '{mode}'. Valid modes are 'sketch', 'elaborate', and 'review'.",
                 error="InvalidMode",
             ).build()
 
@@ -1192,7 +1189,7 @@ async def _update_tools_for_mode(
                   the overall process.
     
     Example:
-        Switching from sketch to author mode::
+        Switching from sketch to elaborate mode::
         
             # Sketch tools: {add_claim, add_argument, connect, remove, ...shared}
             # Author tools: {add_claim, add_argument, connect, edit, remove, inspect_node, ...shared}
@@ -1255,7 +1252,7 @@ async def _update_tools_for_mode(
 ##############################################
 
 # Register tool variants for each mode
-def _register_tool_variants():
+def _register_tool_variants() -> None:
     """Register all tool variants with the tool registry.
     
     Called once at module load time to populate TOOL_REGISTRY with all
@@ -1269,7 +1266,7 @@ def _register_tool_variants():
             - remove (full)
             - *All shared tools*
         
-        **Author Mode** (detailed authoring):
+        **Author Mode** (detailed elaborating):
             - add_claim (full: label, proposition, tags)
             - add_argument (full: label, gist, premises, conclusion, tags)
             - connect (full: source, target, relation_type, target_premise_idx, grounding_strategy)
@@ -1301,7 +1298,7 @@ def _register_tool_variants():
     Notes:
         - Tools with the same ``name`` but different ``modes`` create variants
           that swap when modes change.
-        - Tools with ``modes=["sketch", "author", "review"]`` are shared across
+        - Tools with ``modes=["sketch", "elaborate", "review"]`` are shared across
           all modes and never swapped.
         - This function is idempotent and safe to call multiple times (though
           currently only called once at module import).
@@ -1320,15 +1317,15 @@ def _register_tool_variants():
             
             # Author variant
             TOOL_REGISTRY.register_variant(ToolVariant(
-                fn=add_argument_author,
+                fn=add_argument_elaborate,
                 name="add_argument",        # Same name
-                internal_name="add_argument_author",
-                modes=["author"],
-                description="Add argument (author mode - full structure)"
+                internal_name="add_argument_elaborate",
+                modes=["elaborate"],
+                description="Add argument (elaborate mode - full structure)"
             ))
     """
     
-    # add_claim variants (sketch and author)
+    # add_claim variants (sketch and elaborate)
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=add_claim_sketch,
         name="add_claim",
@@ -1351,10 +1348,10 @@ def _register_tool_variants():
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
-        fn=add_claim_author,
+        fn=add_claim_elaborate,
         name="add_claim",
-        internal_name="add_claim_author",
-        modes=["author"],
+        internal_name="add_claim_elaborate",
+        modes=["elaborate"],
         description=dedent(
             """Add a new claim node to your argumentation graph.
 
@@ -1373,7 +1370,7 @@ def _register_tool_variants():
         )
     ))
     
-    # add_argument variants (sketch and author)
+    # add_argument variants (sketch and elaborate)
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=add_argument_sketch,
         name="add_argument",
@@ -1397,10 +1394,10 @@ def _register_tool_variants():
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
-        fn=add_argument_author,
+        fn=add_argument_elaborate,
         name="add_argument",
-        internal_name="add_argument_author",
-        modes=["author"],
+        internal_name="add_argument_elaborate",
+        modes=["elaborate"],
         description=dedent(
             """Add a new argument node to your argumentation graph.
 
@@ -1423,7 +1420,7 @@ def _register_tool_variants():
         )
     ))
     
-    # connect variants (sketch and author)
+    # connect variants (sketch and elaborate)
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=connect_sketch,
         name="connect",
@@ -1441,10 +1438,10 @@ def _register_tool_variants():
     ))
     
     TOOL_REGISTRY.register_variant(ToolVariant(
-        fn=connect_author,
+        fn=connect_elaborate,
         name="connect",
-        internal_name="connect_author",
-        modes=["author"],
+        internal_name="connect_elaborate",
+        modes=["elaborate"],
         description=dedent(
             """Connect two nodes in your argumentation graph and optionally ground the dialectical relation.
 
@@ -1479,12 +1476,12 @@ def _register_tool_variants():
         )
     ))
     
-    # edit - author mode only
+    # edit - elaborate mode only
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=edit,
         name="edit",
         internal_name="edit",
-        modes=["author"],
+        modes=["elaborate"],
         description=dedent("""Edit an existing node in the argument map.
 
             Args:
@@ -1512,12 +1509,12 @@ def _register_tool_variants():
         )
     ))
     
-    # remove - sketch and author modes
+    # remove - sketch and elaborate modes
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=remove,
         name="remove",
         internal_name="remove",
-        modes=["sketch", "author"],
+        modes=["sketch", "elaborate"],
         description=dedent(
             """Remove an existing node or relation from the argument map.
 
@@ -1541,12 +1538,12 @@ def _register_tool_variants():
         )
     ))
     
-    # inspect_node - author and review modes
+    # inspect_node - elaborate and review modes
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=inspect_node,
         name="inspect_node",
         internal_name="inspect_node",
-        modes=["author", "review"],
+        modes=["elaborate", "review"],
         description=dedent(
             """Show detailed information about a specific node in the argument map.
             
@@ -1573,10 +1570,10 @@ def _register_tool_variants():
         (set_mode, "set_mode", "Switch the argument map editing mode"),
     ]:
         TOOL_REGISTRY.register_variant(ToolVariant(
-            fn=shared_tool_fn,
+            fn=cast(Callable[..., Any], shared_tool_fn),
             name=tool_name,
             internal_name=tool_name,
-            modes=["sketch", "author", "review"],
+            modes=["sketch", "elaborate", "review"],
             description=description
         ))
 

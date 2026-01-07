@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import inspect_node, add_claim_author, add_argument_author
+from koala.tools.tools import inspect_node, add_claim_elaborate, add_argument_elaborate
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 from koala.models import Proposition, ClaimNode
@@ -10,11 +10,11 @@ from koala.models import Proposition, ClaimNode
 
 @pytest.fixture
 def tool_context(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for tool testing in author mode."""
+    """Create mock context for tool testing in elaborate mode."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
-        mode="author"
+        mode="elaborate"
     )
     return ctx
 
@@ -33,7 +33,7 @@ def tool_context_review(empty_arg_map: ArgumentMap) -> Mock:
 async def test_inspect_claim_node(tool_context: Mock) -> None:
     """Test inspecting a claim node."""
     # Add a claim
-    await add_claim_author(
+    await add_claim_elaborate(
         label="C1",
         ctx=tool_context,
         proposition="This is a test claim",
@@ -50,7 +50,7 @@ async def test_inspect_claim_node(tool_context: Mock) -> None:
 async def test_inspect_argument_node(tool_context: Mock) -> None:
     """Test inspecting an argument node."""
     # Add an argument
-    await add_argument_author(
+    await add_argument_elaborate(
         label="A1",
         ctx=tool_context,
         gist="Test argument gist",
@@ -70,9 +70,9 @@ async def test_inspect_node_with_relations(tool_context: Mock) -> None:
     arg_map = tool_context.request_context.lifespan_context.arg_map
     
     # Create nodes with relations
-    await add_claim_author(label="C1", ctx=tool_context, proposition="Claim 1")
-    await add_claim_author(label="C2", ctx=tool_context, proposition="Claim 2")
-    await add_argument_author(label="A1", ctx=tool_context, gist="Argument 1")
+    await add_claim_elaborate(label="C1", ctx=tool_context, proposition="Claim 1")
+    await add_claim_elaborate(label="C2", ctx=tool_context, proposition="Claim 2")
+    await add_argument_elaborate(label="A1", ctx=tool_context, gist="Argument 1")
     
     # Add relations
     arg_map.add_support_relation(from_label="A1", to_label="C1")
@@ -101,7 +101,7 @@ async def test_inspect_nonexistent_node(tool_context: Mock) -> None:
 async def test_inspect_node_suggests_similar(tool_context: Mock) -> None:
     """Test that inspecting nonexistent node suggests similar labels."""
     # Add a node with similar label
-    await add_claim_author(label="TestClaim", ctx=tool_context, proposition="Test")
+    await add_claim_elaborate(label="TestClaim", ctx=tool_context, proposition="Test")
     
     result = await inspect_node(label="TestClam", ctx=tool_context)  # Typo
     
@@ -126,7 +126,7 @@ async def test_inspect_node_in_review_mode(tool_context_review: Mock) -> None:
 
 async def test_inspect_node_with_tags(tool_context: Mock) -> None:
     """Test that inspect_node shows tags."""
-    await add_claim_author(
+    await add_claim_elaborate(
         label="C1",
         ctx=tool_context,
         proposition="Test",
@@ -141,7 +141,7 @@ async def test_inspect_node_with_tags(tool_context: Mock) -> None:
 
 async def test_inspect_isolated_node(tool_context: Mock) -> None:
     """Test inspecting an isolated node with no relations."""
-    await add_claim_author(
+    await add_claim_elaborate(
         label="IsolatedClaim",
         ctx=tool_context,
         proposition="I am alone"
@@ -174,7 +174,7 @@ async def test_inspect_node_with_metadata(tool_context: Mock) -> None:
 
 async def test_inspect_node_embeds_resource(tool_context: Mock) -> None:
     """Test that inspect_node properly embeds resource."""
-    await add_claim_author(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim_elaborate(label="C1", ctx=tool_context, proposition="Test")
     
     result = await inspect_node(label="C1", ctx=tool_context)
     

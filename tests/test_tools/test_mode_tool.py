@@ -25,14 +25,14 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     return ctx
 
 
-async def test_mode_switch_to_author(tool_context: Mock) -> None:
-    """Test switching to author mode."""
+async def test_mode_switch_to_elaborate(tool_context: Mock) -> None:
+    """Test switching to elaborate mode."""
     assert tool_context.request_context.lifespan_context.mode == "sketch"
     
-    result = await set_mode(mode="author", ctx=tool_context)
+    result = await set_mode(mode="elaborate", ctx=tool_context)
     
     assert not result.isError
-    assert tool_context.request_context.lifespan_context.mode == "author"
+    assert tool_context.request_context.lifespan_context.mode == "elaborate"
     # Verify tool_list_changed notification was sent
     tool_context.session.send_tool_list_changed.assert_called_once()
 
@@ -48,7 +48,7 @@ async def test_mode_switch_to_review(tool_context: Mock) -> None:
 
 async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
     """Test switching to sketch mode."""
-    tool_context.request_context.lifespan_context.mode = "author"
+    tool_context.request_context.lifespan_context.mode = "elaborate"
     
     result = await set_mode(mode="sketch", ctx=tool_context)
     

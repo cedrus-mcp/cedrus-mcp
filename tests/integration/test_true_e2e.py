@@ -40,11 +40,11 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "add_argument" in tool_names
             assert "connect" in tool_names
             assert "remove" in tool_names
-            # edit is author-only, so it should NOT be in sketch mode
+            # edit is elaborate-only, so it should NOT be in sketch mode
             assert "edit" not in tool_names
             # validate is review-only
             assert "validate" not in tool_names
-            # inspect_node is author/review-only
+            # inspect_node is elaborate/review-only
             assert "inspect_node" not in tool_names
             
             # Shared tools (available in all modes)
@@ -135,17 +135,17 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             node_text: str = node_resource.contents[0].text
             assert "C1" in node_text
             
-            # Call tool: switch mode to author (needed for edit tool)
+            # Call tool: switch mode to elaborate (needed for edit tool)
             mode_result: Any = await session.call_tool(
                 "set_mode",
                 arguments={
-                    "mode": "author"
+                    "mode": "elaborate"
                 }
             )
             
             assert not mode_result.isError
             
-            # Call tool: edit a claim (only available in author mode)
+            # Call tool: edit a claim (only available in elaborate mode)
             edit_result: Any = await session.call_tool(
                 "edit",
                 arguments={
@@ -159,14 +159,14 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             assert not edit_result.isError
             
-            # Read instructions resource for author mode
+            # Read instructions resource for elaborate mode
             instructions_resource: Any = await session.read_resource(
                 uri=TypeAdapter(AnyUrl).validate_python("argmap://instructions")
             )
             
             assert len(instructions_resource.contents) > 0
             instructions_text: str = instructions_resource.contents[0].text
-            assert "author" in instructions_text.lower()
+            assert "elaborate" in instructions_text.lower()
             
             # # Check if GraphViz is installed
             # graphviz_path: str | None = shutil.which("dot")

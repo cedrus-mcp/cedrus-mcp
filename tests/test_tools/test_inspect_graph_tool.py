@@ -169,8 +169,8 @@ async def test_inspect_graph_different_modes(tool_context: Mock) -> None:
     result = await inspect_graph(ctx=tool_context)
     assert not result.isError
     
-    # Switch to author mode
-    tool_context.request_context.lifespan_context.mode = "author"
+    # Switch to elaborate mode
+    tool_context.request_context.lifespan_context.mode = "elaborate"
     result = await inspect_graph(ctx=tool_context)
     assert not result.isError
     

@@ -4,9 +4,9 @@ import pytest
 from unittest.mock import Mock, patch
 from koala.tools.tools import (
     add_claim_sketch,
-    add_claim_author,
+    add_claim_elaborate,
     add_argument_sketch,
-    add_argument_author,
+    add_argument_elaborate,
 )
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -24,12 +24,12 @@ def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
 
 
 @pytest.fixture
-def tool_context_author(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for author mode testing."""
+def tool_context_elaborate(empty_arg_map: ArgumentMap) -> Mock:
+    """Create mock context for elaborate mode testing."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
-        mode="author"
+        mode="elaborate"
     )
     return ctx
 
@@ -52,17 +52,17 @@ async def test_add_claim_sketch(tool_context_sketch: Mock) -> None:
     assert prop.content == "Test claim"
 
 
-async def test_add_claim_author(tool_context_author: Mock) -> None:
-    """Test adding a claim in author mode with tags."""
-    result = await add_claim_author(
+async def test_add_claim_elaborate(tool_context_elaborate: Mock) -> None:
+    """Test adding a claim in elaborate mode with tags."""
+    result = await add_claim_elaborate(
         label="C1",
-        ctx=tool_context_author,
+        ctx=tool_context_elaborate,
         proposition="Test claim",
         tags=["tag1", "tag2"]
     )
     
     assert not result.isError
-    arg_map = tool_context_author.request_context.lifespan_context.arg_map
+    arg_map = tool_context_elaborate.request_context.lifespan_context.arg_map
     node = arg_map.get_node("C1")
     assert node is not None
     assert node.tags == ["tag1", "tag2"]
@@ -83,11 +83,11 @@ async def test_add_argument_sketch(tool_context_sketch: Mock) -> None:
     assert node.gist == "Test argument"
 
 
-async def test_add_argument_author(tool_context_author: Mock) -> None:
-    """Test adding an argument in author mode with full structure."""
-    result = await add_argument_author(
+async def test_add_argument_elaborate(tool_context_elaborate: Mock) -> None:
+    """Test adding an argument in elaborate mode with full structure."""
+    result = await add_argument_elaborate(
         label="A1",
-        ctx=tool_context_author,
+        ctx=tool_context_elaborate,
         gist="Test argument",
         premises=["Premise 1", "Premise 2"],
         conclusion="Conclusion",
@@ -95,7 +95,7 @@ async def test_add_argument_author(tool_context_author: Mock) -> None:
     )
     
     assert not result.isError
-    arg_map = tool_context_author.request_context.lifespan_context.arg_map
+    arg_map = tool_context_elaborate.request_context.lifespan_context.arg_map
     node = arg_map.get_node("A1")
     assert node is not None
     assert node.gist == "Test argument"

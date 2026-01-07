@@ -2,18 +2,18 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import add_claim_author, add_argument_author, edit
+from koala.tools.tools import add_claim_elaborate, add_argument_elaborate, edit
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture
 def tool_context(empty_arg_map: ArgumentMap) -> Mock:
-    """Create mock context for tool testing in author mode."""
+    """Create mock context for tool testing in elaborate mode."""
     ctx = Mock()
     ctx.request_context.lifespan_context = AppContext(
         arg_map=empty_arg_map,
-        mode="author"  # edit is only available in author mode
+        mode="elaborate"  # edit is only available in elaborate mode
     )
     return ctx
 
@@ -21,7 +21,7 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
 async def test_edit_claim_proposition(tool_context: Mock) -> None:
     """Test editing a claim's proposition."""
     # Add a claim
-    await add_claim_author(label="C1", ctx=tool_context, proposition="Original")
+    await add_claim_elaborate(label="C1", ctx=tool_context, proposition="Original")
     
     # Edit it
     result = edit(
@@ -41,7 +41,7 @@ async def test_edit_claim_proposition(tool_context: Mock) -> None:
 async def test_edit_argument_gist(tool_context: Mock) -> None:
     """Test editing an argument's gist."""
     # Add an argument
-    await add_argument_author(
+    await add_argument_elaborate(
         label="A1",
         ctx=tool_context,
         gist="Original gist"
@@ -64,7 +64,7 @@ async def test_edit_argument_gist(tool_context: Mock) -> None:
 async def test_edit_argument_conclusion(tool_context: Mock) -> None:
     """Test editing an argument's conclusion."""
     # Add an argument
-    await add_argument_author(
+    await add_argument_elaborate(
         label="A1",
         ctx=tool_context,
         gist="Argument",
@@ -101,7 +101,7 @@ def test_edit_nonexistent_node_fails(tool_context: Mock) -> None:
 async def test_edit_tags(tool_context: Mock) -> None:
     """Test editing tags on a node."""
     # Add a claim
-    await add_claim_author(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim_elaborate(label="C1", ctx=tool_context, proposition="Test")
     
     # Add a tag
     result = edit(
@@ -117,7 +117,7 @@ async def test_edit_tags(tool_context: Mock) -> None:
 async def test_edit_metadata(tool_context: Mock) -> None:
     """Test editing metadata on a node."""
     # Add a claim
-    await add_claim_author(label="C1", ctx=tool_context, proposition="Test")
+    await add_claim_elaborate(label="C1", ctx=tool_context, proposition="Test")
     
     # Add metadata
     result = edit(

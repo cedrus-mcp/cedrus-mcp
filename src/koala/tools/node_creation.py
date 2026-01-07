@@ -202,14 +202,14 @@ def new_argument(
             from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
         )
         tc.issue("info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
-        if tc.mode == "author":
+        if tc.mode == "elaborate":
             maybe_ground_relation(
                 label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
             )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
         tc.issue("info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
-        if tc.mode == "author":
+        if tc.mode == "elaborate":
             maybe_ground_relation(
                 from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
             )
@@ -219,7 +219,7 @@ def new_argument(
     if refreshed_argument_node is None:
         raise RuntimeError(f"Failed to retrieve argument node `<{label}>` after creation.")
     argument_node = refreshed_argument_node
-    details = bool(premise_nodes or conclusion_node or tc.mode in ["review", "author"])
+    details = bool(premise_nodes or conclusion_node or tc.mode in ["review", "elaborate"])
     tc.success(
         f"✓ Created new argument node `<{label}>`.",
         result=render_argdown_node(arg_map, label, details=details),

@@ -1,7 +1,7 @@
 """Completeness validation checks."""
 
 from koala.graph.argument_map import ArgumentMap
-from koala.tools import relation_authoring
+from koala.tools import relation_elaborating
 from koala.tools.tool_context import ToolContext
 from koala.utils.relations import has_grounding
 
@@ -35,7 +35,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                     issues_found += 1
                     if fix:
                         # automatically add the missing support relation
-                        _ = relation_authoring.new_support_relation(
+                        _ = relation_elaborating.new_support_relation(
                             from_label=from_label,
                             to_label=to_label,
                             target_premise_idx=None,
@@ -65,7 +65,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                     issues_found += 1
                     if fix:
                         # automatically add the missing attack relation
-                        _ = relation_authoring.new_attack_relation(
+                        _ = relation_elaborating.new_attack_relation(
                             from_label=from_label,
                             to_label=to_label,
                             target_premise_idx=None,

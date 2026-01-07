@@ -29,24 +29,24 @@ def add_argument_node(arg_map: ArgumentMap, gist: str) -> str:
     return label
 
 
-def test_check_core_content_empty_map(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_empty_map(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test core content check on empty map."""
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_core_content_claim_with_proposition(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_claim_with_proposition(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that claim with valid proposition has no issues."""
     prop = Proposition(content="Valid proposition content")
     empty_map.add_proposition(prop)
     claim = ClaimNode(label="C1", proposition_id=prop.id)
     empty_map.add_claim(claim)
     
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_core_content_claim_missing_proposition(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_claim_missing_proposition(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of claim with empty proposition."""
     prop = Proposition(content="")
     empty_map.add_proposition(prop)
@@ -54,11 +54,11 @@ def test_check_core_content_claim_missing_proposition(empty_map: ArgumentMap, au
     empty_map.add_claim(claim)
     
     # Should detect missing proposition
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 1
 
 
-def test_check_core_content_claim_whitespace_only_proposition(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_claim_whitespace_only_proposition(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of claim with whitespace-only proposition."""
     prop = Proposition(content="   \n\t  ")
     empty_map.add_proposition(prop)
@@ -66,40 +66,40 @@ def test_check_core_content_claim_whitespace_only_proposition(empty_map: Argumen
     empty_map.add_claim(claim)
     
     # Should detect empty proposition (after strip)
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 1
 
 
-def test_check_core_content_argument_with_gist(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_argument_with_gist(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that argument with valid gist has no issues."""
     arg = ArgumentNode(label="A1", gist="Valid gist content")
     empty_map.add_argument(arg)
     
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_core_content_argument_missing_gist(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_argument_missing_gist(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of argument with empty gist."""
     arg = ArgumentNode(label="A1", gist="")
     empty_map.add_argument(arg)
     
     # Should detect missing gist
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 1
 
 
-def test_check_core_content_argument_whitespace_only_gist(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_argument_whitespace_only_gist(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of argument with whitespace-only gist."""
     arg = ArgumentNode(label="A1", gist="   \n  ")
     empty_map.add_argument(arg)
     
     # Should detect empty gist (after strip)
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     assert issues == 1
 
 
-def test_check_core_content_respects_max_issues(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_respects_max_issues(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that max_issues parameter limits reported issues."""
     # Create multiple nodes with missing content
     for i in range(5):
@@ -109,7 +109,7 @@ def test_check_core_content_respects_max_issues(empty_map: ArgumentMap, author_c
         empty_map.add_claim(claim)
     
     # With max_issues=2, should stop after 2 issues
-    issues = check_core_content(empty_map, author_context, max_issues=2)
+    issues = check_core_content(empty_map, elaborate_context, max_issues=2)
     assert issues <= 2
 
 
@@ -128,17 +128,17 @@ def test_check_core_content_generates_suggestions_in_sketch_mode(empty_map: Argu
     assert isinstance(suggestions, list)
 
 
-def test_check_core_content_generates_edit_suggestions(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_core_content_generates_edit_suggestions(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that suggestions include edit tool suggestions."""
     prop = Proposition(content="")
     empty_map.add_proposition(prop)
     claim = ClaimNode(label="C1", proposition_id=prop.id)
     empty_map.add_claim(claim)
     
-    issues = check_core_content(empty_map, author_context)
+    issues = check_core_content(empty_map, elaborate_context)
     
     # Should generate edit suggestions
-    suggestions = author_context.suggestions
+    suggestions = elaborate_context.suggestions
     assert issues == 1
     assert isinstance(suggestions, list)
 
@@ -146,22 +146,22 @@ def test_check_core_content_generates_edit_suggestions(empty_map: ArgumentMap, a
 # Tests for check_argument_structure
 
 
-def test_check_argument_structure_empty_map(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_empty_map(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test argument structure check on empty map."""
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_argument_structure_claim_node_no_check(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_claim_node_no_check(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that claim nodes are not checked by argument structure validation."""
     add_claim_node(empty_map, "Claim")
     
     # Claim nodes don't need premises/conclusion structure
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_argument_structure_valid_argument(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_valid_argument(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that argument with premises and conclusion has no issues."""
     # Create premises
     p1 = Proposition(content="Premise 1")
@@ -177,11 +177,11 @@ def test_check_argument_structure_valid_argument(empty_map: ArgumentMap, author_
     arg = ArgumentNode(label="A1", gist="Valid Arg", premises=[p1.id, p2.id], conclusion=c.id)
     empty_map.add_argument(arg)
     
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_argument_structure_missing_conclusion(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_missing_conclusion(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of argument missing conclusion."""
     # Create premise
     p = Proposition(content="Premise")
@@ -192,11 +192,11 @@ def test_check_argument_structure_missing_conclusion(empty_map: ArgumentMap, aut
     empty_map.add_argument(arg)
     
     # Should detect missing conclusion
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues >= 1
 
 
-def test_check_argument_structure_missing_premises(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_missing_premises(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of argument with no premises."""
     # Create conclusion
     c = Proposition(content="Conclusion")
@@ -207,22 +207,22 @@ def test_check_argument_structure_missing_premises(empty_map: ArgumentMap, autho
     empty_map.add_argument(arg)
     
     # Should detect missing premises
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues >= 1
 
 
-def test_check_argument_structure_missing_both(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_missing_both(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of argument missing both premises and conclusion."""
     # Create argument with neither premises nor conclusion
     arg = ArgumentNode(label="A1", gist="Incomplete", premises=[], conclusion="")
     empty_map.add_argument(arg)
     
     # Should detect both missing premises and conclusion
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues >= 2
 
 
-def test_check_argument_structure_respects_max_issues(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_respects_max_issues(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that max_issues parameter limits reported issues."""
     # Create multiple incomplete arguments
     for i in range(5):
@@ -230,7 +230,7 @@ def test_check_argument_structure_respects_max_issues(empty_map: ArgumentMap, au
         empty_map.add_argument(arg)
     
     # With max_issues=3, should stop after 3 issues
-    issues = check_argument_structure(empty_map, author_context, max_issues=3)
+    issues = check_argument_structure(empty_map, elaborate_context, max_issues=3)
     assert issues <= 3
 
 
@@ -247,20 +247,20 @@ def test_check_argument_structure_generates_mode_switch_suggestions_in_sketch(em
     assert isinstance(suggestions, list)
 
 
-def test_check_argument_structure_generates_edit_suggestions(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_generates_edit_suggestions(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that suggestions include edit tool suggestions."""
     arg = ArgumentNode(label="A1", gist="Incomplete", premises=[], conclusion="")
     empty_map.add_argument(arg)
     
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     
     # Should generate edit suggestions
-    suggestions = author_context.suggestions
+    suggestions = elaborate_context.suggestions
     assert issues >= 1
     assert isinstance(suggestions, list)
 
 
-def test_check_argument_structure_single_premise_valid(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_single_premise_valid(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that argument with single premise is valid."""
     # Create premise
     p = Proposition(content="Only Premise")
@@ -275,11 +275,11 @@ def test_check_argument_structure_single_premise_valid(empty_map: ArgumentMap, a
     empty_map.add_argument(arg)
     
     # Should be valid with one premise
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_argument_structure_multiple_premises_valid(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_argument_structure_multiple_premises_valid(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that argument with multiple premises is valid."""
     # Create multiple premises
     premises = []
@@ -297,5 +297,5 @@ def test_check_argument_structure_multiple_premises_valid(empty_map: ArgumentMap
     empty_map.add_argument(arg)
     
     # Should be valid with multiple premises
-    issues = check_argument_structure(empty_map, author_context)
+    issues = check_argument_structure(empty_map, elaborate_context)
     assert issues == 0

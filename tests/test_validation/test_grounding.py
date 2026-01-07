@@ -29,23 +29,23 @@ def add_argument_node(arg_map: ArgumentMap, gist: str) -> str:
     return label
 
 
-def test_check_grounding_empty_map(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_empty_map(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test grounding check on empty map."""
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_grounding_no_relations(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_no_relations(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test grounding check with nodes but no relations."""
     add_claim_node(empty_map, "Claim1")
     add_claim_node(empty_map, "Claim2")
     
     # No relations to check
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     assert issues == 0
 
 
-def test_check_grounding_properly_grounded_support(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_properly_grounded_support(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that properly grounded support relation has no issues."""
     # Create argument with premise and conclusion
     arg_label = add_argument_node(empty_map, "Arg1")
@@ -73,13 +73,13 @@ def test_check_grounding_properly_grounded_support(empty_map: ArgumentMap, autho
         empty_map.add_support_relation(arg_label, claim_label)
     
     # Should not detect grounding issues if properly grounded
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # Test completes successfully
     assert isinstance(issues, int)
 
 
-def test_check_grounding_ungrounded_support_relation(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_ungrounded_support_relation(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of ungrounded support relation."""
     # Create two claims with no internal grounding structure
     c1 = add_claim_node(empty_map, "Claim1")
@@ -89,13 +89,13 @@ def test_check_grounding_ungrounded_support_relation(empty_map: ArgumentMap, aut
     empty_map.add_support_relation(c1, c2)
     
     # Should detect ungrounded relation
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # May or may not find issues depending on internal structure
     assert isinstance(issues, int)
 
 
-def test_check_grounding_properly_grounded_attack(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_properly_grounded_attack(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that properly grounded attack relation has no issues."""
     # Create argument attacking a claim
     arg_label = add_argument_node(empty_map, "Arg1")
@@ -131,13 +131,13 @@ def test_check_grounding_properly_grounded_attack(empty_map: ArgumentMap, author
         empty_map.add_attack_relation(arg_label, claim_label)
     
     # Should not detect grounding issues if properly grounded
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # Test completes successfully
     assert isinstance(issues, int)
 
 
-def test_check_grounding_ungrounded_attack_relation(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_ungrounded_attack_relation(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test detection of ungrounded attack relation."""
     # Create two claims with no internal grounding for attack
     c1 = add_claim_node(empty_map, "Claim1")
@@ -147,13 +147,13 @@ def test_check_grounding_ungrounded_attack_relation(empty_map: ArgumentMap, auth
     empty_map.add_attack_relation(c1, c2)
     
     # Should detect ungrounded attack relation
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # May or may not find issues depending on internal structure
     assert isinstance(issues, int)
 
 
-def test_check_grounding_respects_max_issues(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_respects_max_issues(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that max_issues parameter limits reported issues."""
     # Create multiple ungrounded relations
     claims = []
@@ -166,12 +166,12 @@ def test_check_grounding_respects_max_issues(empty_map: ArgumentMap, author_cont
         empty_map.add_support_relation(claims[i], claims[i + 1])
     
     # With max_issues=2, should stop after 2 issues
-    issues = check_grounding(empty_map, author_context, max_issues=2)
+    issues = check_grounding(empty_map, elaborate_context, max_issues=2)
     
     assert issues <= 2
 
 
-def test_check_grounding_generates_error_level_issues(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_generates_error_level_issues(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that grounding issues are marked as errors."""
     # Create ungrounded relation
     c1 = add_claim_node(empty_map, "Claim1")
@@ -179,13 +179,13 @@ def test_check_grounding_generates_error_level_issues(empty_map: ArgumentMap, au
     empty_map.add_support_relation(c1, c2)
     
     # Check for issues
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # Test completes successfully
     assert isinstance(issues, int)
 
 
-def test_check_grounding_generates_suggestions(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_generates_suggestions(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that grounding check generates suggestions."""
     # Create ungrounded relation
     c1 = add_claim_node(empty_map, "Claim1")
@@ -193,16 +193,16 @@ def test_check_grounding_generates_suggestions(empty_map: ArgumentMap, author_co
     empty_map.add_support_relation(c1, c2)
     
     # Check for issues
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     # Should generate suggestions
-    suggestions = author_context.suggestions
+    suggestions = elaborate_context.suggestions
     
     assert isinstance(issues, int)
     assert isinstance(suggestions, list)
 
 
-def test_check_grounding_checks_all_support_relations(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_checks_all_support_relations(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that all support relations are checked."""
     # Create multiple support relations
     claims = []
@@ -215,12 +215,12 @@ def test_check_grounding_checks_all_support_relations(empty_map: ArgumentMap, au
         empty_map.add_support_relation(claims[i], claims[i + 1])
     
     # Should check all support relations
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     assert isinstance(issues, int)
 
 
-def test_check_grounding_checks_all_attack_relations(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_checks_all_attack_relations(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that all attack relations are checked."""
     # Create multiple attack relations
     claims = []
@@ -233,12 +233,12 @@ def test_check_grounding_checks_all_attack_relations(empty_map: ArgumentMap, aut
         empty_map.add_attack_relation(claims[i], claims[i + 1])
     
     # Should check all attack relations
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     assert isinstance(issues, int)
 
 
-def test_check_grounding_mixed_relation_types(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_mixed_relation_types(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test grounding check with both support and attack relations."""
     claims = []
     for i in range(3):
@@ -250,12 +250,12 @@ def test_check_grounding_mixed_relation_types(empty_map: ArgumentMap, author_con
     empty_map.add_attack_relation(claims[1], claims[2])
     
     # Should check both types
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     assert isinstance(issues, int)
 
 
-def test_check_grounding_fix_parameter_has_no_effect(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_fix_parameter_has_no_effect(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that fix parameter doesn't auto-fix grounding (can't be auto-fixed)."""
     # Create ungrounded relation
     c1 = add_claim_node(empty_map, "Claim1")
@@ -263,19 +263,19 @@ def test_check_grounding_fix_parameter_has_no_effect(empty_map: ArgumentMap, aut
     empty_map.add_support_relation(c1, c2)
     
     # Count issues without fix
-    issues_no_fix = check_grounding(empty_map, author_context, fix=False)
+    issues_no_fix = check_grounding(empty_map, elaborate_context, fix=False)
     
     # Reset context
-    author_context = ToolContext(arg_map=empty_map, mode="author")
+    elaborate_context = ToolContext(arg_map=empty_map, mode="elaborate")
     
     # Try with fix=True
-    issues_with_fix = check_grounding(empty_map, author_context, fix=True)
+    issues_with_fix = check_grounding(empty_map, elaborate_context, fix=True)
     
     # Both should return same result (grounding can't be auto-fixed)
     assert issues_no_fix == issues_with_fix
 
 
-def test_check_grounding_target_premise_grounding(empty_map: ArgumentMap, author_context: ToolContext) -> None:
+def test_check_grounding_target_premise_grounding(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test grounding when relation targets specific premise."""
     # Create argument with multiple premises
     arg_label = add_argument_node(empty_map, "Arg1")
@@ -303,6 +303,6 @@ def test_check_grounding_target_premise_grounding(empty_map: ArgumentMap, author
         empty_map.add_support_relation(claim_label, arg_label)
     
     # Should check grounding for premise-targeted relations
-    issues = check_grounding(empty_map, author_context)
+    issues = check_grounding(empty_map, elaborate_context)
     
     assert isinstance(issues, int)

@@ -12,6 +12,6 @@ async def node_details_resource(label: NodeLabel) -> str:
     rendering = render_argdown_node(
         app_ctx.arg_map,
         label=label,
-        details=app_ctx.mode in ["author", "review"],
+        details=app_ctx.mode in ["elaborate", "review"],
     )
     return f"```argdown\n{rendering}\n```"

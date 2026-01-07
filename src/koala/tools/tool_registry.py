@@ -1,7 +1,7 @@
 """Dynamic tool registry for mode-aware MCP server.
 
 This module implements a tool variant system that allows the MCP server to expose
-different tool signatures based on the current editing mode (sketch, author, review).
+different tool signatures based on the current editing mode (sketch, elaborate, review).
 
 Architecture:
     The registry system consists of two main components:
@@ -17,12 +17,12 @@ Key Concepts:
     signatures for different modes. For example:
     
     - ``add_argument_sketch(label, gist)`` for sketch mode
-    - ``add_argument_author(label, gist, premises, conclusion, tags)`` for author mode
+    - ``add_argument_elaborate(label, gist, premises, conclusion, tags)`` for elaborate mode
     
     Both variants register under the name "add_argument" but are swapped
     dynamically when the mode changes.
     
-    **Dynamic Swapping**: When the user switches modes (e.g., from sketch to author),
+    **Dynamic Swapping**: When the user switches modes (e.g., from sketch to elaborate),
     the system:
     
     1. Removes tools exclusive to the old mode
@@ -61,7 +61,7 @@ See Also:
 """
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Any, Callable
 
 from koala.models.base import Mode
 
@@ -75,7 +75,7 @@ class ToolVariant:
     allowing different function signatures in different modes.
     
     This enables the server to provide mode-appropriate interfaces: simple
-    parameters in sketch mode, detailed parameters in author mode.
+    parameters in sketch mode, detailed parameters in elaborate mode.
     
     Attributes:
         fn: The function implementing this tool variant.
@@ -107,11 +107,11 @@ class ToolVariant:
             )
             
             # Author mode variant - full parameters
-            author_variant = ToolVariant(
-                fn=add_claim_author,
+            elaborate_variant = ToolVariant(
+                fn=add_claim_elaborate,
                 name="add_claim",  # Same external name
-                internal_name="add_claim_author",
-                modes=["author"]
+                internal_name="add_claim_elaborate",
+                modes=["elaborate"]
             )
     
     Notes:
@@ -121,7 +121,7 @@ class ToolVariant:
         - When mode changes, the registry swaps variants with matching names.
     """
     
-    fn: Callable
+    fn: Callable[..., Any]
     """The function implementing this tool variant."""
     
     name: str
@@ -136,7 +136,7 @@ class ToolVariant:
     description: str | None = None
     """Optional description override for this variant."""
     
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     """Additional metadata for tool registration."""
 
 
@@ -158,7 +158,7 @@ class ToolRegistry:
             Example::
             
                 {
-                    "add_argument": [sketch_variant, author_variant],
+                    "add_argument": [sketch_variant, elaborate_variant],
                     "validate": [review_variant],
                     "instructions": [shared_variant]  # Available in all modes
                 }
@@ -172,7 +172,7 @@ class ToolRegistry:
         
             registry = ToolRegistry()
             registry.register_variant(sketch_tool)
-            registry.register_variant(author_tool)
+            registry.register_variant(elaborate_tool)
         
         At server startup::
         
@@ -187,7 +187,7 @@ class ToolRegistry:
             tools_to_add = new_tools - old_tools
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._variants: dict[str, list[ToolVariant]] = {}
         """Map from tool name to list of variants."""
         
@@ -213,10 +213,10 @@ class ToolRegistry:
                 
                 # Author mode variant (same name, different function)
                 registry.register_variant(ToolVariant(
-                    fn=add_claim_author,
+                    fn=add_claim_elaborate,
                     name="add_claim",
-                    internal_name="add_claim_author",
-                    modes=["author"]
+                    internal_name="add_claim_elaborate",
+                    modes=["elaborate"]
                 ))
         """
         if variant.name not in self._variants:
@@ -233,7 +233,7 @@ class ToolRegistry:
         
         Args:
             tool_name: External name of the tool (e.g., "add_argument").
-            mode: The mode to get the variant for ("sketch", "author", or "review").
+            mode: The mode to get the variant for ("sketch", "elaborate", or "review").
         
         Returns:
             The matching tool variant, or ``None`` if the tool is not
@@ -261,7 +261,7 @@ class ToolRegistry:
         mode-specific tools and shared tools available in all modes.
         
         Args:
-            mode: The mode to get tools for ("sketch", "author", or "review").
+            mode: The mode to get tools for ("sketch", "elaborate", or "review").
         
         Returns:
             List of all tool variants available in the mode.
@@ -295,7 +295,7 @@ class ToolRegistry:
         modes during mode switches.
         
         Args:
-            mode: The mode to get tool names for ("sketch", "author", or "review").
+            mode: The mode to get tool names for ("sketch", "elaborate", or "review").
         
         Returns:
             Set of external tool names available in the mode.
@@ -304,10 +304,10 @@ class ToolRegistry:
         
             # Calculate tools to add/remove when switching modes
             old_tools = registry.get_tool_names_for_mode("sketch")
-            new_tools = registry.get_tool_names_for_mode("author")
+            new_tools = registry.get_tool_names_for_mode("elaborate")
             
             tools_to_remove = old_tools - new_tools
-            # Usually empty, author includes most sketch tools
+            # Usually empty, elaborate includes most sketch tools
             
             tools_to_add = new_tools - old_tools
             # Typically: {"edit", "inspect_node"}
