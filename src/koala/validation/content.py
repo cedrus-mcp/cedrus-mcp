@@ -39,7 +39,7 @@ def check_core_content(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                 tc.issue("warning", message, label=label)
                 if tc.mode == "sketch":
                     tc.suggest(
-                        "set_mode",
+                        "switch_mode",
                         {"mode": "elaborate"},
                         f"Switch to elaborate mode to add a proposition to claim node {label}.",
                         "fix",  
@@ -64,7 +64,7 @@ def check_core_content(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                 tc.issue("warning", message, label=label)
                 if tc.mode == "sketch":
                     tc.suggest(
-                        "set_mode",
+                        "switch_mode",
                         {"mode": "elaborate"},
                         f"Switch to elaborate mode to add a gist to argument node {label}.",
                         "fix",  
@@ -118,7 +118,7 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
             tc.issue("warning", message, label=label)
             if tc.mode == "sketch":
                 tc.suggest(
-                    "set_mode",
+                    "switch_mode",
                     {"mode": "elaborate"},
                     f"Switch to elaborate mode to add a conclusion to argument node {label} (1/2).",
                     "fix",  
@@ -169,7 +169,7 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
             tc.issue("warning", message, label=label)
             if tc.mode == "sketch":
                 tc.suggest(
-                    "set_mode",
+                    "switch_mode",
                     {"mode": "elaborate"},
                     f"Switch to elaborate mode to add premises to argument node {label}. (1/2)",
                     "fix",  

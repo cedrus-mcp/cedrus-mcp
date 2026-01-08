@@ -51,7 +51,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             assert "inspect_graph" in tool_names
             assert "inspect_neighborhood" in tool_names
             assert "get_instructions" in tool_names
-            assert "set_mode" in tool_names
+            assert "switch_mode" in tool_names
             
             # List available resources
             resources_result = await session.list_resources()
@@ -137,7 +137,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             
             # Call tool: switch mode to elaborate (needed for edit tool)
             mode_result: Any = await session.call_tool(
-                "set_mode",
+                "switch_mode",
                 arguments={
                     "mode": "elaborate"
                 }

@@ -122,7 +122,7 @@ def test_check_core_content_generates_suggestions_in_sketch_mode(empty_map: Argu
     
     issues = check_core_content(empty_map, sketch_context)
     
-    # Should generate suggestions including set_mode
+    # Should generate suggestions including switch_mode
     suggestions = sketch_context.suggestions
     assert issues == 1
     assert isinstance(suggestions, list)
@@ -241,7 +241,7 @@ def test_check_argument_structure_generates_mode_switch_suggestions_in_sketch(em
     
     issues = check_argument_structure(empty_map, sketch_context)
     
-    # Should generate suggestions including set_mode
+    # Should generate suggestions including switch_mode
     suggestions = sketch_context.suggestions
     assert issues >= 2
     assert isinstance(suggestions, list)

@@ -26,7 +26,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
     if app_ctx.mode == "sketch":
         instructions += "Currently active mode: `sketch` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='set_mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='switch_mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
     return instructions
 
 def instruction_elaborate(app_ctx: AppContext) -> str:
@@ -62,7 +62,7 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
     if app_ctx.mode == "elaborate":
         instructions += "Currently active mode: `elaborate` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='set_mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='switch_mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
     return instructions
 
 def instruction_review(app_ctx: AppContext) -> str:
@@ -95,7 +95,7 @@ def instruction_review(app_ctx: AppContext) -> str:
     if app_ctx.mode == "review":
         instructions += "Currently active mode: `review` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='set_mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='switch_mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
     return instructions
 
 ##################################

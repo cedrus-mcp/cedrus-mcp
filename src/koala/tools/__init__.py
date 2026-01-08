@@ -18,7 +18,7 @@ ToolName = Literal[
     "get_instructions",
     "validate",
     #"export_svg",
-    "set_mode",
+    "switch_mode",
 ]
 
 __all__ = [

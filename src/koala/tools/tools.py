@@ -36,7 +36,7 @@ Dynamic Tool Management:
     
     1. Mode-specific variants are registered in _register_tool_variants()
     2. Initial tools are registered at server startup (server.py)
-    3. When set_mode() is called:
+    3. When switch_mode() is called:
        a. Tools exclusive to old mode are removed via mcp.remove_tool()
        b. Tools exclusive to new mode are added via mcp.add_tool()
        c. Client is notified via ctx.session.send_tool_list_changed()
@@ -351,7 +351,7 @@ async def _connect_impl(
                 tc.issue(
                     "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "set_mode",
+                    "switch_mode",
                     {"mode": "elaborate"},
                     "Switch to 'elaborate' mode to use grounding strategies.",
                 )
@@ -360,7 +360,7 @@ async def _connect_impl(
                 tc.issue(
                     "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
                 ).suggest(
-                    "set_mode",
+                    "switch_mode",
                     {"mode": "elaborate"},
                     "Switch to 'elaborate' mode to specify target premise index.",
                 )
@@ -369,7 +369,7 @@ async def _connect_impl(
             tc.issue(
                 "info", "Creating new relations in 'review' mode. Consider switching mode."
             ).suggest(
-                "set_mode", {"mode": "elaborate"}, "Switch to 'elaborate' mode to create new relations."
+                "switch_mode", {"mode": "elaborate"}, "Switch to 'elaborate' mode to create new relations."
             ).suggest(
                 "validate",
                 {},
@@ -420,7 +420,7 @@ async def _connect_impl(
                         error="RelationAlreadyExists",
                     )
                     .suggest(
-                        "set_mode",
+                        "switch_mode",
                         {"mode": "elaborate"},
                         "Switch to 'elaborate' mode to ground existing relations.",
                     )
@@ -1142,7 +1142,7 @@ def validate(
 #             ).build()
 
 
-async def set_mode(
+async def switch_mode(
     mode: Mode,
     ctx: Context[ServerSession, AppContext],
 ) -> CallToolResult:
@@ -1153,7 +1153,7 @@ async def set_mode(
 
     Example usage:
 
-        set_mode("elaborate")
+        switch_mode("elaborate")
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -1233,7 +1233,7 @@ async def _update_tools_for_mode(
             #    - inspect_neighborhood (same as before)
             #    - inspect_node (new)
             #    - get_instructions (elaborate variant)
-            #    - set_mode (same as before)
+            #    - switch_mode (same as before)
             
             # Result: tools in canonical TOOL_ORDER sequence
     
@@ -1312,7 +1312,7 @@ TOOL_ORDER = [
     # Utility tools - for guidance, validation, and mode switching
     "get_instructions",
     "validate",
-    "set_mode",
+    "switch_mode",
 ]
 
 
@@ -1353,7 +1353,7 @@ def _register_tool_variants() -> None:
             - get_instructions
             - inspect_graph
             - inspect_neighborhood
-            - set_mode
+            - switch_mode
     
     Registration Pattern:
         Each tool variant is registered with:
@@ -1657,7 +1657,7 @@ def _register_tool_variants() -> None:
     for shared_tool_fn, tool_name, description in [
         (inspect_graph, "inspect_graph", "Show an overview of the argumentation graph"),
         (inspect_neighborhood, "inspect_neighborhood", "Show k-neighborhood of a node"),
-        (set_mode, "set_mode", "Switch the argument map editing mode"),
+        (switch_mode, "switch_mode", "Switch the argument map editing mode"),
     ]:
         TOOL_REGISTRY.register_variant(ToolVariant(
             fn=cast(Callable[..., Any], shared_tool_fn),

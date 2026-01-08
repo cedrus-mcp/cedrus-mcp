@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, AsyncMock
-from koala.tools.tools import set_mode
+from koala.tools.tools import switch_mode
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -29,7 +29,7 @@ async def test_mode_switch_to_elaborate(tool_context: Mock) -> None:
     """Test switching to elaborate mode."""
     assert tool_context.request_context.lifespan_context.mode == "sketch"
     
-    result = await set_mode(mode="elaborate", ctx=tool_context)
+    result = await switch_mode(mode="elaborate", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "elaborate"
@@ -39,7 +39,7 @@ async def test_mode_switch_to_elaborate(tool_context: Mock) -> None:
 
 async def test_mode_switch_to_review(tool_context: Mock) -> None:
     """Test switching to review mode."""
-    result = await set_mode(mode="review", ctx=tool_context)
+    result = await switch_mode(mode="review", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "review"
@@ -50,7 +50,7 @@ async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
     """Test switching to sketch mode."""
     tool_context.request_context.lifespan_context.mode = "elaborate"
     
-    result = await set_mode(mode="sketch", ctx=tool_context)
+    result = await switch_mode(mode="sketch", ctx=tool_context)
     
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "sketch"
@@ -59,7 +59,7 @@ async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
 
 async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
     """Test that invalid mode returns error status."""
-    result = await set_mode(mode="invalid", ctx=tool_context)
+    result = await switch_mode(mode="invalid", ctx=tool_context)
     
     # Check that error is indicated in structured content
     assert result.structuredContent["status"] == "failure"
@@ -71,7 +71,7 @@ async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
 
 async def test_mode_switch_same_mode_no_tools_updated(tool_context: Mock) -> None:
     """Test that switching to the same mode doesn't trigger tool updates."""
-    result = await set_mode(mode="sketch", ctx=tool_context)
+    result = await switch_mode(mode="sketch", ctx=tool_context)
     
     assert not result.isError
     # No tool changes should be made when mode doesn't actually change

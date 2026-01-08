@@ -12,7 +12,7 @@ import pytest
 import inspect
 from unittest.mock import Mock, AsyncMock
 from koala.models.base import Mode
-from koala.tools.tools import set_mode, _update_tools_for_mode
+from koala.tools.tools import switch_mode, _update_tools_for_mode
 from koala.tools.tool_registry import TOOL_REGISTRY
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -292,7 +292,7 @@ class TestVariantToolSignatures:
 class TestSharedToolsUnchanged:
     """Test that shared tools remain unchanged across mode switches.
     
-    Shared tools like inspect_graph, set_mode are available in all modes with
+    Shared tools like inspect_graph, switch_mode are available in all modes with
     the same implementation. While they are removed and re-added during mode
     switches (to maintain tool order), their function implementation remains
     the same.
@@ -303,7 +303,7 @@ class TestSharedToolsUnchanged:
     async def test_truly_shared_tools_same_function(self, mcp_context: Mock) -> None:
         """Test that truly shared tools use the same function across modes."""
         # Truly shared tools (same function in all modes)
-        truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "set_mode", "remove"]
+        truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "switch_mode", "remove"]
         
         for tool in truly_shared_tools:
             # Verify the variants are actually the same function
@@ -331,7 +331,7 @@ class TestSharedToolsUnchanged:
         add_calls = [call[1]["name"] for call in mcp_context.fastmcp.add_tool.call_args_list if "name" in call[1]]
         
         # Truly shared tools should be both removed and re-added
-        truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "set_mode", "remove"]
+        truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "switch_mode", "remove"]
         
         for tool in truly_shared_tools:
             assert tool in remove_calls, f"Shared tool {tool} should be removed (for reordering)"
@@ -379,15 +379,15 @@ class TestSharedToolsUnchanged:
 
 
 class TestIntegrationWithSetMode:
-    """Integration tests using the actual set_mode tool."""
+    """Integration tests using the actual switch_mode tool."""
     
     async def test_full_mode_switch_workflow(self, mcp_context: Mock) -> None:
-        """Test complete workflow of switching modes through set_mode tool."""
+        """Test complete workflow of switching modes through switch_mode tool."""
         # Start in sketch mode
         assert mcp_context.request_context.lifespan_context.mode == "sketch"
         
         # Switch to elaborate
-        result = await set_mode(mode="elaborate", ctx=mcp_context)
+        result = await switch_mode(mode="elaborate", ctx=mcp_context)
         
         assert not result.isError
         assert mcp_context.request_context.lifespan_context.mode == "elaborate"

@@ -9,7 +9,7 @@ from koala.tools.tools import (
     edit,
     connect_sketch,
     remove,
-    set_mode,
+    switch_mode,
 )
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
@@ -116,7 +116,7 @@ async def test_mode_tool_switches_mode(mock_context: Mock) -> None:
     """Test switching mode via mode tool."""
     assert mock_context.request_context.lifespan_context.mode == "sketch"
     
-    result = await set_mode(mode="elaborate", ctx=mock_context)
+    result = await switch_mode(mode="elaborate", ctx=mock_context)
     
     assert isinstance(result, CallToolResult)
     assert not result.isError
