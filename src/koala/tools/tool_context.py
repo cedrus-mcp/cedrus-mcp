@@ -240,6 +240,7 @@ class ToolContext:
         }
         plain_content: list[str] = []   
 
+        plain_content.append(f"ACTIVE EDITING MODE: `{self.mode}`")
 
         if self._result_data is not None:
             structured_content["result"] = self._result_data
@@ -260,7 +261,6 @@ class ToolContext:
             text = "\n\n".join(f"{s.action_type.upper()} {s.reason} : `{s.tool}({s.params})`" for s in self.suggestions)
             plain_content.append(f"SUGGESTIONS:\n\n{text}")
 
-        plain_content.append(f"ACTIVE EDITING MODE: `{self.mode}`")
 
 
         # Cast structured_content as plain text for backwards compatibility
