@@ -18,6 +18,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         "captures the main point of each claim and argument, and identifies each node by means of concise and distinct labels.\n"
         "\n"
         "Typical actions in sketch mode include:\n"
+        f'{NextAction(tool="reset_graph", params={}, reason="Fully reset the entire argument map to start afresh. Permanently deletes current graph. Required only as I have been deliberating another issue before.", action_type="reset").model_dump()}\n'
         f'{NextAction(tool="add_claim", params={"label": "Claim Label", "proposition": "The proposition maintained by this claim."}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
         f'{NextAction(tool="add_argument", params={"label": "Argument Label", "gist": "The main idea of this argument."}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
         f'{NextAction(tool="connect", params={"source": "Argument Label", "target": "Claim Label", "relation_type": "support"}, reason="Connect an argument to a claim with a support relation.", action_type="expand").model_dump()}\n'
@@ -50,7 +51,8 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         "\n"
         "In the `elaborate` mode, you'd typically work on individual arguments, clarifying their conclusions and unfolding their premises. "
         "You iteratively improve the argument reconstructions, trying to ground more and more dialectical relations in order to"
-        "obtain an ever more coherent and well-structured argument map.\n"
+        "obtain an ever more coherent and well-structured argument map. While you focus on internal premise conclusion structures, make "
+        "sure to adjust gists and labels as well, as you clarify and gain a better understanding of the arguments.\n"
         "\n"
         "Typical actions in elaborate mode include:\n"
         f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
