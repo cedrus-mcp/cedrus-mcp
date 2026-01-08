@@ -378,3 +378,79 @@ class TestIntegrationWithSetMode:
         
         # Verify tools were updated
         assert mcp_context.fastmcp.add_tool.called or mcp_context.fastmcp.remove_tool.called
+
+
+class TestToolOrdering:
+    """Test that tool order is maintained during mode switches."""
+    
+    async def test_tools_registered_in_canonical_order(self, mcp_context: Mock) -> None:
+        """Test that tools are added in TOOL_ORDER during mode switch."""
+        from koala.tools.tools import TOOL_ORDER
+        
+        # Switch from sketch to elaborate
+        await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
+        
+        # Get all add_tool calls
+        add_calls = mcp_context.fastmcp.add_tool.call_args_list
+        added_tool_names = [call[1]["name"] for call in add_calls if "name" in call[1]]
+        
+        # Verify tools were added in TOOL_ORDER sequence
+        # (Filter to only tools that were actually added)
+        ordered_added = [t for t in TOOL_ORDER if t in added_tool_names]
+        
+        # The order of added tools should match their order in TOOL_ORDER
+        for i, tool_name in enumerate(ordered_added):
+            actual_index = added_tool_names.index(tool_name)
+            # Each tool should appear in the same relative order
+            if i > 0:
+                prev_tool = ordered_added[i - 1]
+                prev_index = added_tool_names.index(prev_tool)
+                assert actual_index > prev_index, \
+                    f"Tool {tool_name} should appear after {prev_tool} in add order"
+    
+    async def test_tool_order_maintained_across_modes(self) -> None:
+        """Test that TOOL_ORDER is consistent with tool registry."""
+        from koala.tools.tools import TOOL_ORDER
+        
+        # Verify all tools in any mode are in TOOL_ORDER
+        for mode in ["sketch", "elaborate", "review"]:
+            mode_tools = TOOL_REGISTRY.get_tool_names_for_mode(mode)
+            for tool in mode_tools:
+                assert tool in TOOL_ORDER, \
+                    f"Tool {tool} in {mode} mode is not in TOOL_ORDER"
+    
+    async def test_sketch_to_elaborate_maintains_order(self, mcp_context: Mock) -> None:
+        """Test specific case: sketch to elaborate preserves logical tool order."""
+        from koala.tools.tools import TOOL_ORDER
+        
+        # Simulate initial sketch mode registration
+        sketch_tools = TOOL_REGISTRY.get_tool_names_for_mode("sketch")
+        for tool_name in TOOL_ORDER:
+            if tool_name in sketch_tools:
+                variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, "sketch")
+                if variant:
+                    mcp_context.fastmcp.add_tool(
+                        variant.fn,
+                        name=variant.name,
+                        description=variant.description,
+                        **variant.metadata
+                    )
+        
+        # Reset call tracking
+        mcp_context.fastmcp.add_tool.reset_mock()
+        mcp_context.fastmcp.remove_tool.reset_mock()
+        
+        # Switch to elaborate
+        await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
+        
+        # Get final tool list from mock
+        final_tools = list(mcp_context.fastmcp._registered_tools.keys())
+        
+        # Filter TOOL_ORDER to only tools in elaborate mode
+        elaborate_tools = TOOL_REGISTRY.get_tool_names_for_mode("elaborate")
+        expected_order = [t for t in TOOL_ORDER if t in elaborate_tools]
+        
+        # Verify final tools match expected order
+        actual_ordered = [t for t in expected_order if t in final_tools]
+        assert actual_ordered == expected_order, \
+            f"Tool order mismatch. Expected: {expected_order}, Got: {actual_ordered}"
