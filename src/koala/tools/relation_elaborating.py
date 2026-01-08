@@ -1,4 +1,4 @@
-"""Authoring tools: new_claim, new_argument, new_support, new_attack."""
+"""Elaborating tools: new_claim, new_argument, new_support, new_attack."""
 
 from typing import Literal
 

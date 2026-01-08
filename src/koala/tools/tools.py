@@ -318,7 +318,7 @@ async def _connect_impl(
     
     Mode Variants:
         - **Sketch**: ``connect_sketch(source, target, relation_type)`` - no grounding
-        - **Author**: ``connect_elaborate(source, target, relation_type, target_premise_idx, grounding_strategy)`` - with grounding
+        - **Elaborate**: ``connect_elaborate(source, target, relation_type, target_premise_idx, grounding_strategy)`` - with grounding
     
     Grounding Behavior:
         - If target is an ArgumentNode and grounding parameters provided:
@@ -1191,9 +1191,9 @@ async def _update_tools_for_mode(
         Switching from sketch to elaborate mode::
         
             # Sketch tools: {add_claim, add_argument, connect, remove, ...shared}
-            # Author tools: {add_claim, add_argument, connect, edit, remove, inspect_node, ...shared}
+            # Elaborate tools: {add_claim, add_argument, connect, edit, remove, inspect_node, ...shared}
             
-            tools_to_remove = {}  # Author is superset of sketch
+            tools_to_remove = {}  # Elaborate is superset of sketch
             tools_to_add = {"edit", "inspect_node"}
             
             # Add edit and inspect_node
@@ -1265,7 +1265,7 @@ def _register_tool_variants() -> None:
             - remove (full)
             - *All shared tools*
         
-        **Author Mode** (detailed elaborating):
+        **Elaborate Mode** (detailed elaborating):
             - add_claim (full: label, proposition, tags)
             - add_argument (full: label, gist, premises, conclusion, tags)
             - connect (full: source, target, relation_type, target_premise_idx, grounding_strategy)
@@ -1314,7 +1314,7 @@ def _register_tool_variants() -> None:
                 description="Add argument (sketch mode - gist only)"
             ))
             
-            # Author variant
+            # Elaborate variant
             TOOL_REGISTRY.register_variant(ToolVariant(
                 fn=add_argument_elaborate,
                 name="add_argument",        # Same name

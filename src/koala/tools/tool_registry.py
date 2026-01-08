@@ -106,7 +106,7 @@ class ToolVariant:
                 modes=["sketch"]
             )
             
-            # Author mode variant - full parameters
+            # Elaborate mode variant - full parameters
             elaborate_variant = ToolVariant(
                 fn=add_claim_elaborate,
                 name="add_claim",  # Same external name
@@ -211,7 +211,7 @@ class ToolRegistry:
                     modes=["sketch"]
                 ))
                 
-                # Author mode variant (same name, different function)
+                # Elaborate mode variant (same name, different function)
                 registry.register_variant(ToolVariant(
                     fn=add_claim_elaborate,
                     name="add_claim",

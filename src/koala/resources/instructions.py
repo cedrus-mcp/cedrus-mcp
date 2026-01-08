@@ -25,9 +25,9 @@ def instructions_sketch(app_ctx: AppContext) -> str:
 
 def instruction_elaborate(app_ctx: AppContext) -> str:
     instructions = (
-        "### Authoring Instructions\n"
+        "### Elaborating Instructions\n"
         "\n"
-        "Author mode is designed for fleshing out the details of your argument map. "
+        "Elaborate mode is designed for fleshing out the details of your argument map. "
         "This includes, in particular, reconstructing the arguments as premise-conclusion structures, "
         "and 'grounding' the support and attack relations.\n"
         "\n"
