@@ -876,7 +876,7 @@ async def get_instructions_elaborate(ctx: Context[ServerSession, AppContext], to
     """Show detailed instructions for elaborate mode.
 
     Args:
-        topic: Specific topic to get instructions for (e.g., "grounding" or "validity").
+        topic: Specific topic to get instructions for (either "grounding" or "validity"). If None, returns general instructions.
     """
 
     if topic is None:
@@ -1640,8 +1640,12 @@ def _register_tool_variants() -> None:
         description=dedent(
             """Show general advice or detailed topic-specific instructions for how to elaborate an argumentation graph.
 
+            Available topics are:
+                - "grounding": Instructions on how to properly ground dialectical relations.
+                - "validity": Instructions on how to ensure argument validity and soundness.
+
             Args:
-                topic: Specific topic to get instructions for ("grounding" or "validity"). Defaults to None for general instructions.
+                topic: Specific topic to get instructions for. Defaults to None for general instructions.
             """)
     ))
     TOOL_REGISTRY.register_variant(ToolVariant(
