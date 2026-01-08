@@ -60,7 +60,7 @@ mcp = FastMCP(
 
 
 # Register tools for initial mode (sketch)
-def _register_initial_tools():
+def _register_initial_tools() -> None:
     """Register tools available in the initial mode (sketch).
     
     Called once at server startup to populate the MCP server with tools
@@ -92,9 +92,10 @@ def _register_initial_tools():
         - koala.tools.tool_registry.ToolRegistry: Registry infrastructure
     """
     from koala.tools.tool_registry import TOOL_REGISTRY
+    from koala.models.base import Mode
     
     # Get all tools for sketch mode
-    initial_mode = "sketch"
+    initial_mode: Mode = "sketch"
     for variant in TOOL_REGISTRY.get_all_tools_for_mode(initial_mode):
         mcp.add_tool(
             variant.fn,

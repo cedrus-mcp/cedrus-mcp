@@ -8,6 +8,8 @@ from koala.models import ClaimNode, NodeLabel, Proposition
 from koala.models.relations import DialecticalRelationType, GroundingStrategy
 from koala.utils.relations import is_grounded_relation
 
+__all__ = ["GroundingStrategy", "validate_grounding_strategy", "maybe_ground_relation"]
+
 
 if TYPE_CHECKING:
     from koala.tools.tool_context import ToolContext
