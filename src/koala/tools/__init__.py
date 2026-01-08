@@ -19,6 +19,7 @@ ToolName = Literal[
     "validate",
     #"export_svg",
     "switch_mode",
+    "reset_graph",
 ]
 
 __all__ = [

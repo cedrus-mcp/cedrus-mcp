@@ -1142,6 +1142,80 @@ def validate(
 #             ).build()
 
 
+async def reset_graph(
+    ctx: Context[ServerSession, AppContext],
+    confirm: bool = False,
+) -> CallToolResult:
+    """Reset the entire reasoning graph to start fresh.
+    
+    Clears all nodes, propositions, and relations from the current argument map
+    and resets to sketch mode. Useful when starting deliberation on a new decision.
+    
+    Args:
+        confirm: Safety confirmation. Must be True to actually reset.
+    
+    Returns:
+        CallToolResult with statistics of what was cleared.
+    
+    Example:
+        # First call warns
+        reset_graph()
+        
+        # Confirm to actually reset
+        reset_graph(confirm=True)
+    """
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+    
+    with tool_context(arg_map, mode) as tc:
+        # Safety check
+        if not confirm:
+            node_count = len(arg_map.argument_graph.nodes)
+            if node_count == 0:
+                return tc.failure(
+                    "Graph is already empty. Nothing to reset.",
+                    error="EmptyGraph"
+                ).build()
+            
+            tc.issue("warning", 
+                f"⚠️  This will permanently delete {node_count} nodes and all relations.")
+            tc.issue("info", 
+                "Call reset_graph(confirm=True) to proceed with reset.")
+            return tc.build()
+        
+        # Gather statistics before clearing
+        claims = arg_map.list_claims()
+        arguments = arg_map.list_arguments()
+        edge_count = arg_map.argument_graph.number_of_edges()
+        prop_count = arg_map.proposition_graph.number_of_nodes()
+        
+        # Perform reset
+        arg_map.argument_graph.clear()
+        arg_map.proposition_graph.clear()
+        
+        # Reset mode to sketch
+        old_mode = ctx.request_context.lifespan_context.mode
+        ctx.request_context.lifespan_context.mode = "sketch"
+        
+        # Update tools if mode changed
+        if old_mode != "sketch":
+            await _update_tools_for_mode(ctx, old_mode, "sketch")
+        
+        # Build response
+        tc.success(f"✓ Reset complete: Cleared {len(claims)} claims, "
+                   f"{len(arguments)} arguments, {edge_count} relations, "
+                   f"and {prop_count} propositions.")
+        tc.issue("info", "Mode reset to 'sketch'.")
+        tc.suggest(
+            "get_instructions",
+            {},
+            "Get guidance for starting your new deliberation.",
+            action_type="help"
+        )
+        
+        return tc.build()
+
+
 async def switch_mode(
     mode: Mode,
     ctx: Context[ServerSession, AppContext],
@@ -1313,6 +1387,9 @@ TOOL_ORDER = [
     "get_instructions",
     "validate",
     "switch_mode",
+
+    # "Nuclear" operation
+    "reset_graph",
 ]
 
 
@@ -1661,6 +1738,7 @@ def _register_tool_variants() -> None:
     for shared_tool_fn, tool_name, description in [
         (inspect_graph, "inspect_graph", "Show an overview of the argumentation graph"),
         (inspect_neighborhood, "inspect_neighborhood", "Show k-neighborhood of a node"),
+        (reset_graph, "reset_graph", "Reset the entire argument map to start fresh"),
         (switch_mode, "switch_mode", "Switch the argument map editing mode"),
     ]:
         TOOL_REGISTRY.register_variant(ToolVariant(
