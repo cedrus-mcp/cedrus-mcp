@@ -349,31 +349,31 @@ async def _connect_impl(
         if mode == "sketch":
             if grounding_strategy is not None:
                 tc.issue(
-                    "warning", "Ignoring grounding strategies in 'sketch' mode.", priority=0.2
+                    "warning", "Ignoring grounding strategies in `sketch` mode.", priority=0.2
                 ).suggest(
                     "switch_mode",
                     {"mode": "elaborate"},
-                    "Switch to 'elaborate' mode to use grounding strategies.",
+                    "Switch to `elaborate` mode to use grounding strategies.",
                 )
                 grounding_strategy = None
             if target_premise_idx is not None:
                 tc.issue(
-                    "warning", "Ignoring target_premise_idx in 'sketch' mode.", priority=0.2
+                    "warning", "Ignoring target_premise_idx in `sketch` mode.", priority=0.2
                 ).suggest(
                     "switch_mode",
                     {"mode": "elaborate"},
-                    "Switch to 'elaborate' mode to specify target premise index.",
+                    "Switch to `elaborate` mode to specify target premise index.",
                 )
                 target_premise_idx = None
         elif mode == "review":
             tc.issue(
-                "info", "Creating new relations in 'review' mode. Consider switching mode."
+                "info", "Creating new relations in `review` mode. Consider switching mode."
             ).suggest(
-                "switch_mode", {"mode": "elaborate"}, "Switch to 'elaborate' mode to create new relations."
+                "switch_mode", {"mode": "elaborate"}, "Switch to `elaborate` mode to create new relations."
             ).suggest(
                 "validate",
                 {},
-                "Run 'validate' to check the argument map.",
+                "Run validation to check the argument map.",
             )
 
         args = parse_tool_args(
@@ -422,7 +422,7 @@ async def _connect_impl(
                     .suggest(
                         "switch_mode",
                         {"mode": "elaborate"},
-                        "Switch to 'elaborate' mode to ground existing relations.",
+                        "Switch to `elaborate` mode to ground existing relations.",
                     )
                     .build()
                 )
@@ -1058,7 +1058,7 @@ def validate(
 
     with tool_context(arg_map, mode) as tc:
         if tc.mode == "sketch":
-            tc.issue("info", "Validation may be limited in 'sketch' mode.")
+            tc.issue("info", "Validation may be limited in `sketch` mode.")
 
         try:
             issues_found = validate_argument_map(arg_map, tc, fix=fix, max_issues=max_issues)
@@ -1205,7 +1205,7 @@ async def reset_graph(
         tc.success(f"✓ Reset complete: Cleared {len(claims)} claims, "
                    f"{len(arguments)} arguments, {edge_count} relations, "
                    f"and {prop_count} propositions.")
-        tc.issue("info", "Mode reset to 'sketch'.")
+        tc.issue("info", "Mode reset to `sketch`.")
         tc.suggest(
             "get_instructions",
             {},
@@ -1236,7 +1236,7 @@ async def switch_mode(
     with tool_context(arg_map, mode) as tc:
         if mode not in ["sketch", "elaborate", "review"]:
             return tc.failure(
-                f"Invalid mode '{mode}'. Valid modes are 'sketch', 'elaborate', and 'review'.",
+                f"Invalid mode `{mode}`. Valid modes are `sketch`, `elaborate`, and `review`.",
                 error="InvalidMode",
             ).build()
 
