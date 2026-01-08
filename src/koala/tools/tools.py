@@ -1257,22 +1257,6 @@ async def _update_tools_for_mode(
         except Exception as e:
             logger.warning(f"Failed to remove tool '{tool_name}': {e}")
     
-    # Add tools that are only in new mode
-    tools_to_add = new_tools - old_tools
-    for tool_name in tools_to_add:
-        variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
-        if variant:
-            try:
-                mcp_server.add_tool(
-                    variant.fn,
-                    name=variant.name,
-                    description=variant.description,
-                    **variant.metadata
-                )
-                logger.debug(f"Added tool '{tool_name}' when switching to '{new_mode}'")
-            except Exception as e:
-                logger.warning(f"Failed to add tool '{tool_name}': {e}")
-    
     # Swap tools that exist in both modes but may have different variants
     tools_to_swap = old_tools & new_tools
     for tool_name in tools_to_swap:
@@ -1294,6 +1278,23 @@ async def _update_tools_for_mode(
                 logger.debug(f"Swapped tool '{tool_name}' variant when switching from '{old_mode}' to '{new_mode}'")
             except Exception as e:
                 logger.warning(f"Failed to swap tool '{tool_name}': {e}")
+
+    # Add tools that are only in new mode
+    tools_to_add = new_tools - old_tools
+    for tool_name in tools_to_add:
+        variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
+        if variant:
+            try:
+                mcp_server.add_tool(
+                    variant.fn,
+                    name=variant.name,
+                    description=variant.description,
+                    **variant.metadata
+                )
+                logger.debug(f"Added tool '{tool_name}' when switching to '{new_mode}'")
+            except Exception as e:
+                logger.warning(f"Failed to add tool '{tool_name}': {e}")
+    
     
     # Notify client of tool list changes
     try:
