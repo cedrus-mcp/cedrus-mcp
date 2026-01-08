@@ -1597,7 +1597,7 @@ def _register_tool_variants() -> None:
     TOOL_REGISTRY.register_variant(ToolVariant(
         fn=get_instructions_elaborate,
         name="get_instructions",
-        internal_name="get_instructions",
+        internal_name="get_instructions_elaborate",
         modes=["elaborate"],
         description=dedent(
             """Show general advice or detailed topic-specific instructions for how to elaborate an argumentation graph.

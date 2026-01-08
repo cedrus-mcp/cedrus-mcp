@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import get_instructions
+from koala.tools.tools import get_instructions, get_instructions_elaborate
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -55,10 +55,44 @@ async def test_instructions_sketch_mode(tool_context_sketch: Mock) -> None:
 
 async def test_instructions_elaborate_mode(tool_context_elaborate: Mock) -> None:
     """Test instructions tool in elaborate mode."""
-    result = await get_instructions(ctx=tool_context_elaborate)
+    result = await get_instructions_elaborate(ctx=tool_context_elaborate)
     
     assert not result.isError
     assert result.content
+
+
+async def test_instructions_elaborate_mode_with_grounding_topic(tool_context_elaborate: Mock) -> None:
+    """Test instructions tool in elaborate mode with grounding topic."""
+    result = await get_instructions_elaborate(ctx=tool_context_elaborate, topic="grounding")
+    
+    assert not result.isError
+    assert result.content
+    # Check that it returns grounding-specific instructions
+    from mcp.types import TextContent
+    text_content = next((c for c in result.content if isinstance(c, TextContent)), None)
+    assert text_content is not None
+    assert len(text_content.text) > 0
+
+
+async def test_instructions_elaborate_mode_with_validity_topic(tool_context_elaborate: Mock) -> None:
+    """Test instructions tool in elaborate mode with validity topic."""
+    result = await get_instructions_elaborate(ctx=tool_context_elaborate, topic="validity")
+    
+    assert not result.isError
+    assert result.content
+    # Check that it returns validity-specific instructions
+    from mcp.types import TextContent
+    text_content = next((c for c in result.content if isinstance(c, TextContent)), None)
+    assert text_content is not None
+    assert len(text_content.text) > 0
+
+
+async def test_instructions_elaborate_mode_with_invalid_topic(tool_context_elaborate: Mock) -> None:
+    """Test instructions tool in elaborate mode with invalid topic."""
+    result = await get_instructions_elaborate(ctx=tool_context_elaborate, topic="invalid")  # type: ignore
+    
+    # Should fail with error for invalid topic
+    assert result.structuredContent and result.structuredContent["status"] == "failure"
 
 
 async def test_instructions_review_mode(tool_context_review: Mock) -> None:
@@ -109,10 +143,13 @@ async def test_instructions_different_per_mode(
     tool_context_elaborate: Mock,
     tool_context_review: Mock
 ) -> None:
-    """Test that instructions may vary by mode."""
+    """Test that instructions vary by mode."""
+    # Sketch and review use basic get_instructions
     result_sketch = await get_instructions(ctx=tool_context_sketch)
-    result_elaborate = await get_instructions(ctx=tool_context_elaborate)
     result_review = await get_instructions(ctx=tool_context_review)
+    
+    # Elaborate uses get_instructions_elaborate
+    result_elaborate = await get_instructions_elaborate(ctx=tool_context_elaborate)
     
     # All should succeed
     assert not result_sketch.isError
@@ -123,6 +160,32 @@ async def test_instructions_different_per_mode(
     assert result_sketch.content
     assert result_elaborate.content
     assert result_review.content
+
+
+async def test_instructions_elaborate_accepts_topic_parameter(
+    tool_context_elaborate: Mock
+) -> None:
+    """Test that elaborate mode variant accepts topic parameter."""
+    # Should work without topic (defaults to general instructions)
+    result_general = await get_instructions_elaborate(ctx=tool_context_elaborate)
+    assert not result_general.isError
+    
+    # Should work with grounding topic
+    result_grounding = await get_instructions_elaborate(ctx=tool_context_elaborate, topic="grounding")
+    assert not result_grounding.isError
+    
+    # Should work with validity topic
+    result_validity = await get_instructions_elaborate(ctx=tool_context_elaborate, topic="validity")
+    assert not result_validity.isError
+    
+    # Content should differ between topics
+    from mcp.types import TextContent
+    text_grounding = next((c for c in result_grounding.content if isinstance(c, TextContent)), None)
+    text_validity = next((c for c in result_validity.content if isinstance(c, TextContent)), None)
+    assert text_grounding is not None
+    assert text_validity is not None
+    # The two topic-specific instructions should be different
+    assert text_grounding.text != text_validity.text
 
 
 async def test_instructions_no_parameters_required(
@@ -150,11 +213,38 @@ async def test_instructions_available_in_all_modes(
     tool_context_elaborate: Mock,
     tool_context_review: Mock
 ) -> None:
-    """Test that instructions is available in all modes."""
-    # Instructions is a shared tool, should work in all modes
-    modes = [tool_context_sketch, tool_context_elaborate, tool_context_review]
+    """Test that instructions is available in all modes with appropriate signature."""
+    # Sketch and review use basic get_instructions
+    result_sketch = await get_instructions(ctx=tool_context_sketch)
+    result_review = await get_instructions(ctx=tool_context_review)
     
-    for ctx in modes:
-        result = await get_instructions(ctx=ctx)
-        assert not result.isError
-        assert result.content
+    # Elaborate uses get_instructions_elaborate (which can also work without topic)
+    result_elaborate = await get_instructions_elaborate(ctx=tool_context_elaborate)
+    
+    assert not result_sketch.isError
+    assert not result_elaborate.isError
+    assert not result_review.isError
+    assert result_sketch.content
+    assert result_elaborate.content
+    assert result_review.content
+
+
+async def test_instructions_sketch_and_review_no_topic_parameter(
+    tool_context_sketch: Mock,
+    tool_context_review: Mock
+) -> None:
+    """Test that sketch and review modes use basic get_instructions without topic parameter."""
+    # Basic get_instructions doesn't accept topic parameter
+    result_sketch = await get_instructions(ctx=tool_context_sketch)
+    result_review = await get_instructions(ctx=tool_context_review)
+    
+    assert not result_sketch.isError
+    assert not result_review.isError
+    
+    # Verify that these are the simple variant (no topic parameter in signature)
+    import inspect
+    sig = inspect.signature(get_instructions)
+    params = list(sig.parameters.keys())
+    # Should only have 'ctx' parameter
+    assert 'ctx' in params
+    assert 'topic' not in params
