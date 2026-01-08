@@ -1194,21 +1194,16 @@ async def _update_tools_for_mode(
 ) -> None:
     """Update available tools when switching modes.
     
-    Performs the dynamic tool swapping by calculating the difference between
-    modes and adding/removing tools accordingly. Maintains the canonical tool
-    order defined in TOOL_ORDER. Also sends a notification to the MCP client
-    that the tool list has changed.
+    Performs the dynamic tool swapping by rebuilding the tool list in canonical
+    order. Maintains the order defined in TOOL_ORDER by removing all tools and
+    re-registering them in the correct sequence. Also sends a notification to
+    the MCP client that the tool list has changed.
     
     Algorithm:
         1. Get tool name sets for old and new modes from TOOL_REGISTRY
-        2. Iterate through TOOL_ORDER to process tools in canonical order:
-           
-           - If tool only in old mode: remove it via ``mcp_server.remove_tool()``
-           - If tool only in new mode: add it via ``mcp_server.add_tool()``
-           - If tool in both modes with different variants: swap by removing and re-adding
-           - If tool in both modes with same variant: skip (already correct)
-        
-        3. Send ``tools/list_changed`` notification to client
+        2. Remove ALL old tools via ``mcp_server.remove_tool()``
+        3. Iterate through TOOL_ORDER and add tools for new mode in sequence
+        4. Send ``tools/list_changed`` notification to client
     
     Args:
         ctx: FastMCP context providing access to server and session.
@@ -1227,50 +1222,48 @@ async def _update_tools_for_mode(
             # Elaborate tools: {add_claim, add_argument, connect, edit, remove, inspect_node, ...shared}
             
             # Process in TOOL_ORDER:
-            # - add_claim: in both, different variants -> swap
-            # - add_argument: in both, different variants -> swap
-            # - edit: only in new mode -> add
-            # - remove: in both, same variant -> skip
-            # - connect: in both, different variants -> swap
-            # - inspect_graph: in both, same variant -> skip
-            # - inspect_neighborhood: in both, same variant -> skip
-            # - inspect_node: only in new mode -> add
-            # - get_instructions: in both, different variants -> swap
-            # - validate: not in either -> skip
-            # - set_mode: in both, same variant -> skip
+            # 1. Remove all old tools (add_claim, add_argument, connect, remove, inspect_graph, ...)
+            # 2. Add tools in TOOL_ORDER that are in elaborate mode:
+            #    - add_claim (elaborate variant)
+            #    - add_argument (elaborate variant)
+            #    - edit (new)
+            #    - remove (same as before)
+            #    - connect (elaborate variant)
+            #    - inspect_graph (same as before)
+            #    - inspect_neighborhood (same as before)
+            #    - inspect_node (new)
+            #    - get_instructions (elaborate variant)
+            #    - set_mode (same as before)
             
-            # Result: tools remain in TOOL_ORDER sequence
+            # Result: tools in canonical TOOL_ORDER sequence
     
     Notes:
-        - Tool order is maintained by iterating through TOOL_ORDER instead of
-          using unordered set operations.
+        - Tool order is maintained by completely rebuilding the tool list rather
+          than selectively adding/removing tools.
+        - This ensures consistent ordering even when tools are shared between modes.
         - For tools with variants (e.g., add_argument), both the function and
-          description are updated by removing and re-adding the tool.
+          description are updated by the rebuild.
         - Failures to add/remove individual tools are logged as warnings but
           don't stop the overall mode switch.
         - Client notification failures are also logged but non-fatal.
     """
     mcp_server = ctx.fastmcp
     
-    # Get tool name sets for each mode (for membership testing)
+    # Get tool name sets for each mode
     old_tools = TOOL_REGISTRY.get_tool_names_for_mode(old_mode)
     new_tools = TOOL_REGISTRY.get_tool_names_for_mode(new_mode)
     
-    # Process tools in canonical order to maintain consistent tool list ordering
+    # Remove all old tools to rebuild list in canonical order
+    for tool_name in old_tools:
+        try:
+            mcp_server.remove_tool(tool_name)
+            logger.debug(f"Removed tool '{tool_name}' when switching from '{old_mode}' to '{new_mode}'")
+        except Exception as e:
+            logger.warning(f"Failed to remove tool '{tool_name}': {e}")
+    
+    # Add tools for new mode in canonical order
     for tool_name in TOOL_ORDER:
-        in_old = tool_name in old_tools
-        in_new = tool_name in new_tools
-        
-        if in_old and not in_new:
-            # Tool only in old mode - remove it
-            try:
-                mcp_server.remove_tool(tool_name)
-                logger.debug(f"Removed tool '{tool_name}' when switching from '{old_mode}' to '{new_mode}'")
-            except Exception as e:
-                logger.warning(f"Failed to remove tool '{tool_name}': {e}")
-        
-        elif not in_old and in_new:
-            # Tool only in new mode - add it
+        if tool_name in new_tools:
             variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
             if variant:
                 try:
@@ -1280,30 +1273,9 @@ async def _update_tools_for_mode(
                         description=variant.description,
                         **variant.metadata
                     )
-                    logger.debug(f"Added tool '{tool_name}' when switching to '{new_mode}'")
+                    logger.debug(f"Added tool '{tool_name}' for mode '{new_mode}'")
                 except Exception as e:
                     logger.warning(f"Failed to add tool '{tool_name}': {e}")
-        
-        elif in_old and in_new:
-            # Tool in both modes - check if variant changed
-            old_variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, old_mode)
-            new_variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
-            
-            # Only swap if the variants are actually different
-            if old_variant and new_variant and old_variant.fn != new_variant.fn:
-                try:
-                    # Remove old variant
-                    mcp_server.remove_tool(tool_name)
-                    # Add new variant
-                    mcp_server.add_tool(
-                        new_variant.fn,
-                        name=new_variant.name,
-                        description=new_variant.description,
-                        **new_variant.metadata
-                    )
-                    logger.debug(f"Swapped tool '{tool_name}' variant when switching from '{old_mode}' to '{new_mode}'")
-                except Exception as e:
-                    logger.warning(f"Failed to swap tool '{tool_name}': {e}")
     
     # Notify client of tool list changes
     try:

@@ -293,20 +293,16 @@ class TestSharedToolsUnchanged:
     """Test that shared tools remain unchanged across mode switches.
     
     Shared tools like inspect_graph, set_mode are available in all modes with
-    the same implementation and should not be removed/re-added during mode switches.
+    the same implementation. While they are removed and re-added during mode
+    switches (to maintain tool order), their function implementation remains
+    the same.
     
     Note: get_instructions is NOT a shared tool - it has mode-specific variants.
     """
     
-    async def test_truly_shared_tools_not_swapped(self, mcp_context: Mock) -> None:
-        """Test that truly shared tools (same fn across modes) are not swapped."""
-        await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
-        
-        # Get all add and remove calls
-        add_calls = [call_obj[0][0] for call_obj in mcp_context.fastmcp.add_tool.call_args_list]
-        remove_calls = [call_obj[0][0] for call_obj in mcp_context.fastmcp.remove_tool.call_args_list]
-        
-        # Truly shared tools (same function in all modes) should not be touched
+    async def test_truly_shared_tools_same_function(self, mcp_context: Mock) -> None:
+        """Test that truly shared tools use the same function across modes."""
+        # Truly shared tools (same function in all modes)
         truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "set_mode", "remove"]
         
         for tool in truly_shared_tools:
@@ -317,8 +313,29 @@ class TestSharedToolsUnchanged:
             if sketch_variant and elaborate_variant:
                 assert sketch_variant.fn == elaborate_variant.fn, \
                     f"{tool} should have the same function in both modes"
-                assert tool not in add_calls, f"Shared tool {tool} should not be added"
-                assert tool not in remove_calls, f"Shared tool {tool} should not be removed"
+                assert sketch_variant.description == elaborate_variant.description, \
+                    f"{tool} should have the same description in both modes"
+    
+    async def test_shared_tools_re_registered_for_order(self, mcp_context: Mock) -> None:
+        """Test that shared tools are removed and re-added to maintain order.
+        
+        Even though shared tools don't change functionality, they must be
+        removed and re-added to ensure the final tool list is in canonical order.
+        """
+        await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
+        
+        # Get all tool names from remove calls
+        remove_calls = [call[0][0] for call in mcp_context.fastmcp.remove_tool.call_args_list]
+        
+        # Get all tool names from add calls (keyword argument "name")
+        add_calls = [call[1]["name"] for call in mcp_context.fastmcp.add_tool.call_args_list if "name" in call[1]]
+        
+        # Truly shared tools should be both removed and re-added
+        truly_shared_tools = ["inspect_graph", "inspect_neighborhood", "set_mode", "remove"]
+        
+        for tool in truly_shared_tools:
+            assert tool in remove_calls, f"Shared tool {tool} should be removed (for reordering)"
+            assert tool in add_calls, f"Shared tool {tool} should be re-added (for reordering)"
     
     async def test_get_instructions_is_variant_tool(self, mcp_context: Mock) -> None:
         """Test that get_instructions is correctly treated as a variant tool.
@@ -413,7 +430,8 @@ class TestToolOrdering:
         from koala.tools.tools import TOOL_ORDER
         
         # Verify all tools in any mode are in TOOL_ORDER
-        for mode in ["sketch", "elaborate", "review"]:
+        modes: list[Mode] = ["sketch", "elaborate", "review"]
+        for mode in modes:
             mode_tools = TOOL_REGISTRY.get_tool_names_for_mode(mode)
             for tool in mode_tools:
                 assert tool in TOOL_ORDER, \
@@ -443,14 +461,15 @@ class TestToolOrdering:
         # Switch to elaborate
         await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
         
-        # Get final tool list from mock
+        # Get final tool list from mock (preserves insertion order)
         final_tools = list(mcp_context.fastmcp._registered_tools.keys())
         
         # Filter TOOL_ORDER to only tools in elaborate mode
         elaborate_tools = TOOL_REGISTRY.get_tool_names_for_mode("elaborate")
         expected_order = [t for t in TOOL_ORDER if t in elaborate_tools]
         
-        # Verify final tools match expected order
-        actual_ordered = [t for t in expected_order if t in final_tools]
-        assert actual_ordered == expected_order, \
-            f"Tool order mismatch. Expected: {expected_order}, Got: {actual_ordered}"
+        # Verify final tools are in the expected order
+        # Filter final_tools to only include elaborate tools, then check order
+        actual_order = [t for t in final_tools if t in elaborate_tools]
+        assert actual_order == expected_order, \
+            f"Tool order mismatch. Expected: {expected_order}, Got: {actual_order}"
