@@ -58,6 +58,9 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "premises", "edit_options": {"new_value": "The proposition to be added as further premise of this argument."}}, reason="Add a premise to an existing argument.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
         "\n"
+        "For more detailed guidance check out the topic-specific instructions on grounding dialectical relations and ensuring argument validity:\n"
+        f'- {NextAction(tool="get_instructions", params={"topic": "grounding"}, reason="Get detailed instructions on how to ground dialectical relations.", action_type="refine").model_dump()}\n'
+        f'- {NextAction(tool="get_instructions", params={"topic": "validity"}, reason="Get detailed instructions on how to ensure argument validity.", action_type="refine").model_dump()}\n'
     )
     if app_ctx.mode == "elaborate":
         instructions += "Currently active mode: `elaborate` mode."
