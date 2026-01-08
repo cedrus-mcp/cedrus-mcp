@@ -10,7 +10,8 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         "Sketch mode allows you to outline an argument map without having to fill in the precise details. "
         "You can add nodes (that is: claims and arguments) quickly by focusing on their key points (proposition) or main ideas (gist). "
         "A good sketch includes all the important claims and arguments, connects them provisionally via support and attack relations, "
-        "captures the main point of each claim and argument, and identifies each node by means of concise and distinct labels.\n\n"
+        "captures the main point of each claim and argument, and identifies each node by means of concise and distinct labels.\n"
+        "\n"
         "Typical actions in sketch mode include:\n"
         f'{NextAction(tool="add_claim", params={"label": "Claim Label", "proposition": "The proposition maintained by this claim."}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
         f'{NextAction(tool="add_argument", params={"label": "Argument Label", "gist": "The main idea of this argument."}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
@@ -20,7 +21,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
     if app_ctx.mode == "sketch":
         instructions += "Currently active mode: `sketch` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='set_mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
     return instructions
 
 def instruction_elaborate(app_ctx: AppContext) -> str:
@@ -56,7 +57,7 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
     if app_ctx.mode == "elaborate":
         instructions += "Currently active mode: `elaborate` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='set_mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
     return instructions
 
 def instruction_review(app_ctx: AppContext) -> str:
@@ -79,11 +80,17 @@ def instruction_review(app_ctx: AppContext) -> str:
         "- Identify complex and elaborate arguments > split into simpler sub-arguments > ensure each sub-argument is properly reconstructed > connect sub-arguments through grounded support relations\n"
         "- Start reviewing from main claims and root arguments and work your way against the direction of the dialectical relations \n"
         "\n"
+        "Typical tool calls in review mode include:\n"
+        f'{NextAction(tool="inspect_graph", params={}, reason="Inspect the overall structure of the argument map.", action_type="review").model_dump()}\n'
+        f"{NextAction(tool='validate', params={}, reason='Run validation to identify issues in the argument map that need attention.', action_type='review').model_dump()}\n"
+        f"{NextAction(tool='inspect_neighborhood', params={'label': 'Node Label'}, reason='Inspect the local neighborhood of a specific node to understand its connections and context.', action_type='review').model_dump()}\n"
+        f"{NextAction(tool='inspect_node', params={'label': 'Node Label'}, reason='Inspect the details of a specific node to evaluate its content and role in the argument map.', action_type='review').model_dump()}\n"
+        "\n"
     )
     if app_ctx.mode == "review":
         instructions += "Currently active mode: `review` mode."
     else:
-        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
+        instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='set_mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
     return instructions
 
 @mcp.resource("argmap://instructions")
