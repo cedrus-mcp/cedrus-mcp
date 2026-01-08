@@ -634,8 +634,7 @@ def edit(
         field: Field to edit (label, proposition, gist, conclusion, premises, tags, metadata)
         edit_options: Field-specific configuration:
             - For label/proposition/gist/conclusion: new_value
-            - For premises: new_value, premise_idx
-            - For tags: new_value (to add), old_value (to remove), or both
+            - For premises/tags: new_value (to add), old_value (to remove), or both
             - For metadata: key, new_value
 
     Example usage:
@@ -649,7 +648,7 @@ def edit(
         edit(
             label="Existing-Argument",
             field="premises",
-            edit_options={"premise_idx": 1, "new_value": "This is the revised first premise."}
+            edit_options={"old_value": "This is the original first premise.", "new_value": "This is the revised first premise."}
         )
     """
 
@@ -714,7 +713,7 @@ def edit(
                     case "premises":
                         return node_updates.update_premises(
                             label=label,
-                            premise_idx=args.premise_idx,
+                            old_value=args.old_value,
                             new_value=args.new_value,
                             arg_map=arg_map,
                             tc=tc,

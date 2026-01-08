@@ -658,7 +658,7 @@ class ArgumentMap:
     
     # Helper methods for redundancy checks
     @staticmethod
-    def _is_redundant_support(edge_data, c_edge_data, c, v, edge_data_cache):
+    def _is_redundant_support(edge_data: dict[str, Any], c_edge_data: dict[str, Any], c: NodeLabel, v: NodeLabel, edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]]) -> bool:
         if edge_data["_type"] == "support" and c_edge_data["_type"] == "support":
             c_to_v_edge_data = edge_data_cache.get((c, v))
             if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "support":
@@ -666,7 +666,7 @@ class ArgumentMap:
         return False
 
     @staticmethod
-    def _is_redundant_attack(edge_data, c_edge_data, c, v, edge_data_cache):
+    def _is_redundant_attack(edge_data: dict[str, Any], c_edge_data: dict[str, Any], c: NodeLabel, v: NodeLabel, edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]]) -> bool:
         if edge_data["_type"] == "attack":
             if c_edge_data["_type"] == "attack":
                 c_to_v_edge_data = edge_data_cache.get((c, v))

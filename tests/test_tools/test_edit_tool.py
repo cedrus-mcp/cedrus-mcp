@@ -128,3 +128,153 @@ async def test_edit_metadata(tool_context: Mock) -> None:
     )
     
     assert not result.isError
+
+
+async def test_edit_premises_add_new(tool_context: Mock) -> None:
+    """Test adding a new premise to an argument."""
+    # Add an argument
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["First premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Add a new premise
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={"new_value": "Second premise"}
+    )
+    
+    assert not result.isError
+    arg_map = tool_context.request_context.lifespan_context.arg_map
+    node = arg_map.get_node("A1")
+    premise_contents = [arg_map.get_proposition(pid).content for pid in node.premises]
+    assert "First premise" in premise_contents
+    assert "Second premise" in premise_contents
+    assert len(premise_contents) == 2
+
+
+async def test_edit_premises_remove_existing(tool_context: Mock) -> None:
+    """Test removing an existing premise from an argument."""
+    # Add an argument with two premises
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["First premise", "Second premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Remove the first premise
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={"old_value": "First premise"}
+    )
+    
+    assert not result.isError
+    arg_map = tool_context.request_context.lifespan_context.arg_map
+    node = arg_map.get_node("A1")
+    premise_contents = [arg_map.get_proposition(pid).content for pid in node.premises]
+    assert "First premise" not in premise_contents
+    assert "Second premise" in premise_contents
+    assert len(premise_contents) == 1
+
+
+async def test_edit_premises_update_existing(tool_context: Mock) -> None:
+    """Test updating an existing premise content."""
+    # Add an argument
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["Original premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Update the premise
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={"old_value": "Original premise", "new_value": "Updated premise"}
+    )
+    
+    assert not result.isError
+    arg_map = tool_context.request_context.lifespan_context.arg_map
+    node = arg_map.get_node("A1")
+    premise_contents = [arg_map.get_proposition(pid).content for pid in node.premises]
+    assert "Original premise" not in premise_contents
+    assert "Updated premise" in premise_contents
+    assert len(premise_contents) == 1
+
+
+async def test_edit_premises_neither_old_nor_new_fails(tool_context: Mock) -> None:
+    """Test that providing neither old_value nor new_value fails."""
+    # Add an argument
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["First premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Try to edit without providing values
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={}
+    )
+    
+    assert result.isError or result.structuredContent["status"] == "failure"
+
+
+async def test_edit_premises_nonexistent_old_value_fails(tool_context: Mock) -> None:
+    """Test that trying to update a non-existent premise fails."""
+    # Add an argument
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["First premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Try to update a premise that doesn't exist
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={"old_value": "Nonexistent premise", "new_value": "New content"}
+    )
+    
+    assert result.structuredContent["status"] == "failure"
+
+
+async def test_edit_premises_empty_new_value_fails(tool_context: Mock) -> None:
+    """Test that adding an empty premise fails."""
+    # Add an argument
+    await add_argument_elaborate(
+        label="A1",
+        ctx=tool_context,
+        gist="Test argument",
+        premises=["First premise"],
+        conclusion="Conclusion"
+    )
+    
+    # Try to add an empty premise
+    result = edit(
+        label="A1",
+        field="premises",
+        ctx=tool_context,
+        edit_options={"new_value": ""}
+    )
+    
+    assert result.structuredContent["status"] == "failure"

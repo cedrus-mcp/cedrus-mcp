@@ -464,7 +464,7 @@ def update_tags(
 
 def update_premises(
     label: NodeLabel,
-    premise_idx: int | None,
+    old_value: str | None,
     new_value: str | None,
     arg_map: ArgumentMap,
     tc: ToolContext,
@@ -473,19 +473,17 @@ def update_premises(
 
     Args:
         label: The label of the argument node to update.
-        premise_idx: The index of the premise to update.
+        old_value: The content of the premise to remove or replace (if any).
         new_value: The content of the premise to add (if any). If None, the premise at premise_idx is removed.
 
-    If premise_idx refers to a valid index of the premises list, 
-    the corresponding premise is updated or removed.
-    If premise_idx is out of range, a new premise is added.
+    If old_value is None, a new premise is added. If new_value is None, the premise with old_value is removed.
     """
 
     try:
-        if premise_idx is None:
+        if old_value is None and new_value is None:
             return tc.failure(
-                f"✗ premise_idx must be provided for updating premises of argument `<{label}>`.",
-                error="MissingPremiseIndex",
+                f"✗ Neither old_value nor new_value provided for updating premises of argument `<{label}>`.",
+                error="NoPremiseValuesProvided",
             ).build()
 
         argument_node = arg_map.get_argument(label)
@@ -496,20 +494,27 @@ def update_premises(
 
         premise_nodes = [arg_map.get_proposition(pid) for pid in argument_node.premises]
         if any(p is None for p in premise_nodes):
-            tc.issue("info", 
-                f"Found and cleaned up non-existing premises in argument `<{label}>`.",
-                priority=0.2,
+            tc.issue(
+                "warning",
+                f"Ignoring non-existent premises in argument node `<{label}>`. Consider running validate with fix=True to clean up.",
             )
         premise_nodes = [p for p in premise_nodes if p is not None]
-        premise_node = premise_nodes[premise_idx - 1] if 0 < premise_idx <= len(premise_nodes) else None
-            
-        if premise_node is None:
-            if new_value is None:
+
+
+        if old_value is not None:
+            old_premise = next((p for p in premise_nodes if p and p.content == old_value), None)
+            if old_premise is None:
                 return tc.failure(
-                    f"✗ Cannot remove non-existing premise at index {premise_idx} of argument `<{label}>`.",
-                    error="InvalidPremiseIndex",
+                    f"✗ Cannot find premise '{textwrap.shorten(old_value, 30)}' in argument `<{label}>` for updating.",
+                    error="PremiseNotFound",
                 ).build()
-            if new_value.strip() == "":
+        else:
+            old_premise = None
+
+
+        if old_premise is None:
+
+            if new_value is None or new_value.strip() == "":
                 return tc.failure(
                     f"✗ Cannot create a new empty premise in argument `<{label}>`.",
                     error="EmptyPremiseContent",
@@ -528,37 +533,39 @@ def update_premises(
                 f"✓ Added new premise '({len(premise_nodes)}) {textwrap.shorten(new_value, 30)}' to argument `<{label}>`.",
                 result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
-        else:
+
+        else: 
+
+            # Check for invalid specifications first
             if new_value is not None and new_value.strip() == "":
                 return tc.failure(
-                    f"✗ Cannot update premise at index {premise_idx} of argument `<{label}>` to an empty value.",
+                    f"✗ Cannot update premise '{old_premise.content}' of argument `<{label}>` to an empty value.",
                     error="EmptyPremiseContent",
                 ).build()
 
-            if new_value is not None and premise_node.content == new_value:
+            if new_value is not None and old_premise.content == new_value:
                 return tc.failure(
-                    f"✗ Old premise content and new_value are the same (`{premise_node.content}`) for updating premises of argument `<{label}>`.",
+                    f"✗ Old premise content and new_value are the same (`{old_premise.content}`) for updating premises of argument `<{label}>`.",
                     error="SamePremiseValuesProvided",
                 ).build()
 
             if new_value is None:
-                premise_nodes.pop(premise_idx - 1)
                 arg_map.update_node(
                     argument_node.label,
-                    {"premises": [p.id for p in premise_nodes if p is not None]},
+                    {"premises": [p.id for p in premise_nodes if p is not None and p.id != old_premise.id]},
                 )
-                arg_map.maybe_remove_unused_proposition(premise_node.id)
+                arg_map.maybe_remove_unused_proposition(old_premise.id)
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                 return tc.success(
-                    f"✓ Removed premise '({premise_idx}) {textwrap.shorten(premise_node.content, 30)}' from argument `<{label}>`.",
+                    f"✓ Removed premise '{textwrap.shorten(old_premise.content, 40)}' from argument `<{label}>`.",
                     result=render_argdown_node(arg_map, argument_node.label, details=True),
                 ).build()
 
             if new_value is not None:
-                update_proposition(premise_node.id, {"content": new_value}, exempt_nodes_flagging=[argument_node.label], arg_map=arg_map, tc=tc)
+                update_proposition(old_premise.id, {"content": new_value}, exempt_nodes_flagging=[argument_node.label], arg_map=arg_map, tc=tc)
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                 return tc.success(
-                    f"✓ Updated premise '({premise_idx}) {textwrap.shorten(premise_node.content, 30)}' of argument `<{label}>` to '{textwrap.shorten(new_value, 30)}'.",
+                    f"✓ Updated premise '{old_premise.content}' of argument `<{label}>` to '{new_value}'.",
                     result=render_argdown_node(arg_map, argument_node.label, details=True),
                 ).build()
     except Exception as e:

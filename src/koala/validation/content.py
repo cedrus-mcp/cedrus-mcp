@@ -109,10 +109,7 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
         if not isinstance(node, ArgumentNode):
             continue
 
-        premises = [
-            arg_map.get_proposition(p_id) for p_id in node.premises
-        ]
-        premises = [p for p in premises if p is not None]
+
         conclusion = arg_map.get_proposition(node.conclusion)
 
         if conclusion is None:
@@ -141,6 +138,31 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
         if max_issues is not None and issues_found >= max_issues:
             break
 
+
+        premises = [
+            arg_map.get_proposition(p_id) for p_id in node.premises
+        ]
+
+        # Check and cleanup any None premises
+        if any(p is None for p in premises):
+            issues_found += 1
+            message = f"Argument node {label} has non-existing premises."
+            tc.issue("warning", message, label=label)
+            premises = [p for p in premises if p is not None]
+            if fix:
+                arg_map.update_node(label, updates={"premises": [p.id for p in premises if p is not None]})
+            else:
+                # suggest run validation with fix=True
+                tc.suggest(
+                    "validate",
+                    {"fix": True},
+                    f"Run validation with fix=True to clean up non-existing premises in argument node {label}.",
+                    "fix",
+                )
+        if max_issues is not None and issues_found >= max_issues:
+            break
+
+
         if len(premises) == 0:
             issues_found += 1
             message = f"Argument node {label} has no premises."
@@ -164,5 +186,6 @@ def check_argument_structure(arg_map: ArgumentMap, tc: ToolContext, fix: bool = 
                 f"Add a premise to argument node {label}. Repeat as necessary. (2/2)",
                 "fix",
             )
+
 
     return issues_found
