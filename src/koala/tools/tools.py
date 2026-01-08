@@ -595,7 +595,7 @@ async def connect_elaborate(
     ctx: Context[ServerSession, AppContext],
     relation_type: DialecticalRelationType = "support",
     target_premise_idx: int | None = None,
-    grounding_strategy: GroundingStrategy | Literal[""] = "",
+    grounding_strategy: Literal['define_negation', 'define_equivalence', 'copy_premise', 'negate_premise', 'copy_conclusion', 'negate_conclusion', ""] = "",
 ) -> CallToolResult:
     """Create a relation (elaborate mode - with grounding).
 
