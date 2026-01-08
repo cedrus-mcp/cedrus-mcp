@@ -1202,12 +1202,14 @@ async def _update_tools_for_mode(
         1. Get tool name sets for old and new modes from TOOL_REGISTRY
         2. Calculate set differences:
            
-           - ``tools_to_remove = old_tools - new_tools``
-           - ``tools_to_add = new_tools - old_tools``
+           - ``tools_to_remove = old_tools - new_tools`` (tools only in old mode)
+           - ``tools_to_add = new_tools - old_tools`` (tools only in new mode)
+           - ``tools_to_swap = old_tools & new_tools`` (tools in both modes - may have different variants)
         
         3. Remove old tools via ``mcp_server.remove_tool()``
         4. Add new tools via ``mcp_server.add_tool()``
-        5. Send ``tools/list_changed`` notification to client
+        5. Swap variant tools by removing and re-adding with new variant
+        6. Send ``tools/list_changed`` notification to client
     
     Args:
         ctx: FastMCP context providing access to server and session.
@@ -1227,14 +1229,15 @@ async def _update_tools_for_mode(
             
             tools_to_remove = {}  # Elaborate is superset of sketch
             tools_to_add = {"edit", "inspect_node"}
+            tools_to_swap = {"add_claim", "add_argument", "connect"}  # Have different variants
             
             # Add edit and inspect_node
+            # Swap add_claim, add_argument, connect to elaborate variants
             # Send notification to client
     
     Notes:
-        - For tools with variants (e.g., add_argument), the tool is neither
-          added nor removed—only the underlying function is swapped internally
-          by MCP when we re-register under the same name.
+        - For tools with variants (e.g., add_argument), both the function and
+          description need to be updated by removing and re-adding the tool.
         - Failures to add/remove individual tools are logged as warnings but
           don't stop the overall mode switch.
         - Client notification failures are also logged but non-fatal.
@@ -1269,6 +1272,28 @@ async def _update_tools_for_mode(
                 logger.debug(f"Added tool '{tool_name}' when switching to '{new_mode}'")
             except Exception as e:
                 logger.warning(f"Failed to add tool '{tool_name}': {e}")
+    
+    # Swap tools that exist in both modes but may have different variants
+    tools_to_swap = old_tools & new_tools
+    for tool_name in tools_to_swap:
+        old_variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, old_mode)
+        new_variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, new_mode)
+        
+        # Only swap if the variants are actually different
+        if old_variant and new_variant and old_variant.fn != new_variant.fn:
+            try:
+                # Remove old variant
+                mcp_server.remove_tool(tool_name)
+                # Add new variant
+                mcp_server.add_tool(
+                    new_variant.fn,
+                    name=new_variant.name,
+                    description=new_variant.description,
+                    **new_variant.metadata
+                )
+                logger.debug(f"Swapped tool '{tool_name}' variant when switching from '{old_mode}' to '{new_mode}'")
+            except Exception as e:
+                logger.warning(f"Failed to swap tool '{tool_name}': {e}")
     
     # Notify client of tool list changes
     try:
