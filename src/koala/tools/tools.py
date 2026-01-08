@@ -595,7 +595,7 @@ async def connect_elaborate(
     ctx: Context[ServerSession, AppContext],
     relation_type: DialecticalRelationType = "support",
     target_premise_idx: int | None = None,
-    grounding_strategy: GroundingStrategy | None = None,
+    grounding_strategy: GroundingStrategy | Literal[""] = "",
 ) -> CallToolResult:
     """Create a relation (elaborate mode - with grounding).
 
@@ -610,7 +610,7 @@ async def connect_elaborate(
         source, target, ctx,
         relation_type=relation_type,
         target_premise_idx=target_premise_idx,
-        grounding_strategy=grounding_strategy
+        grounding_strategy=grounding_strategy if grounding_strategy != "" else None
     )
 
 
@@ -872,14 +872,14 @@ async def get_instructions(ctx: Context[ServerSession, AppContext]) -> CallToolR
     tc.success("✓ Printed instructions.")
     return tc.build()
 
-async def get_instructions_elaborate(ctx: Context[ServerSession, AppContext], topic: Literal["grounding", "validity"] | None = None) -> CallToolResult:
+async def get_instructions_elaborate(ctx: Context[ServerSession, AppContext], topic: Literal["grounding", "validity", ""] = "") -> CallToolResult:
     """Show detailed instructions for elaborate mode.
 
     Args:
-        topic: Specific topic to get instructions for (either "grounding" or "validity"). If None, returns general instructions.
+        topic: Specific topic to get instructions for (either "grounding" or "validity"). If empty, returns general instructions.
     """
 
-    if topic is None:
+    if topic == "":
         return await get_instructions(ctx)
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -1645,7 +1645,7 @@ def _register_tool_variants() -> None:
                 - "validity": Instructions on how to ensure argument validity and soundness.
 
             Args:
-                topic: Specific topic to get instructions for. Defaults to None for general instructions.
+                topic: Specific topic to get instructions for. Defaults to empty string for general instructions.
             """)
     ))
     TOOL_REGISTRY.register_variant(ToolVariant(
