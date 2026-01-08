@@ -872,6 +872,38 @@ async def get_instructions(ctx: Context[ServerSession, AppContext]) -> CallToolR
     tc.success("✓ Printed instructions.")
     return tc.build()
 
+async def get_instructions_elaborate(ctx: Context[ServerSession, AppContext], topic: Literal["grounding", "validity"] | None = None) -> CallToolResult:
+    """Show detailed instructions for elaborate mode.
+
+    Args:
+        topic: Specific topic to get instructions for (e.g., "grounding" or "validity").
+    """
+
+    if topic is None:
+        return await get_instructions(ctx)
+
+    arg_map = ctx.request_context.lifespan_context.arg_map
+    mode = ctx.request_context.lifespan_context.mode
+
+    with tool_context(arg_map, mode) as tc:
+        try:
+            if topic == "grounding":
+                text = koala.resources.instructions.instructions_grounding()
+                return tc.success("✓ Providing grounding instructions.", result=text).build()
+            elif topic == "validity":
+                text = koala.resources.instructions.instructions_validity()
+                return tc.success("✓ Providing validity instructions.", result=text).build()
+            else:
+                return tc.failure(
+                    f"Unknown topic '{topic}' for elaborate instructions. Available topics: 'grounding', 'validity'.", error="UnknownTopic"
+                ).build()
+        except Exception as e:
+            logger.error(f"Error providing elaborate instructions for topic '{topic}': {str(e)}")
+            return tc.failure(
+                f"✗ Error providing `elaborate` instructions for topic '{topic}'", error=str(e)
+            ).build()
+
+
 
 async def inspect_graph(
     ctx: Context[ServerSession, AppContext],
@@ -1560,10 +1592,31 @@ def _register_tool_variants() -> None:
         modes=["review"],
         description="Validate the current argument map for consistency and completeness"
     ))
+
+    # get_instruction - sketch, elaborate and review modes
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=get_instructions_elaborate,
+        name="get_instructions",
+        internal_name="get_instructions",
+        modes=["elaborate"],
+        description=dedent(
+            """Show general advice or detailed topic-specific instructions for how to elaborate an argumentation graph.
+
+            Args:
+                topic: Specific topic to get instructions for ("grounding" or "validity"). Defaults to None for general instructions.
+            """)
+    ))
+    TOOL_REGISTRY.register_variant(ToolVariant(
+        fn=get_instructions,
+        name="get_instructions",
+        internal_name="get_instructions",
+        modes=["sketch", "review"],
+        description="Show instructions and usage hints for current mode"
+    ))
+
     
     # Shared tools (all modes)
     for shared_tool_fn, tool_name, description in [
-        (get_instructions, "get_instructions", "Show instructions for current mode"),
         (inspect_graph, "inspect_graph", "Show an overview of the argumentation graph"),
         (inspect_neighborhood, "inspect_neighborhood", "Show k-neighborhood of a node"),
         (set_mode, "set_mode", "Switch the argument map editing mode"),
