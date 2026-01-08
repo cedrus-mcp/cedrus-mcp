@@ -15,7 +15,7 @@ ToolName = Literal[
     "inspect_graph",
     "inspect_neighborhood",
     "inspect_node",
-    "instructions",
+    "get_instructions",
     "validate",
     #"export_svg",
     "set_mode",

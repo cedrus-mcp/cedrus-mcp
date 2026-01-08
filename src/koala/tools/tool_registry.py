@@ -160,7 +160,7 @@ class ToolRegistry:
                 {
                     "add_argument": [sketch_variant, elaborate_variant],
                     "validate": [review_variant],
-                    "instructions": [shared_variant]  # Available in all modes
+                    "get_instructions": [shared_variant]  # Available in all modes
                 }
     
     Thread Safety:
@@ -278,7 +278,7 @@ class ToolRegistry:
             # - add_argument_sketch
             # - connect_sketch
             # - remove
-            # - instructions, inspect_graph, etc. (shared)
+            # - get_instructions, inspect_graph, etc. (shared)
         """
         tools = []
         for variants in self._variants.values():

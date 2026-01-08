@@ -16,7 +16,7 @@ Tool Organization:
     - add_argument_elaborate(label, gist, premises, conclusion, tags) - Full detail
     
     **Shared Tools**: Tools available in all modes with consistent signatures
-    (e.g., instructions, inspect_graph).
+    (e.g., get_instructions, inspect_graph).
 
 Mode System:
     - **sketch**: Rapid prototyping with minimal detail
@@ -619,7 +619,7 @@ async def connect_elaborate(
 ##############################################
 # These tools have consistent signatures across all modes (or specific subsets).
 # They don't need variants - the same function is used regardless of mode.
-# Examples: edit (elaborate only), validate (review only), instructions (all modes)
+# Examples: edit (elaborate only), validate (review only), get_instructions (all modes)
 
 def edit(
     label: NodeLabel,
@@ -848,12 +848,12 @@ def remove(
 ##############################################
 
 
-async def instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResult:
+async def get_instructions(ctx: Context[ServerSession, AppContext]) -> CallToolResult:
     """Show instructions for current mode.
 
     Example usage:
 
-        instructions()
+        get_instructions()
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -1147,9 +1147,9 @@ async def set_mode(
         
         tc.success(f"✓ Switched mode from '{old_mode}' to '{mode}'.")
         tc.suggest(
-            "instructions",
+            "get_instructions",
             {},
-            f"Run 'instructions' to see guidelines for '{mode}' mode.",
+            f"Run 'get_instructions' to see guidelines for '{mode}' mode.",
             action_type="help",
         )
         return tc.build()
@@ -1280,7 +1280,7 @@ def _register_tool_variants() -> None:
             - *All shared tools*
         
         **Shared Tools** (all modes):
-            - instructions
+            - get_instructions
             - inspect_graph
             - inspect_neighborhood
             - set_mode
@@ -1563,7 +1563,7 @@ def _register_tool_variants() -> None:
     
     # Shared tools (all modes)
     for shared_tool_fn, tool_name, description in [
-        (instructions, "instructions", "Show instructions for current mode"),
+        (get_instructions, "get_instructions", "Show instructions for current mode"),
         (inspect_graph, "inspect_graph", "Show an overview of the argumentation graph"),
         (inspect_neighborhood, "inspect_neighborhood", "Show k-neighborhood of a node"),
         (set_mode, "set_mode", "Switch the argument map editing mode"),

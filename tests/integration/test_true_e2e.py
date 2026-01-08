@@ -50,7 +50,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
             # Shared tools (available in all modes)
             assert "inspect_graph" in tool_names
             assert "inspect_neighborhood" in tool_names
-            assert "instructions" in tool_names
+            assert "get_instructions" in tool_names
             assert "set_mode" in tool_names
             
             # List available resources

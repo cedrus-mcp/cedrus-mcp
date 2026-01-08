@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import instructions
+from koala.tools.tools import get_instructions
 from koala.server import AppContext
 from koala.graph.argument_map import ArgumentMap
 
@@ -42,7 +42,7 @@ def tool_context_review(empty_arg_map: ArgumentMap) -> Mock:
 
 async def test_instructions_sketch_mode(tool_context_sketch: Mock) -> None:
     """Test instructions tool in sketch mode."""
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
     assert result.content
@@ -55,7 +55,7 @@ async def test_instructions_sketch_mode(tool_context_sketch: Mock) -> None:
 
 async def test_instructions_elaborate_mode(tool_context_elaborate: Mock) -> None:
     """Test instructions tool in elaborate mode."""
-    result = await instructions(ctx=tool_context_elaborate)
+    result = await get_instructions(ctx=tool_context_elaborate)
     
     assert not result.isError
     assert result.content
@@ -63,7 +63,7 @@ async def test_instructions_elaborate_mode(tool_context_elaborate: Mock) -> None
 
 async def test_instructions_review_mode(tool_context_review: Mock) -> None:
     """Test instructions tool in review mode."""
-    result = await instructions(ctx=tool_context_review)
+    result = await get_instructions(ctx=tool_context_review)
     
     assert not result.isError
     assert result.content
@@ -71,7 +71,7 @@ async def test_instructions_review_mode(tool_context_review: Mock) -> None:
 
 async def test_instructions_returns_text(tool_context_sketch: Mock) -> None:
     """Test that instructions returns text content."""
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
     assert result.content
@@ -84,7 +84,7 @@ async def test_instructions_returns_text(tool_context_sketch: Mock) -> None:
 
 async def test_instructions_embeds_resource(tool_context_sketch: Mock) -> None:
     """Test that instructions embeds resource with proper URI."""
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
     assert result.content
@@ -97,7 +97,7 @@ async def test_instructions_embeds_resource(tool_context_sketch: Mock) -> None:
 
 async def test_instructions_success_message(tool_context_sketch: Mock) -> None:
     """Test that instructions includes success message."""
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
     # Should have structured content with success status
@@ -110,9 +110,9 @@ async def test_instructions_different_per_mode(
     tool_context_review: Mock
 ) -> None:
     """Test that instructions may vary by mode."""
-    result_sketch = await instructions(ctx=tool_context_sketch)
-    result_elaborate = await instructions(ctx=tool_context_elaborate)
-    result_review = await instructions(ctx=tool_context_review)
+    result_sketch = await get_instructions(ctx=tool_context_sketch)
+    result_elaborate = await get_instructions(ctx=tool_context_elaborate)
+    result_review = await get_instructions(ctx=tool_context_review)
     
     # All should succeed
     assert not result_sketch.isError
@@ -130,7 +130,7 @@ async def test_instructions_no_parameters_required(
 ) -> None:
     """Test that instructions requires no parameters."""
     # Should work with just ctx parameter
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
 
@@ -140,7 +140,7 @@ async def test_instructions_handles_errors_gracefully(
 ) -> None:
     """Test that instructions handles errors gracefully."""
     # Even with empty map, should not raise exception
-    result = await instructions(ctx=tool_context_sketch)
+    result = await get_instructions(ctx=tool_context_sketch)
     
     assert not result.isError
 
@@ -155,6 +155,6 @@ async def test_instructions_available_in_all_modes(
     modes = [tool_context_sketch, tool_context_elaborate, tool_context_review]
     
     for ctx in modes:
-        result = await instructions(ctx=ctx)
+        result = await get_instructions(ctx=ctx)
         assert not result.isError
         assert result.content
