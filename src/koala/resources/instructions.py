@@ -172,11 +172,19 @@ def instructions_grounding() -> str:
         "Attempts to ground a sketched dialectic relation may fail for different reasons, e.g. because the conclusion of the supporting/attacking argument is not related to any relevant premise "
         "of the supported/attacked argument -- no matter how exactly you elaborate the latter one. In such cases, the original dialectical relation should be reconsidered and possibly removed from "
         "the argument map. Reconsider whether the supporting/attacking argument has another dialectical function:\n"
-        "- maybe an argument A, rather than supporting B, is an alternatiove justification of the B's conclusion, in which case A and be would be parallel arguments supporting the "
+        "- maybe an argument A, rather than supporting B, is an alternative justification of the B's conclusion, in which case A and be would be parallel arguments supporting the "
         "same claims / arguments;\n"
+        "- maybe an argument A, rather than supporting argument B, is actually supporting another (implicit) argument A* that supports B, in which case you might reconstruct a support chain from A to A* to B';\n"
         "- maybe an argument A, rather than supporting claim C, is attacking an argument B that attacks C, in which case A would defend C against an objection (posed by B);\n"
         "- maybe an argument A, rather than attacking B, is actually attacking the claim C that B supports, in which case A would be a direct objection to C; etc.\n"
+        "\n"
+        "> [!IMPORTANT]\n"
+        "> Only define two propositions (e.g., a premise and a conclusion) as **equivalent** (grounding_strategy='define_equivalence') if they are truly semantically equivalent.\n"
+        "> Likewise, only define two propositions as **contradictory** (grounding_strategy='define_negation') if they are truly contradictory, i.e., one is the negation of the other.\n"
+        "> Otherwise you risk to mess up the entire argumentation graph!\n"
+
     )
+
 
 
 def instructions_validity() -> str:
