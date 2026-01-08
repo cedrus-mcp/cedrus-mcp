@@ -217,7 +217,8 @@ class ToolContext:
                     "status": "failure",
                     "error": self._error,
                     "message": self._message,
-                    "issues": [i.model_dump() for i in self.issues] if self.issues else []
+                    "issues": [i.model_dump() for i in self.issues] if self.issues else [],
+                    "active_editing_mode": self.mode,
                 }
             self.content.append(
                 TextContent(
@@ -235,9 +236,11 @@ class ToolContext:
         structured_content: dict[str, Any] = {
             "status": self._status,
             "message": self._message,
+            "active_editing_mode": self.mode,
         }
         plain_content: list[str] = []   
-        
+
+
         if self._result_data is not None:
             structured_content["result"] = self._result_data
             plain_content.append(f"RESULT:\n\n{self._result_data}")
@@ -256,6 +259,8 @@ class ToolContext:
             structured_content["next_actions"] = [s.model_dump() for s in self.suggestions]
             text = "\n\n".join(f"{s.action_type.upper()} {s.reason} : `{s.tool}({s.params})`" for s in self.suggestions)
             plain_content.append(f"SUGGESTIONS:\n\n{text}")
+
+        plain_content.append(f"ACTIVE EDITING MODE: `{self.mode}`")
 
 
         # Cast structured_content as plain text for backwards compatibility
