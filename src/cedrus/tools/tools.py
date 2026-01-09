@@ -1,6 +1,6 @@
 """MCP tool implementations with mode-aware dynamic registration.
 
-This module defines all MCP tools for the KOALA argument mapping server.
+This module defines all MCP tools for the CEDRUS argument mapping server.
 Tools are organized into mode-specific variants that expose different signatures
 based on the current editing mode (sketch, elaborate, review).
 

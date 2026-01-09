@@ -1,6 +1,6 @@
-"""KOALA MCP server entry point.
+"""CEDRUS MCP server entry point.
 
-This module serves as the main entry point for running the KOALA MCP server.
+This module serves as the main entry point for running the CEDRUS MCP server.
 It imports and registers all tools, resources, and prompts, then starts the
 FastMCP server with the specified transport.
 
@@ -44,10 +44,10 @@ import cedrus.resources  # noqa: F401
 # === Entry Point ===
 
 def main() -> None:
-    """Run the KOALA MCP server."""
+    """Run the CEDRUS MCP server."""
     # Determine transport from command line or default to stdio
 
-    parser = argparse.ArgumentParser(description="KOALA MCP server")
+    parser = argparse.ArgumentParser(description="CEDRUS MCP server")
     parser.add_argument(
         "--http",
         action="store_true",
@@ -59,7 +59,7 @@ def main() -> None:
     if args.http:
         transport = "streamable-http"
 
-    print(f"Starting KOALA MCP server with {transport} transport ...")
+    print(f"Starting CEDRUS MCP server with {transport} transport ...")
     try:
         mcp.run(transport=transport)
     except KeyboardInterrupt:

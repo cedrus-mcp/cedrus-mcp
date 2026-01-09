@@ -181,7 +181,7 @@ def _create_graphviz_graph(layout_direction: str) -> graphviz.Digraph:
     """Create and configure GraphViz Digraph object."""
     dot = graphviz.Digraph(
         name="cedrus_argument_map",
-        comment="Created with KOALA MCP Server",
+        comment="Created with CEDRUS MCP Server",
         graph_attr={
             "format": "svg",
             "rankdir": layout_direction,

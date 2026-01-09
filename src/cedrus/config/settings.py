@@ -1,13 +1,13 @@
 """Application settings and configuration.
 
 # Using uv run
-KOALA_DATA_FILE=~/data/argmap.json uv run cedrus
+CEDRUS_DATA_FILE=~/data/argmap.json uv run cedrus
 
 # Using uvx
-KOALA_DATA_FILE=~/data/argmap.json uvx cedrus
+CEDRUS_DATA_FILE=~/data/argmap.json uvx cedrus
 
 # Multiple settings
-KOALA_DATA_FILE=~/maps/debate.json KOALA_MAX_NODES=200 uv run cedrus
+CEDRUS_DATA_FILE=~/maps/debate.json CEDRUS_MAX_NODES=200 uv run cedrus
 """
 
 from pathlib import Path
@@ -15,10 +15,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """KOALA application settings."""
+    """CEDRUS application settings."""
     
     model_config = SettingsConfigDict(
-        env_prefix="KOALA_",
+        env_prefix="CEDRUS_",
         case_sensitive=False
     )
 

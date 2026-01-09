@@ -1,4 +1,4 @@
-"""KOALA MCP server instance with lifecycle management."""
+"""CEDRUS MCP server instance with lifecycle management."""
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -44,15 +44,15 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
 instructions="""\
-The KOALA MCP server equips AI agents with tools to structure their internal thinking. \
-It allows agents to organize heterogeneous and conflicting reasoning in a structured \
-argumentation graph, and provides capabilities to sketch, refine and review such argumentation \
+The Cedrus MCP server equips AI agents with tools to structure their internal thinking. \
+It allows agents to organize heterogeneous and conflicting reasoning as structured \
+argumentation, and provides capabilities to sketch, refine and review such reasoning \
 graphs.\
 """
 
 # Create the MCP server instance
 mcp = FastMCP(
-    "KOALA Structured Thinking MCP Server",
+    "reasoning-graph",
     instructions=instructions,
     lifespan=app_lifespan,
     stateless_http=False,

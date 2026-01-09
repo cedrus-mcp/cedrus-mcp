@@ -1,4 +1,4 @@
-"""Pydantic models and data structures for KOALA."""
+"""Pydantic models and data structures for CEDRUS."""
 
 ## export alls models (except BaseNode) for easier imports
 from .nodes import ArgumentNode, ClaimNode

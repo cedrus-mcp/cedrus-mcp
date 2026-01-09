@@ -1,1 +1,1 @@
-"""Test suite for KOALA."""
+"""Test suite for CEDRUS."""
