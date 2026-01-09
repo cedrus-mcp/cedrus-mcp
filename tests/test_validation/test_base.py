@@ -1,10 +1,10 @@
 """Tests for base validation orchestration."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.base import validate_argument_map
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.base import validate_argument_map
 
 
 def test_validate_empty_map_sketch_mode(empty_map: ArgumentMap, sketch_context: ToolContext) -> None:

@@ -2,9 +2,9 @@
 
 import pytest
 from unittest.mock import Mock, AsyncMock
-from koala.tools.tools import switch_mode
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.tools.tools import switch_mode
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

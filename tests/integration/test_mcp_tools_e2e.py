@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 from mcp.types import CallToolResult
-from koala.tools.tools import (
+from cedrus.tools.tools import (
     add_claim_sketch,
     add_argument_sketch,
     edit,
@@ -11,8 +11,8 @@ from koala.tools.tools import (
     remove,
     switch_mode,
 )
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

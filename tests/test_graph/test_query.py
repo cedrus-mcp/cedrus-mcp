@@ -1,7 +1,7 @@
 """Unit tests for graph query operations."""
 
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
 
 
 def test_get_k_neighborhood_k1() -> None:

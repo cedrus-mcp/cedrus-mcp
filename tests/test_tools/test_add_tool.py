@@ -2,14 +2,14 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.tools.tools import (
+from cedrus.tools.tools import (
     add_claim_sketch,
     add_claim_elaborate,
     add_argument_sketch,
     add_argument_elaborate,
 )
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture
@@ -143,7 +143,7 @@ async def test_add_empty_label_fails(tool_context_sketch: Mock) -> None:
         )
 
 
-@patch("koala.resources.graph_views.mcp.get_context")
+@patch("cedrus.resources.graph_views.mcp.get_context")
 async def test_add_duplicate_label_gets_unique(mock_get_context, tool_context_sketch: Mock) -> None:
     """Test that duplicate labels are made unique."""
     # Mock the context returned by mcp.get_context

@@ -2,9 +2,9 @@
 
 import pytest
 from pathlib import Path
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
-from koala.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.server import AppContext
 
 
 @pytest.fixture

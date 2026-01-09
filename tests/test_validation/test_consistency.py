@@ -1,10 +1,10 @@
 """Tests for consistency validation."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.consistency import check_consistency
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.consistency import check_consistency
 
 
 def test_check_consistency_empty_map(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
@@ -55,7 +55,7 @@ def test_check_consistency_detects_self_contradictory_equivalence_class(empty_ma
     # Directly add equivalence edge Q ≡ Not-P to bypass API safety check
     # This creates a self-contradictory equivalence class: {P, Q, Not-P}
     # where P and Not-P have a negation relation
-    from koala.models.relations import LogicalRelation
+    from cedrus.models.relations import LogicalRelation
     relation = LogicalRelation(_type="equivalence")
     empty_map.proposition_graph.add_edge(prop2.id, prop3.id, **relation.model_dump(by_alias=True))
     
@@ -68,7 +68,7 @@ def test_check_consistency_detects_self_contradictory_equivalence_class(empty_ma
 def test_check_consistency_respects_max_issues(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:
     """Test that max_issues parameter limits reported issues."""
     # Create multiple self-contradictory equivalence classes
-    from koala.models.relations import LogicalRelation
+    from cedrus.models.relations import LogicalRelation
     
     for i in range(5):
         p1 = Proposition(content=f"Prop{i}")

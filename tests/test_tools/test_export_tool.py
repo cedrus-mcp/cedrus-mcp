@@ -2,9 +2,9 @@
 
 # import pytest
 # from unittest.mock import Mock, patch
-# from koala.tools.tools import add, export_svg
-# from koala.server import AppContext
-# from koala.graph.argument_map import ArgumentMap
+# from cedrus.tools.tools import add, export_svg
+# from cedrus.server import AppContext
+# from cedrus.graph.argument_map import ArgumentMap
 # from mcp.types import ImageContent
 
 
@@ -27,7 +27,7 @@
 #     add(label="C2", ctx=tool_context, node_options={"proposition": "Claim 2"})
     
 #     # Mock the export_svg function to avoid GraphViz dependency
-#     with patch('koala.tools.tools.export_svg') as mock_export:
+#     with patch('cedrus.tools.tools.export_svg') as mock_export:
 #         mock_export.return_value = '<svg>test</svg>'
         
 #         result = await export_svg(ctx=tool_context)
@@ -45,7 +45,7 @@
 #     add(label="C1", ctx=tool_context, node_options={"proposition": "Claim"})
 #     add(label="A1", ctx=tool_context, node_options={"node_type": "argument", "gist": "Arg"})
     
-#     with patch('koala.tools.tools.export_svg') as mock_export:
+#     with patch('cedrus.tools.tools.export_svg') as mock_export:
 #         mock_export.return_value = '<svg>test</svg>'
         
 #         result = await export_svg(ctx=tool_context)
@@ -60,7 +60,7 @@
 # @pytest.mark.asyncio
 # async def test_export_handles_graphviz_error(tool_context: Mock) -> None:
 #     """Test that export handles GraphViz errors gracefully."""
-#     with patch('koala.graph.svg_export.export_svg') as mock_export:
+#     with patch('cedrus.graph.svg_export.export_svg') as mock_export:
 #         mock_export.side_effect = RuntimeError("GraphViz not installed")
 #         result = await export_svg(ctx=tool_context)
         

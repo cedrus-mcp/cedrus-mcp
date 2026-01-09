@@ -2,9 +2,9 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.resources.instructions import instruction_resource
-from koala.server import mcp, AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.resources.instructions import instruction_resource
+from cedrus.server import mcp, AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

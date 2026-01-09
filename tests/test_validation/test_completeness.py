@@ -1,10 +1,10 @@
 """Tests for completeness validation."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.completeness import check_completeness
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.completeness import check_completeness
 
 
 def test_check_completeness_empty_map(empty_map: ArgumentMap, elaborate_context: ToolContext) -> None:

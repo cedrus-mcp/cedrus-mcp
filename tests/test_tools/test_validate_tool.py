@@ -6,10 +6,10 @@ Detailed validation logic is tested in tests/test_validation/.
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import validate
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
-from koala.models import Proposition, ClaimNode, ArgumentNode
+from cedrus.tools.tools import validate
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import Proposition, ClaimNode, ArgumentNode
 
 
 @pytest.fixture

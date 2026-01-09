@@ -1,6 +1,6 @@
 """Unit tests for node models."""
 
-from koala.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
 
 
 def test_create_claim_node() -> None:

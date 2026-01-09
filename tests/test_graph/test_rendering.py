@@ -1,8 +1,8 @@
 """Unit tests for argdown rendering."""
 
-from koala.graph.argument_map import ArgumentMap
-from koala.graph.rendering import render_argdown, render_argdown_node
-from koala.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.graph.rendering import render_argdown, render_argdown_node
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
 
 
 def test_render_empty_graph() -> None:

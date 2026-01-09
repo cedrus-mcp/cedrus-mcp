@@ -1,6 +1,6 @@
 """Unit tests for relation models."""
 
-from koala.models import DialecticalRelation
+from cedrus.models import DialecticalRelation
 
 
 def test_create_support_relation() -> None:

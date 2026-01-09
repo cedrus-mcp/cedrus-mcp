@@ -1,11 +1,11 @@
 [project]
-name = "koala"
+name = "cedrus"
 version = "0.1.0"
-description = "KOALA - Agent-centric MCP server for informal argument mapping"
+description = "CEDRUS - Agent-centric MCP server for informal argument mapping"
 authors = [
     {name = "Your Name", email = "your.email@example.com"}
 ]
-scripts = { "koala" = "koala.__main__:main" }
+scripts = { "cedrus" = "cedrus.__main__:main" }
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -34,7 +34,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/koala"]
+packages = ["src/cedrus"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

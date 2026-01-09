@@ -1,8 +1,8 @@
 """Unit tests for ArgumentMap operations."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
 
 
 def test_create_empty_argument_map() -> None:

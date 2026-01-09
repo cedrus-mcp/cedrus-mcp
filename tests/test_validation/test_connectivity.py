@@ -1,10 +1,10 @@
 """Tests for connectivity validation."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.connectivity import check_connectivity
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.connectivity import check_connectivity
 
 
 def add_claim_node(arg_map: ArgumentMap, content: str) -> str:

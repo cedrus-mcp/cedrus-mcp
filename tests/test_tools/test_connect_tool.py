@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import (
+from cedrus.tools.tools import (
     add_claim_sketch,
     add_claim_elaborate,
     add_argument_sketch,
@@ -10,8 +10,8 @@ from koala.tools.tools import (
     connect_sketch,
     connect_elaborate,
 )
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

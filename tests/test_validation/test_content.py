@@ -1,10 +1,10 @@
 """Tests for content validation."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ArgumentNode, ClaimNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.content import check_core_content, check_argument_structure
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.content import check_core_content, check_argument_structure
 
 
 def add_claim_node(arg_map: ArgumentMap, content: str) -> str:

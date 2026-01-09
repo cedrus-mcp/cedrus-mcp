@@ -1,10 +1,10 @@
 """Tests for grounding validation."""
 
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models import ClaimNode, ArgumentNode, Proposition
-from koala.tools.tool_context import ToolContext
-from koala.validation.grounding import check_grounding
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.tools.tool_context import ToolContext
+from cedrus.validation.grounding import check_grounding
 
 
 def add_claim_node(arg_map: ArgumentMap, content: str) -> str:

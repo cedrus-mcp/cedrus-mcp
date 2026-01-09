@@ -1,6 +1,6 @@
 import pytest
-from koala.graph.argument_map import ArgumentMap
-from koala.models.nodes import ArgumentNode, ClaimNode
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.models.nodes import ArgumentNode, ClaimNode
 import networkx as nx
 
 @pytest.fixture

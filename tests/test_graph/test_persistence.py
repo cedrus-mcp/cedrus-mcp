@@ -1,9 +1,9 @@
 """Unit tests for graph persistence (save/load)."""
 
 from pathlib import Path
-from koala.graph.argument_map import ArgumentMap
-from koala.graph.persistence import save_graph, load_graph
-from koala.models import ClaimNode, ArgumentNode, Proposition
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.graph.persistence import save_graph, load_graph
+from cedrus.models import ClaimNode, ArgumentNode, Proposition
 
 
 def test_save_empty_graph(temp_data_file: Path) -> None:

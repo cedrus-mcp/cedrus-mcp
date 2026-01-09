@@ -1,7 +1,7 @@
 """Unit tests for proposition models."""
 
 import pytest
-from koala.models import Proposition
+from cedrus.models import Proposition
 
 
 def test_create_proposition() -> None:

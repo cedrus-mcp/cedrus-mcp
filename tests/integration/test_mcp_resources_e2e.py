@@ -2,13 +2,13 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.models.base import Mode
-from koala.resources.graph_views import graph_thin_resource, graph_details_resource, neighborhood_details_resource
-from koala.resources.node_details import node_details_resource
-from koala.resources.summaries import statistics_resource
-from koala.resources.instructions import instruction_resource
-from koala.server import mcp, AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.models.base import Mode
+from cedrus.resources.graph_views import graph_thin_resource, graph_details_resource, neighborhood_details_resource
+from cedrus.resources.node_details import node_details_resource
+from cedrus.resources.summaries import statistics_resource
+from cedrus.resources.instructions import instruction_resource
+from cedrus.server import mcp, AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ async def test_instructions_resource_sketch(mock_mcp_context: Mock, mode = "sket
 
 
 @pytest.mark.asyncio
-async def test_instructions_resource_elaborate(mock_mcp_context: Mock, mode = "elaborate") -> None:
+async def test_instructions_resource_elaborate(mock_mcp_context: Mock, mode: Mode = "elaborate") -> None:
     """Test instruction resource for elaborate mode."""
     with patch.object(mcp, 'get_context', return_value=mock_mcp_context):
         mcp.get_context().request_context.lifespan_context.mode = mode
@@ -99,7 +99,7 @@ async def test_instructions_resource_elaborate(mock_mcp_context: Mock, mode = "e
 
 
 @pytest.mark.asyncio
-async def test_instructions_resource_review(mock_mcp_context: Mock, mode = "review") -> None:
+async def test_instructions_resource_review(mock_mcp_context: Mock, mode: Mode = "review") -> None:
     """Test instruction resource for review mode."""
     with patch.object(mcp, 'get_context', return_value=mock_mcp_context):
         mcp.get_context().request_context.lifespan_context.mode = mode

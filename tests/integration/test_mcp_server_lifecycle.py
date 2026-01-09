@@ -3,16 +3,16 @@
 import pytest
 from pathlib import Path
 from _pytest.monkeypatch import MonkeyPatch
-from koala.server import app_lifespan, mcp
-from koala.graph.argument_map import ArgumentMap
-from koala.graph.persistence import save_graph
-from koala.models import ClaimNode, Proposition
+from cedrus.server import app_lifespan, mcp
+from cedrus.graph.argument_map import ArgumentMap
+from cedrus.graph.persistence import save_graph
+from cedrus.models import ClaimNode, Proposition
 
 
 @pytest.mark.asyncio
 async def test_server_lifespan_creates_new_graph(temp_data_file: Path, monkeypatch: MonkeyPatch) -> None:
     """Test that server creates new graph when data file doesn't exist."""
-    from koala.config.settings import settings
+    from cedrus.config.settings import settings
     monkeypatch.setattr(settings, "data_file", temp_data_file)
     
     async with app_lifespan(mcp) as ctx:
@@ -24,7 +24,7 @@ async def test_server_lifespan_creates_new_graph(temp_data_file: Path, monkeypat
 @pytest.mark.asyncio
 async def test_server_lifespan_loads_existing_graph(temp_data_file: Path, sample_arg_map: ArgumentMap, monkeypatch: MonkeyPatch) -> None:
     """Test that server loads existing graph on startup (persistence is stub)."""
-    from koala.config.settings import settings
+    from cedrus.config.settings import settings
     
     # Save sample graph
     save_graph(sample_arg_map, temp_data_file)
@@ -38,7 +38,7 @@ async def test_server_lifespan_loads_existing_graph(temp_data_file: Path, sample
 @pytest.mark.asyncio
 async def test_server_lifespan_saves_on_shutdown(temp_data_file: Path, monkeypatch: MonkeyPatch) -> None:
     """Test that server saves graph on shutdown (persistence is stub)."""
-    from koala.config.settings import settings
+    from cedrus.config.settings import settings
     monkeypatch.setattr(settings, "data_file", temp_data_file)
     
     async with app_lifespan(mcp) as ctx:

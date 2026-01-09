@@ -11,11 +11,11 @@ modes change. It ensures that:
 import pytest
 import inspect
 from unittest.mock import Mock, AsyncMock
-from koala.models.base import Mode
-from koala.tools.tools import switch_mode, _update_tools_for_mode
-from koala.tools.tool_registry import TOOL_REGISTRY
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.models.base import Mode
+from cedrus.tools.tools import switch_mode, _update_tools_for_mode
+from cedrus.tools.tool_registry import TOOL_REGISTRY
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture
@@ -402,7 +402,7 @@ class TestToolOrdering:
     
     async def test_tools_registered_in_canonical_order(self, mcp_context: Mock) -> None:
         """Test that tools are added in TOOL_ORDER during mode switch."""
-        from koala.tools.tools import TOOL_ORDER
+        from cedrus.tools.tools import TOOL_ORDER
         
         # Switch from sketch to elaborate
         await _update_tools_for_mode(mcp_context, "sketch", "elaborate")
@@ -427,7 +427,7 @@ class TestToolOrdering:
     
     async def test_tool_order_maintained_across_modes(self) -> None:
         """Test that TOOL_ORDER is consistent with tool registry."""
-        from koala.tools.tools import TOOL_ORDER
+        from cedrus.tools.tools import TOOL_ORDER
         
         # Verify all tools in any mode are in TOOL_ORDER
         modes: list[Mode] = ["sketch", "elaborate", "review"]
@@ -439,7 +439,7 @@ class TestToolOrdering:
     
     async def test_sketch_to_elaborate_maintains_order(self, mcp_context: Mock) -> None:
         """Test specific case: sketch to elaborate preserves logical tool order."""
-        from koala.tools.tools import TOOL_ORDER
+        from cedrus.tools.tools import TOOL_ORDER
         
         # Simulate initial sketch mode registration
         sketch_tools = TOOL_REGISTRY.get_tool_names_for_mode("sketch")

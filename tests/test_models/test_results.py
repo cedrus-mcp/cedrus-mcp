@@ -1,6 +1,6 @@
 """Unit tests for result models."""
 
-from koala.models.results import NextAction
+from cedrus.models.results import NextAction
 
 
 def test_create_next_action() -> None:

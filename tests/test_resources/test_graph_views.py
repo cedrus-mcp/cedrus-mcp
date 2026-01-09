@@ -2,9 +2,9 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from koala.resources.graph_views import graph_thin_resource, graph_details_resource, neighborhood_details_resource
-from koala.server import mcp, AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.resources.graph_views import graph_thin_resource, graph_details_resource, neighborhood_details_resource
+from cedrus.server import mcp, AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

@@ -2,9 +2,9 @@
 
 import pytest
 from unittest.mock import Mock
-from koala.tools.tools import get_instructions, get_instructions_elaborate
-from koala.server import AppContext
-from koala.graph.argument_map import ArgumentMap
+from cedrus.tools.tools import get_instructions, get_instructions_elaborate
+from cedrus.server import AppContext
+from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

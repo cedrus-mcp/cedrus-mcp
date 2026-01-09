@@ -20,7 +20,7 @@ async def test_mcp_server_full_lifecycle(tmp_path: Path) -> None:
     # Configure server parameters
     server_params: StdioServerParameters = StdioServerParameters(
         command="uv",
-        args=["run", "python", "-m", "koala"],
+        args=["run", "python", "-m", "cedrus"],
         env={
             "KOALA_DATA_FILE": str(data_file),
         }
@@ -219,7 +219,7 @@ async def test_mcp_server_error_handling(tmp_path: Path) -> None:
     
     server_params: StdioServerParameters = StdioServerParameters(
         command="uv",
-        args=["run", "python", "-m", "koala"],
+        args=["run", "python", "-m", "cedrus"],
         env={
             "KOALA_DATA_FILE": str(data_file),
         }
