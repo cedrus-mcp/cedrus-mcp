@@ -41,7 +41,8 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         "A good reconstruction of an argument provides the argument's conclusion and the premises "
         "which are used to infer and justify that conclusion.\n"
         "\n"
-        "A dialectical relation should be 'grounded' in the logical connections between the nodes' constituent propositions in the following sense:\n"
+        "A dialectical relation (=macro-feature) should be 'grounded' in the logical connections between the nodes' constituent propositions "
+        "(=micro-features) in the following sense:\n"
         "- A claim C supports an argument A if C is used as a premise in A's reconstruction.\n"
         "- A claim C attacks an argument A if C negates a premise in A's reconstruction.\n"
         "- An argument A supports a claim C if A's conclusion is C's proposition.\n"
@@ -50,9 +51,9 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         "- An argument A1 attacks an argument A2 if A1's conclusion negates a premise in A2's reconstruction.\n"
         "\n"
         "In the `elaborate` mode, you'd typically work on individual arguments, clarifying their conclusions and unfolding their premises. "
-        "You iteratively improve the argument reconstructions, trying to ground more and more dialectical relations in order to"
-        "obtain an ever more coherent and well-structured argument map. While you focus on internal premise conclusion structures, make "
-        "sure to adjust gists and labels as well, as you clarify and gain a better understanding of the arguments.\n"
+        "You iteratively improve the argument reconstructions, trying to ground more and more dialectical macro-level relations in logical "
+        "micro-level features in order to obtain an ever more coherent and well-structured argument map. While you focus on internal premise "
+        "conclusion structures, make sure to adjust gists and labels as well, as you clarify and gain a better understanding of the arguments.\n"
         "\n"
         "Typical actions in elaborate mode include:\n"
         f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
@@ -60,7 +61,7 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "premises", "edit_options": {"new_value": "The proposition to be added as further premise of this argument."}}, reason="Add a premise to an existing argument.", action_type="refine").model_dump()}\n'
         f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
         "\n"
-        "For more detailed guidance check out the topic-specific instructions on grounding dialectical relations and ensuring argument validity:\n"
+        "For more detailed guidance check out the topic-specific instructions on 'grounding' dialectical macro relations and ensuring argument 'validity':\n"
         f'- {NextAction(tool="get_instructions", params={"topic": "grounding"}, reason="Get detailed instructions on how to ground dialectical relations.", action_type="refine").model_dump()}\n'
         f'- {NextAction(tool="get_instructions", params={"topic": "validity"}, reason="Get detailed instructions on how to ensure argument validity.", action_type="refine").model_dump()}\n'
     )
@@ -112,8 +113,8 @@ def instructions_grounding() -> str:
     return (
         "# How to make sure that dialectical relations are grounded\n"
         "\n"
-        "Grounding refers to the process of establishing clear and explicit connections between the nodes in your argument map. "
-        "This involves ensuring that support and attack relations are justified by the content of the nodes involved.\n"
+        "Grounding refers to the process of establishing clear and explicit macro relations between the nodes in your argument map. "
+        "This involves ensuring that *macro-level* support and attack relations are justified by the *micro-level* content of the nodes involved.\n"
         "\n"
         "To ground a support relation, verify that the supporting node provides a conclusion that is equivalent to a premise of the supported node. "
         "For attack relations, ensure that the attacking node has a conclusion that directly contradicts a premise of the attacked node.\n"
@@ -181,7 +182,7 @@ def instructions_grounding() -> str:
         "- maybe an argument A, rather than attacking B, is actually attacking the claim C that B supports, in which case A would be a direct objection to C; etc.\n"
         "\n"
         "> [!IMPORTANT]\n"
-        "> Only define two propositions (e.g., a premise and a conclusion) as **equivalent** (grounding_strategy='define_equivalence') if they are truly semantically equivalent.\n"
+        "> When grounding dialectical relations, only define two propositions (e.g., a premise and a conclusion) as **equivalent** (grounding_strategy='define_equivalence') if they are truly semantically equivalent.\n"
         "> Likewise, only define two propositions as **contradictory** (grounding_strategy='define_negation') if they are truly contradictory, i.e., one is the negation of the other.\n"
         "> Otherwise you risk to mess up the entire argumentation graph!\n"
 
