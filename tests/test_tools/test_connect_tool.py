@@ -118,6 +118,7 @@ async def test_connect_nonexistent_nodes_fails(tool_context_sketch: Mock) -> Non
         relation_type="support",
         ctx=tool_context_sketch,
     )
-    
+
     # Check that error is indicated in structured content
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"

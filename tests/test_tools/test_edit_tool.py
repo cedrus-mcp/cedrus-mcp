@@ -95,6 +95,7 @@ def test_edit_nonexistent_node_fails(tool_context: Mock) -> None:
             ctx=tool_context,
             edit_options={"new_value": "Test"}
         )
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
 
 
@@ -232,8 +233,11 @@ async def test_edit_premises_neither_old_nor_new_fails(tool_context: Mock) -> No
         ctx=tool_context,
         edit_options={}
     )
-    
-    assert result.isError or result.structuredContent["status"] == "failure"
+
+    assert result.isError or (
+        result.structuredContent is not None
+        and result.structuredContent["status"] == "failure"
+    )
 
 
 async def test_edit_premises_nonexistent_old_value_fails(tool_context: Mock) -> None:
@@ -254,7 +258,8 @@ async def test_edit_premises_nonexistent_old_value_fails(tool_context: Mock) -> 
         ctx=tool_context,
         edit_options={"old_value": "Nonexistent premise", "new_value": "New content"}
     )
-    
+
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
 
 
@@ -276,5 +281,6 @@ async def test_edit_premises_empty_new_value_fails(tool_context: Mock) -> None:
         ctx=tool_context,
         edit_options={"new_value": ""}
     )
-    
+
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"

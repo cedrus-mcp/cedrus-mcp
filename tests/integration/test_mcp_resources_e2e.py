@@ -78,7 +78,7 @@ async def test_statistics_resource(mock_mcp_context: Mock, sample_arg_map: Argum
 
 
 @pytest.mark.asyncio
-async def test_instructions_resource_sketch(mock_mcp_context: Mock, mode = "sketch") -> None:
+async def test_instructions_resource_sketch(mock_mcp_context: Mock, mode: Mode = "sketch") -> None:
     """Test instruction resource for sketch mode."""
     with patch.object(mcp, 'get_context', return_value=mock_mcp_context):
         result = await instruction_resource()

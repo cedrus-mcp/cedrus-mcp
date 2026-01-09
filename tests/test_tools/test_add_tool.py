@@ -144,7 +144,7 @@ async def test_add_empty_label_fails(tool_context_sketch: Mock) -> None:
 
 
 @patch("cedrus.resources.graph_views.mcp.get_context")
-async def test_add_duplicate_label_gets_unique(mock_get_context, tool_context_sketch: Mock) -> None:
+async def test_add_duplicate_label_gets_unique(mock_get_context: Mock, tool_context_sketch: Mock) -> None:
     """Test that duplicate labels are made unique."""
     # Mock the context returned by mcp.get_context
     mock_context = Mock()

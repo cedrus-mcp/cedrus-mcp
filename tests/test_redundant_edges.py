@@ -3,14 +3,17 @@ from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models.nodes import ArgumentNode, ClaimNode
 import networkx as nx
 
+
 @pytest.fixture
-def argument_map():
-    # Create a fixture for the ArgumentMap instance
+def argument_map() -> ArgumentMap:
+    """Fixture providing an empty ``ArgumentMap`` instance backed by a DiGraph."""
+
     arg_map = ArgumentMap()
     arg_map.argument_graph = nx.DiGraph()
     return arg_map
 
-def test_redundant_edges_support_case(argument_map):
+
+def test_redundant_edges_support_case(argument_map: ArgumentMap) -> None:
     # Add nodes using ArgumentMap methods
     argument_map.add_argument(ArgumentNode(label="A"))
     argument_map.add_argument(ArgumentNode(label="B"))
@@ -25,7 +28,8 @@ def test_redundant_edges_support_case(argument_map):
     redundant = argument_map.redundant_edges()
     assert ("A", "B") in redundant
 
-def test_redundant_edges_attack_case(argument_map):
+
+def test_redundant_edges_attack_case(argument_map: ArgumentMap) -> None:
     # Add nodes using ArgumentMap methods
     argument_map.add_argument(ArgumentNode(label="A"))
     argument_map.add_argument(ArgumentNode(label="B"))
@@ -40,7 +44,8 @@ def test_redundant_edges_attack_case(argument_map):
     redundant = argument_map.redundant_edges()
     assert ("A", "B") in redundant
 
-def test_no_redundant_edges(argument_map):
+
+def test_no_redundant_edges(argument_map: ArgumentMap) -> None:
     # Add nodes using ArgumentMap methods
     argument_map.add_argument(ArgumentNode(label="A"))
     argument_map.add_argument(ArgumentNode(label="B"))
@@ -54,7 +59,8 @@ def test_no_redundant_edges(argument_map):
     redundant = argument_map.redundant_edges()
     assert len(redundant) == 0
 
-def test_invalid_edge_types(argument_map):
+
+def test_invalid_edge_types(argument_map: ArgumentMap) -> None:
     # Add nodes using ArgumentMap methods
     argument_map.add_argument(ArgumentNode(label="A"))
     argument_map.add_argument(ArgumentNode(label="B"))

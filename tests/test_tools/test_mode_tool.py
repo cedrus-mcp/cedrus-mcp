@@ -59,9 +59,12 @@ async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
 
 async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
     """Test that invalid mode returns error status."""
-    result = await switch_mode(mode="invalid", ctx=tool_context)
+    # Pass an intentionally invalid mode; mark as type-ignored since the
+    # production function only accepts valid modes at the type level.
+    result = await switch_mode(mode="invalid", ctx=tool_context)  # type: ignore[arg-type]
     
     # Check that error is indicated in structured content
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
     # Mode should remain unchanged
     assert tool_context.request_context.lifespan_context.mode == "sketch"

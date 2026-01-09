@@ -86,6 +86,8 @@ async def test_remove_relation(tool_context: Mock) -> None:
 def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
     """Test removing a non-existent node raises KeyError."""
     result = remove(label="NONEXISTENT", ctx=tool_context)
+    # ``structuredContent`` is optional on the result type; assert non-None before indexing
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
 
 
@@ -100,6 +102,7 @@ async def test_remove_with_both_label_and_relation_prioritizes_label(tool_contex
         source="A1", target="C2",
         ctx=tool_context
     )
-    
+
     # Should fail
+    assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
