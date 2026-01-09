@@ -55,7 +55,7 @@ def deliberate_decision(decision_problem: str) -> str:
         "### Your final output\n\n"
         "When you are ready to answer the user, provide:\n"
         "1. **Final decision**: Clearly state the chosen option.\n"
-        "2. **Overall assessment**: Briefly summarize how this decision is rooted in your overall assessment of the deliberation.\n"
+        "2. **Overall assessment**: Briefly summarize how this decision is rooted in your overall assessment of the deliberation.\n\n"
         "## Additional instructions\n\n"
         "- If available, use todo lists to dynamically track, add, and manage pending tasks during your deliberation.\n"
         "- Use the `instructions` resource when needed to get further guidance on tools, modes, and best practices.\n"
