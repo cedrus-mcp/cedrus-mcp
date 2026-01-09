@@ -1255,7 +1255,7 @@ async def switch_mode(
         tc.suggest(
             "get_instructions",
             {},
-            f"Run 'get_instructions' to see guidelines for '{mode}' mode.",
+            f"Run 'get_instructions' to get important guidance and hints for '{mode}' mode.",
             action_type="help",
         )
         return tc.build()
