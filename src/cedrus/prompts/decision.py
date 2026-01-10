@@ -34,7 +34,6 @@ def deliberate_decision(decision_problem: str) -> str:
         "### Phase I: Orientation and Reflection\n"
         "\n"
         "Reflect on, and clarify for your own:\n"
-        "\n"
         "- What sort of decision are you facing and which kinds of considerations are pertinent to making a well-reasoned "
         "choice?\n"
         "- What are the standards and criteria your deliberation should meet in order to inform the decision you face?\n"
