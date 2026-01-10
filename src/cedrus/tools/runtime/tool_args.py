@@ -3,7 +3,7 @@
 from typing import Any, Literal, overload
 
 from mcp.server.fastmcp.utilities.logging import get_logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models import NodeLabel
