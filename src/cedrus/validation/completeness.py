@@ -1,9 +1,9 @@
 """Completeness validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
+from cedrus.graph.query import has_grounding
 from cedrus.tools.backend import relations
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.utils.relations import has_grounding
 
 
 def check_completeness(

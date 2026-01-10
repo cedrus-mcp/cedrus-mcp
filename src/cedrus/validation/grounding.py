@@ -1,8 +1,8 @@
 """Grounding validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
+from cedrus.graph.query import is_grounded_relation
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.utils.relations import is_grounded_relation
 
 
 def check_grounding(
