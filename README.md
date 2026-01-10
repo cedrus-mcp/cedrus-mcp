@@ -1,8 +1,8 @@
-# Cedrus MCP Server
+# Cedrus MCP Server (aka `reasoning-graph`)
 
-Cedrus is a **thinking tool** for AI assistants.
+Cedrus is a **thinking tool** for AI assistants and agents.
 
-It runs as a **Model Context Protocol (MCP) server** and gives an assistant a place to **externalize and structure its chain‑of‑thought** instead of keeping reasoning hidden in a single text blob.
+It runs as a **Model Context Protocol (MCP) server** and gives an agent a place to **externalize and structure its chain‑of‑thought** instead of keeping reasoning hidden in a single text blob.
 
 You can think of Cedrus as a shared "reasoning canvas" between you and the assistant:
 - The assistant turns its internal thoughts into **claims** (things that might be true or false).
