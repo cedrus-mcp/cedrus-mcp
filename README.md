@@ -11,7 +11,7 @@ You can think of Cedrus as a shared "reasoning canvas" between you and the assis
 
 Cedrus keeps track of this evolving argument map and offers tools to sketch it, refine it, and review it as the conversation unfolds.
 
----
+
 
 ## Why use Cedrus?
 
@@ -29,7 +29,7 @@ It is especially useful for:
 - Debates, policy analysis, and complex decisions.
 - Explanations where you want to see the **shape of the reasons**, not just the conclusion.
 
----
+
 
 ## Quick Start
 
@@ -45,7 +45,7 @@ This will:
 
 Usually you do **not** run this by hand; instead your MCP‑aware app (editor / assistant / tool host) runs this command under the hood when it needs Cedrus.
 
----
+
 
 ## Using Cedrus in an MCP client
 
@@ -79,7 +79,7 @@ After that, your client should be able to:
 
 You do **not** need to know the underlying Python or MCP details to do this.
 
----
+
 
 ## How Cedrus shapes chain‑of‑thought
 
@@ -100,7 +100,7 @@ Once connected, a typical pattern looks like this:
 
 All of this happens through MCP tools that your client can show as buttons, menus, or commands. You and the assistant share the same structured argument map instead of a hidden chain‑of‑thought.
 
----
+
 
 ## Configs
 
@@ -114,7 +114,7 @@ uvx git+https://github.com/debatelab/cedrus
 
 These are optional and safe to ignore when you are just getting started.
 
----
+
 
 ## Learning from inside the tool
 
