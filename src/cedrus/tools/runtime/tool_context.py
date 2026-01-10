@@ -1,26 +1,27 @@
 """Tool execution context for managing tool outputs in a unified way."""
 
 from __future__ import annotations
+
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pydantic.networks import AnyUrl
-from typing import Any, Literal, TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, Literal
 
 from mcp.types import (
+    Annotations,
     CallToolResult,
+    ContentBlock,
+    EmbeddedResource,
+    Role,
     TextContent,
     TextResourceContents,
-    EmbeddedResource,
-    Annotations,
-    ContentBlock,
-    Role,
 )
+from pydantic.networks import AnyUrl
 
-from cedrus.models.base import Issue, NodeLabel, Mode
-from cedrus.models.results import NextAction
+from cedrus.backend.models.base import Issue, Mode, NodeLabel
+from cedrus.backend.models.results import NextAction
 
 if TYPE_CHECKING:
-    from cedrus.graph import ArgumentMap
+    from cedrus.backend.graph import ArgumentMap
     from cedrus.tools import ToolName
 else:
     ToolName = str

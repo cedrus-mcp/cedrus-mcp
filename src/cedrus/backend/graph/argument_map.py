@@ -1,22 +1,22 @@
 # src/cedrus/graph/argument_map.py
 
 from __future__ import annotations
-from functools import lru_cache
-import textwrap
 
+import re
+import textwrap
+from datetime import datetime
+from functools import lru_cache
+from typing import Any, Dict, Iterator, List, Optional
+
+import networkx as nx
 from mcp.server.fastmcp.utilities.logging import get_logger
 
-from datetime import datetime
-import re
-import networkx as nx
-from typing import Any, Dict, Iterator, List, Optional
-from cedrus.models.base import PropositionID, NodeLabel
-from cedrus.models.nodes import ClaimNode, ArgumentNode
-from cedrus.models.propositions import Proposition
-from cedrus.models.relations import DialecticalRelation, LogicalRelation
+from cedrus.backend.models.base import NodeLabel, PropositionID
+from cedrus.backend.models.nodes import ArgumentNode, ClaimNode
+from cedrus.backend.models.propositions import Proposition
+from cedrus.backend.models.relations import DialecticalRelation, LogicalRelation
 
-
-logger = get_logger("cedrus.graph")  # Creates 'FastMCP.cedrus' logger
+logger = get_logger("cedrus.backend.graph")  # Creates 'FastMCP.cedrus' logger
 
 
 class ArgumentMap:
@@ -163,11 +163,7 @@ class ArgumentMap:
         attack = DialecticalRelation(_type="attack", target_premise_idx=target_premise_idx)
         self.argument_graph.add_edge(from_label, to_label, **attack.model_dump(by_alias=True))
 
-    def update_relation(
-        self, from_label: str,
-        to_label: str,
-        updates: Dict[str, Any]
-    ) -> None:
+    def update_relation(self, from_label: str, to_label: str, updates: Dict[str, Any]) -> None:
         """Update a relation's attributes."""
         relation = self.get_dialectic_relation(from_label, to_label)
         if not relation:
@@ -341,7 +337,7 @@ class ArgumentMap:
             for n in self.argument_graph.nodes()
             if self.argument_graph.nodes[n]["_type"] == "argument"
         ]
-    
+
     def list_roots(self) -> List[NodeLabel]:
         """Get all root nodes (nodes with no incoming edges)."""
         return [n for n in self.argument_graph.nodes() if self.argument_graph.out_degree(n) == 0]
@@ -353,7 +349,7 @@ class ArgumentMap:
             for u, v in self.argument_graph.edges()
             if self.argument_graph.edges[u, v]["_type"] == "support"
         ]
-    
+
     def list_attack_relations(self) -> List[tuple[NodeLabel, NodeLabel]]:
         """Get all attack relations."""
         return [
@@ -393,12 +389,14 @@ class ArgumentMap:
             for v in self.argument_graph.successors(label)
             if self.argument_graph.edges[label, v]["_type"] == "attack"
         ]
-    
+
     def get_k_neighborhood(self, label: NodeLabel, k: int) -> List[NodeLabel]:
         """Get k-neighborhood of a node (all nodes within distance k, including the node itself)."""
-        return list(nx.single_source_shortest_path_length(
-            self.argument_graph.to_undirected(), label, cutoff=k
-        ).keys())
+        return list(
+            nx.single_source_shortest_path_length(
+                self.argument_graph.to_undirected(), label, cutoff=k
+            ).keys()
+        )
 
     def get_negation_of(self, prop_id: PropositionID) -> Iterator[Proposition]:
         """Get propositions that are negations of the given proposition."""
@@ -411,10 +409,12 @@ class ArgumentMap:
         """Get weakly connected components of the argument graph."""
         return [list(c) for c in nx.weakly_connected_components(self.argument_graph)]
 
-    def redundant_edges(self, subset: list[NodeLabel] | None = None) -> List[tuple[NodeLabel, NodeLabel]]:
+    def redundant_edges(
+        self, subset: list[NodeLabel] | None = None
+    ) -> List[tuple[NodeLabel, NodeLabel]]:
         """Get list of redundant edges in the argument graph.
-        
-        An edge (a, b) from argument node a to argument node b is redundant 
+
+        An edge (a, b) from argument node a to argument node b is redundant
         iff there is a claim c such that
         * (a, b) is a support edge, a supports c, and c supports b, or
         * (a, b) is an attack edge, a attacks c, and c supports b, or
@@ -422,7 +422,6 @@ class ArgumentMap:
         """
         subset_tuple = tuple(subset) if subset is not None else None
         return self._redundant_edges(self.argument_graph, subset=subset_tuple)
-
 
     def find_proposition_by_content(self, content: str) -> Iterator[Proposition]:
         """Get propositions by content."""
@@ -469,26 +468,26 @@ class ArgumentMap:
 
     def longest_path(self) -> List[NodeLabel]:
         """Get the longest simple path in the argument graph.
-        
+
         A simple path is a path with no repeated nodes. For directed acyclic graphs,
         this uses an efficient algorithm. For graphs with cycles, this enumerates
         all simple paths between all node pairs, which may be slow for large graphs.
-        
+
         Returns:
             The longest simple path as a list of node labels, or an empty list if
             the graph has no nodes.
         """
         if not self.argument_graph.nodes():
             return []
-        
+
         # For DAGs, use the efficient algorithm
         if self.is_acyclic():
             return nx.dag_longest_path(self.argument_graph)
-        
+
         # For graphs with cycles, find longest simple path by checking all pairs
         longest_path: List[NodeLabel] = []
         nodes = list(self.argument_graph.nodes())
-        
+
         for source in nodes:
             for target in nodes:
                 # Find all simple paths from source to target
@@ -498,7 +497,7 @@ class ArgumentMap:
                             longest_path = path
                 except nx.NetworkXNoPath:
                     continue
-        
+
         return longest_path
 
     # === Analytics ===
@@ -534,6 +533,7 @@ class ArgumentMap:
     def most_similar_labels(self, label: str) -> Iterator[tuple[str, float]]:
         """Get most similar existing labels by Indel similarity."""
         from rapidfuzz import fuzz
+
         fuzz.ratio("this is a test", "this is a test!")
         sorted_tuples = [
             (existing_label, fuzz.ratio(label, existing_label) / 100.0)
@@ -541,7 +541,6 @@ class ArgumentMap:
         ]
         sorted_tuples.sort(key=lambda x: x[1], reverse=True)
         yield from sorted_tuples
-
 
     def is_proposition_used(self, prop_id: PropositionID) -> bool:
         """Check if proposition is referenced by any node."""
@@ -562,7 +561,7 @@ class ArgumentMap:
 
     def _get_equivalence_graph(self) -> nx.Graph[PropositionID]:
         """Get equivalence graph.
-        
+
         Returns a graph where nodes are all propositions and edges represent
         equivalence relations. Isolated nodes represent singleton equivalence classes.
         """
@@ -605,14 +604,15 @@ class ArgumentMap:
         map.proposition_graph = nx.node_link_graph(data["proposition_graph"])
         return map
 
-
     # === Internal helper methods can be added here ===
 
     @lru_cache(maxsize=64)
-    def _redundant_edges(self, graph: nx.DiGraph[NodeLabel], subset: list[NodeLabel] | None = None) -> List[tuple[NodeLabel, NodeLabel]]:
+    def _redundant_edges(
+        self, graph: nx.DiGraph[NodeLabel], subset: list[NodeLabel] | None = None
+    ) -> List[tuple[NodeLabel, NodeLabel]]:
         """Get list of redundant edges in the argument graph.
-        
-        An edge (a, b) from argument node a to argument node b is redundant 
+
+        An edge (a, b) from argument node a to argument node b is redundant
         iff there is a claim c such that
         * (a, b) is a support edge, a supports c, and c supports b, or
         * (a, b) is an attack edge, a attacks c, and c supports b, or
@@ -621,10 +621,7 @@ class ArgumentMap:
         redundant: List[tuple[NodeLabel, NodeLabel]] = []
 
         # Pre-fetch edge data to reduce redundant lookups
-        edge_data_cache = {
-            (u, v): graph.edges[u, v]
-            for u, v in graph.edges()
-        }
+        edge_data_cache = {(u, v): graph.edges[u, v] for u, v in graph.edges()}
 
         for u, v in edge_data_cache:
             edge_data = edge_data_cache[(u, v)]
@@ -655,10 +652,16 @@ class ArgumentMap:
                     break
 
         return redundant
-    
+
     # Helper methods for redundancy checks
     @staticmethod
-    def _is_redundant_support(edge_data: dict[str, Any], c_edge_data: dict[str, Any], c: NodeLabel, v: NodeLabel, edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]]) -> bool:
+    def _is_redundant_support(
+        edge_data: dict[str, Any],
+        c_edge_data: dict[str, Any],
+        c: NodeLabel,
+        v: NodeLabel,
+        edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]],
+    ) -> bool:
         if edge_data["_type"] == "support" and c_edge_data["_type"] == "support":
             c_to_v_edge_data = edge_data_cache.get((c, v))
             if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "support":
@@ -666,7 +669,13 @@ class ArgumentMap:
         return False
 
     @staticmethod
-    def _is_redundant_attack(edge_data: dict[str, Any], c_edge_data: dict[str, Any], c: NodeLabel, v: NodeLabel, edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]]) -> bool:
+    def _is_redundant_attack(
+        edge_data: dict[str, Any],
+        c_edge_data: dict[str, Any],
+        c: NodeLabel,
+        v: NodeLabel,
+        edge_data_cache: dict[tuple[NodeLabel, NodeLabel], dict[str, Any]],
+    ) -> bool:
         if edge_data["_type"] == "attack":
             if c_edge_data["_type"] == "attack":
                 c_to_v_edge_data = edge_data_cache.get((c, v))
@@ -677,4 +686,3 @@ class ArgumentMap:
                 if c_to_v_edge_data and c_to_v_edge_data.get("_type") == "attack":
                     return True
         return False
-

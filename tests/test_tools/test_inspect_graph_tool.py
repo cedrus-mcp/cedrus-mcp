@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.server import AppContext
 from cedrus.tools.entrypoints.sketch import (
     add_argument as add_argument_sketch,

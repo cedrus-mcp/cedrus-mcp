@@ -1,12 +1,12 @@
 # resources/instructions.py
 
-from cedrus.models.results import NextAction
+from cedrus.backend.models.results import NextAction
 from cedrus.server import AppContext, mcp
-
 
 #####################################
 # Overview and generic instructions #
 #####################################
+
 
 def instructions_sketch(app_ctx: AppContext) -> str:
     instructions = (
@@ -18,10 +18,10 @@ def instructions_sketch(app_ctx: AppContext) -> str:
         "captures the main point of each claim and argument, and identifies each node by means of concise and distinct labels.\n"
         "\n"
         "Typical actions in sketch mode include:\n"
-        f'{NextAction(tool="reset_graph", params={}, reason="Fully reset the entire argument map to start afresh. Permanently deletes current graph. Required only as I have been deliberating another issue before.", action_type="reset").model_dump()}\n'
-        f'{NextAction(tool="add_claim", params={"label": "Claim Label", "proposition": "The proposition maintained by this claim."}, reason="Add a new claim.", action_type="expand").model_dump()}\n'
-        f'{NextAction(tool="add_argument", params={"label": "Argument Label", "gist": "The main idea of this argument."}, reason="Add a new argument.", action_type="expand").model_dump()}\n'
-        f'{NextAction(tool="connect", params={"source": "Argument Label", "target": "Claim Label", "relation_type": "support"}, reason="Connect an argument to a claim with a support relation.", action_type="expand").model_dump()}\n'
+        f"{NextAction(tool='reset_graph', params={}, reason='Fully reset the entire argument map to start afresh. Permanently deletes current graph. Required only as I have been deliberating another issue before.', action_type='reset').model_dump()}\n"
+        f"{NextAction(tool='add_claim', params={'label': 'Claim Label', 'proposition': 'The proposition maintained by this claim.'}, reason='Add a new claim.', action_type='expand').model_dump()}\n"
+        f"{NextAction(tool='add_argument', params={'label': 'Argument Label', 'gist': 'The main idea of this argument.'}, reason='Add a new argument.', action_type='expand').model_dump()}\n"
+        f"{NextAction(tool='connect', params={'source': 'Argument Label', 'target': 'Claim Label', 'relation_type': 'support'}, reason='Connect an argument to a claim with a support relation.', action_type='expand').model_dump()}\n"
         "\n"
     )
     if app_ctx.mode == "sketch":
@@ -29,6 +29,7 @@ def instructions_sketch(app_ctx: AppContext) -> str:
     else:
         instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `sketch` mode call {NextAction(tool='switch_mode', params={'mode': 'sketch'}, reason='Switch to sketch mode.')}."
     return instructions
+
 
 def instruction_elaborate(app_ctx: AppContext) -> str:
     instructions = (
@@ -56,20 +57,21 @@ def instruction_elaborate(app_ctx: AppContext) -> str:
         "conclusion structures, make sure to adjust gists and labels as well, as you clarify and gain a better understanding of the arguments.\n"
         "\n"
         "Typical actions in elaborate mode include:\n"
-        f'{NextAction(tool="edit", params={"label": "Claim Label", "field": "proposition", "edit_options": {"new_value": "The revised and clarified proposition of this claim."}}, reason="Edit an existing claim to add more detail.", action_type="refine").model_dump()}\n'
-        f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "conclusion", "edit_options": {"new_value": "The proposition serving as the conclusion of this argument."}}, reason="Edit an existing argument to add more detail.", action_type="refine").model_dump()}\n'
-        f'{NextAction(tool="edit", params={"label": "Argument Label", "field": "premises", "edit_options": {"new_value": "The proposition to be added as further premise of this argument."}}, reason="Add a premise to an existing argument.", action_type="refine").model_dump()}\n'
-        f'{NextAction(tool="connect", params={"source": "Argument 1", "target": "Argument 2", "relation_type": "attack", "target_premise_idx": "2"}, reason="Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.", action_type="refine").model_dump()}\n'
+        f"{NextAction(tool='edit', params={'label': 'Claim Label', 'field': 'proposition', 'edit_options': {'new_value': 'The revised and clarified proposition of this claim.'}}, reason='Edit an existing claim to add more detail.', action_type='refine').model_dump()}\n"
+        f"{NextAction(tool='edit', params={'label': 'Argument Label', 'field': 'conclusion', 'edit_options': {'new_value': 'The proposition serving as the conclusion of this argument.'}}, reason='Edit an existing argument to add more detail.', action_type='refine').model_dump()}\n"
+        f"{NextAction(tool='edit', params={'label': 'Argument Label', 'field': 'premises', 'edit_options': {'new_value': 'The proposition to be added as further premise of this argument.'}}, reason='Add a premise to an existing argument.', action_type='refine').model_dump()}\n"
+        f"{NextAction(tool='connect', params={'source': 'Argument 1', 'target': 'Argument 2', 'relation_type': 'attack', 'target_premise_idx': '2'}, reason='Ground attack relation by specifying that the conclusion of <Argument 1> negates premise (2) of <Argument 2>.', action_type='refine').model_dump()}\n"
         "\n"
         "For more detailed guidance check out the topic-specific instructions on 'grounding' dialectical macro relations and ensuring argument 'validity':\n"
-        f'- {NextAction(tool="get_instructions", params={"topic": "grounding"}, reason="Get detailed instructions on how to ground dialectical relations.", action_type="refine").model_dump()}\n'
-        f'- {NextAction(tool="get_instructions", params={"topic": "validity"}, reason="Get detailed instructions on how to ensure argument validity.", action_type="refine").model_dump()}\n'
+        f"- {NextAction(tool='get_instructions', params={'topic': 'grounding'}, reason='Get detailed instructions on how to ground dialectical relations.', action_type='refine').model_dump()}\n"
+        f"- {NextAction(tool='get_instructions', params={'topic': 'validity'}, reason='Get detailed instructions on how to ensure argument validity.', action_type='refine').model_dump()}\n"
     )
     if app_ctx.mode == "elaborate":
         instructions += "Currently active mode: `elaborate` mode."
     else:
         instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `elaborate` mode call {NextAction(tool='switch_mode', params={'mode': 'elaborate'}, reason='Switch to elaborate mode.').model_dump()}."
     return instructions
+
 
 def instruction_review(app_ctx: AppContext) -> str:
     instructions: str = (
@@ -92,7 +94,7 @@ def instruction_review(app_ctx: AppContext) -> str:
         "- Start reviewing from main claims and root arguments and work your way against the direction of the dialectical relations \n"
         "\n"
         "Typical tool calls in review mode include:\n"
-        f'{NextAction(tool="inspect_graph", params={}, reason="Inspect the overall structure of the argument map.", action_type="review").model_dump()}\n'
+        f"{NextAction(tool='inspect_graph', params={}, reason='Inspect the overall structure of the argument map.', action_type='review').model_dump()}\n"
         f"{NextAction(tool='validate', params={}, reason='Run validation to identify issues in the argument map that need attention.', action_type='review').model_dump()}\n"
         f"{NextAction(tool='inspect_neighborhood', params={'label': 'Node Label'}, reason='Inspect the local neighborhood of a specific node to understand its connections and context.', action_type='review').model_dump()}\n"
         f"{NextAction(tool='inspect_node', params={'label': 'Node Label'}, reason='Inspect the details of a specific node to evaluate its content and role in the argument map.', action_type='review').model_dump()}\n"
@@ -103,6 +105,7 @@ def instruction_review(app_ctx: AppContext) -> str:
     else:
         instructions += f"Currently active mode: `{app_ctx.mode}` mode. To switch to `review` mode call {NextAction(tool='switch_mode', params={'mode': 'review'}, reason='Switch to review mode.').model_dump()}."
     return instructions
+
 
 ##################################
 # Topic specific instructions    #
@@ -185,9 +188,7 @@ def instructions_grounding() -> str:
         "> When grounding dialectical relations, only define two propositions (e.g., a premise and a conclusion) as **equivalent** (grounding_strategy='define_equivalence') if they are truly semantically equivalent.\n"
         "> Likewise, only define two propositions as **contradictory** (grounding_strategy='define_negation') if they are truly contradictory, i.e., one is the negation of the other.\n"
         "> Otherwise you risk to mess up the entire argumentation graph!\n"
-
     )
-
 
 
 def instructions_validity() -> str:
@@ -212,7 +213,6 @@ def instructions_validity() -> str:
     )
 
 
-
 @mcp.resource("argmap://instructions")
 async def instruction_resource() -> str:
     """Provide instruction text for different modes."""
@@ -233,4 +233,3 @@ async def instruction_resource() -> str:
 
 
 # @mcp.resource("argmap://instructions/merging")
-

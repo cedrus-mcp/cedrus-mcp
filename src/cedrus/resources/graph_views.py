@@ -2,8 +2,8 @@
 
 from typing import Literal
 
-from cedrus.graph.rendering import render_argdown
-from cedrus.models.base import NodeLabel
+from cedrus.backend.graph.rendering import render_argdown
+from cedrus.backend.models.base import NodeLabel
 from cedrus.server import mcp
 
 

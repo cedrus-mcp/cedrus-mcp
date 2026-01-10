@@ -16,8 +16,8 @@ from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
+from cedrus.backend.validation import validate_argument_map
 from cedrus.tools.runtime import tool_context
-from cedrus.validation import validate_argument_map
 
 if TYPE_CHECKING:
     from cedrus.server import AppContext

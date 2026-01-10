@@ -2,10 +2,10 @@
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ClaimNode, Proposition
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import ClaimNode, Proposition
+from cedrus.backend.validation.connectivity import check_connectivity
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.validation.connectivity import check_connectivity
 
 
 def add_claim_node(arg_map: ArgumentMap, content: str) -> str:

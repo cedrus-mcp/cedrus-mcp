@@ -5,20 +5,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cedrus.graph import ArgumentMap
-from cedrus.models import (
+from cedrus.backend.graph import ArgumentMap
+from cedrus.backend.models import (
     ArgumentNode,
     NodeLabel,
     Proposition,
 )
-from cedrus.models.relations import RelationConfig
+from cedrus.backend.models.relations import RelationConfig
 
 if TYPE_CHECKING:
     from cedrus.tools.runtime.tool_context import ToolContext
 
 # NOTE: Grounding functions moved to grounding.py
-# NOTE: Review flagging functions live in cedrus.tools.backend.relations
-# NOTE: update_proposition lives in cedrus.tools.backend.nodes
+# NOTE: Review flagging functions live in cedrus.tools.adapters.relations
+# NOTE: update_proposition lives in cedrus.tools.adapters.nodes
 
 
 def ensure_label_is_unique(

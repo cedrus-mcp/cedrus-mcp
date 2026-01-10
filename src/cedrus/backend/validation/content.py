@@ -1,7 +1,7 @@
 """Completeness validation checks."""
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models.nodes import ArgumentNode, ClaimNode
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models.nodes import ArgumentNode, ClaimNode
 from cedrus.tools.runtime.tool_context import ToolContext
 
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.backend.validation.grounding import check_grounding
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.validation.grounding import check_grounding
 
 
 def add_claim_node(arg_map: ArgumentMap, content: str) -> str:

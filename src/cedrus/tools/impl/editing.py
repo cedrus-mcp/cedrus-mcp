@@ -19,9 +19,9 @@ from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 from pydantic import AnyUrl
 
-from cedrus.models import ArgumentNode, ClaimNode, NodeLabel
-from cedrus.models.relations import DialecticalRelationType, GroundingStrategy
-from cedrus.tools.backend import nodes, relations
+from cedrus.backend.models import ArgumentNode, ClaimNode, NodeLabel
+from cedrus.backend.models.relations import DialecticalRelationType, GroundingStrategy
+from cedrus.tools.adapters import nodes, relations
 from cedrus.tools.runtime import (
     suggestions,
     tool_args,

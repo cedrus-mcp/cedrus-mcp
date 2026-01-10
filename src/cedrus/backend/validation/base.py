@@ -1,12 +1,12 @@
 """ValidationPipeline class for chainable validation."""
 
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.validation.completeness import check_completeness
+from cedrus.backend.validation.connectivity import check_connectivity
+from cedrus.backend.validation.consistency import check_consistency
+from cedrus.backend.validation.content import check_argument_structure, check_core_content
+from cedrus.backend.validation.grounding import check_grounding
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.validation.completeness import check_completeness
-from cedrus.validation.connectivity import check_connectivity
-from cedrus.validation.consistency import check_consistency
-from cedrus.validation.content import check_argument_structure, check_core_content
-from cedrus.validation.grounding import check_grounding
 
 
 def validate_argument_map(

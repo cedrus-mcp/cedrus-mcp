@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cedrus.graph import ArgumentMap
-from cedrus.graph.query import is_grounded_relation
-from cedrus.models import ClaimNode, NodeLabel, Proposition
-from cedrus.models.relations import DialecticalRelationType, GroundingStrategy
+from cedrus.backend.graph import ArgumentMap
+from cedrus.backend.graph.query import is_grounded_relation
+from cedrus.backend.models import ClaimNode, NodeLabel, Proposition
+from cedrus.backend.models.relations import DialecticalRelationType, GroundingStrategy
 
 __all__ = ["GroundingStrategy", "validate_grounding_strategy", "maybe_ground_relation"]
 

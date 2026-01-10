@@ -2,10 +2,10 @@
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.backend.validation.base import validate_argument_map
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.validation.base import validate_argument_map
 
 
 def test_validate_empty_map_sketch_mode(

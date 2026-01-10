@@ -1,8 +1,10 @@
 """Node detail resources: detailed node information and context."""
+
 from typing import Any
 
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.server import mcp
+
 
 @mcp.resource("argmap://statistics")
 async def statistics_resource() -> dict[str, Any]:

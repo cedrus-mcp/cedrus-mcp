@@ -2,11 +2,11 @@
 
 from mcp.server.fastmcp.utilities.logging import get_logger
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import (
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import (
     NodeLabel,
 )
-from cedrus.models.nodes import ClaimNode
+from cedrus.backend.models.nodes import ClaimNode
 from cedrus.tools.runtime.tool_context import ToolContext
 
 logger = get_logger("cedrus.tools")  # Creates 'FastMCP.cedrus' logger

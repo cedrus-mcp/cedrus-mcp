@@ -11,13 +11,13 @@ from typing import Any
 
 from mcp.types import CallToolResult
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.graph.rendering import render_argdown_node
-from cedrus.models import ArgumentNode, ClaimNode, NodeLabel, Proposition
-from cedrus.models.propositions import Proposition as PropositionModel
-from cedrus.models.relations import DialecticalRelationType
-from cedrus.tools.backend.grounding import GroundingStrategy, maybe_ground_relation
-from cedrus.tools.backend.relations import (
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.graph.rendering import render_argdown_node
+from cedrus.backend.models import ArgumentNode, ClaimNode, NodeLabel, Proposition
+from cedrus.backend.models.propositions import Proposition as PropositionModel
+from cedrus.backend.models.relations import DialecticalRelationType
+from cedrus.tools.adapters.grounding import GroundingStrategy, maybe_ground_relation
+from cedrus.tools.adapters.relations import (
     flag_nodes_as_needing_review,
     flag_relations_as_needing_review,
 )
@@ -39,7 +39,7 @@ def new_claim(
 ) -> None:
     """Create a new claim node in the argument map.
 
-    This is a direct move of :func:`cedrus.tools.backend.nodes.new_claim`.
+    This is a direct move of :func:`cedrus.tools.adapters.nodes.new_claim`.
     """
 
     import textwrap
@@ -126,7 +126,7 @@ def new_argument(
 ) -> None:
     """Create a new argument node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.new_argument`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.new_argument`.
     """
 
     # Infer grounding strategy from context
@@ -225,7 +225,7 @@ def delete_claim(
 ) -> CallToolResult:
     """Delete a claim node from the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.delete_claim`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.delete_claim`.
     """
 
     try:
@@ -254,7 +254,7 @@ def delete_argument(
 ) -> CallToolResult:
     """Delete an argument node from the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.delete_argument`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.delete_argument`.
     """
 
     try:
@@ -287,7 +287,7 @@ def update_proposition(
 ) -> None:
     """Update a proposition in the argument map and flag referencing nodes.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_proposition`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_proposition`.
     """
 
     if not updates:
@@ -316,7 +316,7 @@ def update_claim(
 ) -> CallToolResult:
     """Update a claim node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_claim`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_claim`.
     """
 
     import textwrap
@@ -430,7 +430,7 @@ def update_argument(
 ) -> CallToolResult:
     """Update an argument node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_argument`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_argument`.
     """
 
     import textwrap
@@ -602,7 +602,7 @@ def update_metadata(
 ) -> CallToolResult:
     """Update metadata for a node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_metadata`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_metadata`.
     """
 
     try:
@@ -655,7 +655,7 @@ def update_tags(
 ) -> CallToolResult:
     """Update tags for a node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_tags`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_tags`.
     """
 
     try:
@@ -725,7 +725,7 @@ def update_premises(
 ) -> CallToolResult:
     """Update premises for an argument node in the argument map.
 
-    Direct move of :func:`cedrus.tools.backend.nodes.update_premises`.
+    Direct move of :func:`cedrus.tools.adapters.nodes.update_premises`.
     """
 
     import textwrap

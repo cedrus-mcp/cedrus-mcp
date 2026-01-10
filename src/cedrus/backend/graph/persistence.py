@@ -1,7 +1,8 @@
 """Save and load functionality for argument maps."""
 
 from pathlib import Path
-from cedrus.graph.argument_map import ArgumentMap
+
+from cedrus.backend.graph.argument_map import ArgumentMap
 
 
 def load_graph(path: Path) -> ArgumentMap:

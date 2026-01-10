@@ -2,8 +2,8 @@
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import ArgumentNode, ClaimNode, Proposition
 from cedrus.tools.runtime.tool_context import ToolContext
 
 

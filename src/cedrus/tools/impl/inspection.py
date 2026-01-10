@@ -20,7 +20,7 @@ from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 from pydantic import AnyUrl
 
-from cedrus.models import NodeLabel
+from cedrus.backend.models import NodeLabel
 from cedrus.tools.runtime import tool_context
 
 if TYPE_CHECKING:

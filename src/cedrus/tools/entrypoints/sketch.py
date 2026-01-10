@@ -9,17 +9,16 @@ in :mod:`cedrus.tools.impl`.
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from mcp.server.fastmcp import Context
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
-from cedrus.models import NodeLabel
-from cedrus.models.base import Mode
-from cedrus.models.relations import DialecticalRelationType
-from cedrus.tools.impl import editing, inspection, guidance, meta
-from typing import Callable
+from cedrus.backend.models import NodeLabel
+from cedrus.backend.models.base import Mode
+from cedrus.backend.models.relations import DialecticalRelationType
+from cedrus.tools.impl import editing, guidance, inspection, meta
 from cedrus.tools.tool_registry import TOOL_REGISTRY, ToolVariant
 
 if TYPE_CHECKING:

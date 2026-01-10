@@ -1,6 +1,6 @@
 """Connectivity validation checks."""
 
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.tools.runtime.tool_context import ToolContext
 
 

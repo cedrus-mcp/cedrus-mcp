@@ -11,9 +11,9 @@ import networkx as nx
 from mcp.server.fastmcp.utilities.logging import get_logger
 from unidecode import unidecode
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models.base import NodeLabel
-from cedrus.models.nodes import ArgumentNode, ClaimNode
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models.base import NodeLabel
+from cedrus.backend.models.nodes import ArgumentNode, ClaimNode
 
 logger = get_logger("cedrus.svg_export")
 
@@ -52,7 +52,7 @@ def export_svg(
 ) -> str:
     """
     Export ArgumentMap to SVG via GraphViz.
-    
+
     Parameters
     ----------
     arg_map : ArgumentMap
@@ -69,17 +69,17 @@ def export_svg(
         Untagged arguments use default light blue.
     include_review_flags : bool, default False
         If True, highlight nodes with needs_review_flag with red borders
-        
+
     Returns
     -------
     str
         SVG markup as string
-        
+
     Raises
     ------
     RuntimeError
         If graphviz system package is not installed
-        
+
     Examples
     --------
     >>> svg_string = export_svg(arg_map)
@@ -87,20 +87,20 @@ def export_svg(
     ...     f.write(svg_string)
     """
     _check_graphviz_installed()
-    
+
     # Default tag colors
     if tag_colors is None:
         tag_colors = {}
-    
+
     # Preprocess the argument graph
     processed_graph = _preprocess_argument_graph(arg_map, tag_colors, include_review_flags)
-    
+
     # Create graphviz Digraph
     dot = _create_graphviz_graph(layout_direction)
-    
+
     # Get root nodes for subgraph grouping
     roots = arg_map.list_roots()
-    
+
     # Add root nodes to a subgraph (same rank)
     if roots:
         subgraph = graphviz.Digraph(name="central_claims")
@@ -110,12 +110,12 @@ def export_svg(
                 node_data = processed_graph.nodes[root_label]
                 subgraph.node(root_label, label=node_data["label"])
         dot.subgraph(subgraph)
-    
+
     # Add non-root nodes
     for node_label, node_data in processed_graph.nodes.items():
         if node_label not in roots:
             dot.node(node_label, label=node_data["label"])
-    
+
     # Add edges
     for from_label, to_label, edge_data in processed_graph.edges(data=True):
         if (from_label, to_label) in arg_map.redundant_edges():
@@ -126,10 +126,10 @@ def export_svg(
             color=edge_data["color"],
             penwidth=edge_data["penwidth"],
         )
-    
+
     # Render to SVG
-    svg_string = dot.pipe(encoding='utf-8', format='svg')
-    
+    svg_string = dot.pipe(encoding="utf-8", format="svg")
+
     return str(svg_string)
 
 
@@ -140,16 +140,16 @@ def _preprocess_argument_graph(
 ) -> nx.DiGraph[NodeLabel]:
     """
     Convert ArgumentMap to preprocessed NetworkX DiGraph.
-    
+
     This step makes a deep copy and preprocesses all node and edge attributes
     before passing to GraphViz, similar to logikon's approach.
     """
     G: nx.DiGraph[NodeLabel] = nx.DiGraph()
-    
+
     # Process nodes
     for node_label in arg_map.argument_graph.nodes():
         node = arg_map.get_node(node_label)
-        
+
         if isinstance(node, ClaimNode):
             label = _create_claim_label(node, arg_map, include_review_flags)
         elif isinstance(node, ArgumentNode):
@@ -157,14 +157,13 @@ def _preprocess_argument_graph(
         else:
             logger.warning(f"Unknown node type for {node_label}")
             continue
-        
+
         G.add_node(node_label, label=label)
-    
+
     # Process edges
     for from_label, to_label in arg_map.argument_graph.edges():
-
         relation = arg_map.get_dialectic_relation(from_label, to_label)
-        
+
         if relation:
             edge_color = "darkgreen" if relation.relation_type == "support" else "red"
             G.add_edge(
@@ -173,7 +172,7 @@ def _preprocess_argument_graph(
                 color=edge_color,
                 penwidth=_ARROWWIDTH,
             )
-    
+
     return G
 
 
@@ -198,7 +197,7 @@ def _create_graphviz_graph(layout_direction: str) -> graphviz.Digraph:
         },
         edge_attr={
             "penwidth": _ARROWWIDTH,
-        }
+        },
     )
     return dot
 
@@ -209,31 +208,27 @@ def _create_claim_label(
     include_review_flags: bool,
 ) -> str:
     """Create HTML label for a claim node."""
-    
+
     # Get proposition content
     prop = arg_map.get_proposition(node.proposition_id)
     text = prop.content if prop else "[No proposition]"
-    
+
     # Preprocess and wrap text
     text = _preprocess_text(text)
     text = _wrap_text(text, _MAX_TEXT_WIDTH)
-    
+
     # Determine border color
     if include_review_flags and node.needs_review_flag:
         border_color = "#FF0000"  # Red for review
     else:
         border_color = "#000000"  # Black border
-    
+
     # Format label
     label_text = _preprocess_text(node.label)
-    
+
     # Create HTML label
-    html_label = _CLAIM_NODE_TEMPLATE.format(
-        label=label_text,
-        text=text,
-        bgcolor=border_color
-    )
-    
+    html_label = _CLAIM_NODE_TEMPLATE.format(label=label_text, text=text, bgcolor=border_color)
+
     return html_label
 
 
@@ -244,55 +239,51 @@ def _create_argument_label(
     include_review_flags: bool,
 ) -> str:
     """Create HTML label for an argument node."""
-    
+
     # Get gist
     text = node.gist if node.gist else "[No gist]"
     text = _preprocess_text(text)
     text = _wrap_text(text, _MAX_TEXT_WIDTH)
-    
+
     # Determine background color based on tags
     bgcolor = _get_argument_color(node, tag_colors)
-        
+
     # Format label
     label_text = _preprocess_text(node.label)
-    
+
     # Create HTML label
-    html_label = _ARGUMENT_NODE_TEMPLATE.format(
-        label=label_text,
-        text=text,
-        bgcolor=bgcolor
-    )
-    
+    html_label = _ARGUMENT_NODE_TEMPLATE.format(label=label_text, text=text, bgcolor=bgcolor)
+
     return html_label
 
 
 def _get_argument_color(node: ArgumentNode, tag_colors: dict[str, str]) -> str:
     """Get background color for argument node based on tags."""
-    
+
     # Check if node has any tags with specified colors
     for tag in node.tags:
         if tag in tag_colors:
             return tag_colors[tag]
-    
+
     # Default: light blue
     return "#B3E5FC"
 
 
 def _preprocess_text(text: str) -> str:
     """Preprocess text for GraphViz HTML labels."""
-    
+
     # Convert unicode to ASCII
     text = unidecode(text)
-    
+
     # Escape special HTML/GraphViz characters
     text = text.replace("&", "+")  # & causes issues
     text = text.replace("<", "&lt;")
     text = text.replace(">", "&gt;")
-    
+
     # Handle colons (can cause issues in GraphViz)
     if ":" in text:
         text = text.replace(":", " --")
-    
+
     return text
 
 
@@ -305,12 +296,7 @@ def _wrap_text(text: str, width: int) -> str:
 def _check_graphviz_installed() -> None:
     """Check if GraphViz is installed on the system."""
     try:
-        subprocess.run(
-            ["dot", "-V"],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        subprocess.run(["dot", "-V"], check=True, capture_output=True, text=True)
     except (subprocess.CalledProcessError, FileNotFoundError) as err:
         logger.error("GraphViz 'dot' command not found")
         msg = (

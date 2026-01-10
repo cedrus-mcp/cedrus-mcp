@@ -1,8 +1,8 @@
 """Graph query utilities for argument maps."""
 
-from cedrus.graph import ArgumentMap
-from cedrus.models import ClaimNode, NodeLabel
-from cedrus.models.relations import DialecticalRelationType
+from cedrus.backend.graph import ArgumentMap
+from cedrus.backend.models import ClaimNode, NodeLabel
+from cedrus.backend.models.relations import DialecticalRelationType
 
 
 def has_grounding(

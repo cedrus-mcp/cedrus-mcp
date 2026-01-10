@@ -11,10 +11,10 @@ from typing import Literal
 
 from mcp.types import CallToolResult
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import NodeLabel
-from cedrus.models.base import PropositionID
-from cedrus.tools.backend.grounding import maybe_ground_relation
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import NodeLabel
+from cedrus.backend.models.base import PropositionID
+from cedrus.tools.adapters.grounding import maybe_ground_relation
 from cedrus.tools.runtime.tool_context import ToolContext
 from cedrus.tools.util import validate_target_premise_idx
 
@@ -29,7 +29,7 @@ def new_support_relation(
 ) -> CallToolResult:
     """Create a new support relation.
 
-    Direct move of :func:`cedrus.tools.backend.relations.new_support_relation`.
+    Direct move of :func:`cedrus.tools.adapters.relations.new_support_relation`.
     """
 
     if not arg_map.is_node(from_label):
@@ -80,7 +80,7 @@ def new_attack_relation(
 ) -> CallToolResult:
     """Create a new attack relation.
 
-    Direct move of :func:`cedrus.tools.backend.relations.new_attack_relation`.
+    Direct move of :func:`cedrus.tools.adapters.relations.new_attack_relation`.
     """
 
     if not arg_map.is_node(from_label):
@@ -130,7 +130,7 @@ def ground_support_relation(
 ) -> CallToolResult:
     """Ground an existing support relation.
 
-    Direct move of :func:`cedrus.tools.backend.relations.ground_support_relation`.
+    Direct move of :func:`cedrus.tools.adapters.relations.ground_support_relation`.
     """
 
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
@@ -164,7 +164,7 @@ def ground_attack_relation(
 ) -> CallToolResult:
     """Ground an existing attack relation.
 
-    Direct move of :func:`cedrus.tools.backend.relations.ground_attack_relation`.
+    Direct move of :func:`cedrus.tools.adapters.relations.ground_attack_relation`.
     """
 
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
@@ -197,7 +197,7 @@ def delete_relation(
 ) -> CallToolResult:
     """Delete an existing dialectical relation.
 
-    Direct move of :func:`cedrus.tools.backend.relations.delete_relation`.
+    Direct move of :func:`cedrus.tools.adapters.relations.delete_relation`.
     """
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
         return tc.failure(
@@ -219,7 +219,7 @@ def flag_relations_as_needing_review(
 ) -> None:
     """Flag all relations connected to a node as needing review.
 
-    Direct move of :func:`cedrus.tools.backend.relations.flag_relations_as_needing_review`.
+    Direct move of :func:`cedrus.tools.adapters.relations.flag_relations_as_needing_review`.
     """
 
     supporters = arg_map.get_supporters(ref_node_label)
@@ -257,7 +257,7 @@ def flag_nodes_as_needing_review(
 ) -> None:
     """Flag all nodes referencing a proposition as needing review.
 
-    Direct move of :func:`cedrus.tools.backend.relations.flag_nodes_as_needing_review`.
+    Direct move of :func:`cedrus.tools.adapters.relations.flag_nodes_as_needing_review`.
     """
 
     nodes_requiring_review: list[NodeLabel] = [

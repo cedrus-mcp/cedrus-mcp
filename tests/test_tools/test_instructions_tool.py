@@ -1,11 +1,13 @@
 """Unit tests for instructions tool."""
 
-import pytest
 from unittest.mock import Mock
-from cedrus.tools.entrypoints.sketch import get_instructions
-from cedrus.tools.entrypoints.elaborate import get_instructions as get_instructions_elaborate
+
+import pytest
+
+from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.server import AppContext
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.tools.entrypoints.elaborate import get_instructions as get_instructions_elaborate
+from cedrus.tools.entrypoints.sketch import get_instructions
 
 
 @pytest.fixture

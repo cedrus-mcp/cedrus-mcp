@@ -1,10 +1,12 @@
 """Unit tests for mode tool."""
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
-from cedrus.tools.entrypoints.sketch import switch_mode
+
+from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.server import AppContext
-from cedrus.graph.argument_map import ArgumentMap
+from cedrus.tools.entrypoints.sketch import switch_mode
 
 
 @pytest.fixture

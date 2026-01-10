@@ -2,10 +2,10 @@
 
 import pytest
 
-from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ClaimNode, Proposition
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models import ClaimNode, Proposition
+from cedrus.backend.validation.consistency import check_consistency
 from cedrus.tools.runtime.tool_context import ToolContext
-from cedrus.validation.consistency import check_consistency
 
 
 def test_check_consistency_empty_map(
@@ -64,7 +64,7 @@ def test_check_consistency_detects_self_contradictory_equivalence_class(
     # Directly add equivalence edge Q ≡ Not-P to bypass API safety check
     # This creates a self-contradictory equivalence class: {P, Q, Not-P}
     # where P and Not-P have a negation relation
-    from cedrus.models.relations import LogicalRelation
+    from cedrus.backend.models.relations import LogicalRelation
 
     relation = LogicalRelation(_type="equivalence")
     empty_map.proposition_graph.add_edge(prop2.id, prop3.id, **relation.model_dump(by_alias=True))
@@ -80,7 +80,7 @@ def test_check_consistency_respects_max_issues(
 ) -> None:
     """Test that max_issues parameter limits reported issues."""
     # Create multiple self-contradictory equivalence classes
-    from cedrus.models.relations import LogicalRelation
+    from cedrus.backend.models.relations import LogicalRelation
 
     for i in range(5):
         p1 = Proposition(content=f"Prop{i}")

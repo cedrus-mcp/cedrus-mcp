@@ -1,15 +1,23 @@
 """Unit tests for remove tool."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
+
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.server import AppContext
+from cedrus.tools.entrypoints.sketch import (
+    add_argument as add_argument_sketch,
+)
 from cedrus.tools.entrypoints.sketch import (
     add_claim as add_claim_sketch,
-    add_argument as add_argument_sketch,
+)
+from cedrus.tools.entrypoints.sketch import (
     connect as connect_sketch,
+)
+from cedrus.tools.entrypoints.sketch import (
     remove,
 )
-from cedrus.server import AppContext
-from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

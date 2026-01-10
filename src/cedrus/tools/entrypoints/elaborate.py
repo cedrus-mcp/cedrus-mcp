@@ -15,10 +15,10 @@ from mcp.server.fastmcp import Context
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
-from cedrus.models import NodeLabel
-from cedrus.models.base import Mode
-from cedrus.models.relations import DialecticalRelationType, GroundingStrategy
-from cedrus.tools.impl import editing, inspection, guidance, validation, meta
+from cedrus.backend.models import NodeLabel
+from cedrus.backend.models.base import Mode
+from cedrus.backend.models.relations import DialecticalRelationType, GroundingStrategy
+from cedrus.tools.impl import editing, guidance, inspection, meta, validation
 from cedrus.tools.tool_registry import TOOL_REGISTRY, ToolVariant
 
 if TYPE_CHECKING:
@@ -271,10 +271,10 @@ def register_elaborate_tools() -> None:
             modes=["elaborate"],
             description=dedent(
                 """Remove an existing node or relation from the argument map.
- 
+
                 Provide either `label` (to remove a node) OR `source` and `target` (to remove a relation),
                 but not all.
- 
+
                 Args:
                     label: Label of the node to remove (for node removal).
                     source: Source node label of the relation to remove (for relation removal).

@@ -8,15 +8,17 @@ modes change. It ensures that:
 4. Shared tools remain unchanged
 """
 
-import pytest
 import inspect
-from unittest.mock import Mock, AsyncMock
-from cedrus.models.base import Mode
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models.base import Mode
+from cedrus.server import AppContext
 from cedrus.tools.entrypoints.sketch import switch_mode
 from cedrus.tools.impl.meta import update_tools_for_mode_core
 from cedrus.tools.tool_registry import TOOL_REGISTRY
-from cedrus.server import AppContext
-from cedrus.graph.argument_map import ArgumentMap
 
 
 @pytest.fixture

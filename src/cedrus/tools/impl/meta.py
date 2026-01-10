@@ -17,7 +17,7 @@ from mcp.server.fastmcp.utilities.logging import get_logger
 from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
-from cedrus.models.base import Mode
+from cedrus.backend.models.base import Mode
 from cedrus.tools.runtime import tool_context
 from cedrus.tools.tool_registry import TOOL_REGISTRY
 

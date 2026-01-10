@@ -64,7 +64,7 @@ MCP Protocol Integration:
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from cedrus.models.base import Mode
+from cedrus.backend.models.base import Mode
 
 
 @dataclass

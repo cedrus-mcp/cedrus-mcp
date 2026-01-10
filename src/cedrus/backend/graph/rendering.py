@@ -1,26 +1,24 @@
 """Render argumen map as argdown"""
 
-from typing import Literal
 import json
-from cedrus.graph import ArgumentMap
-from cedrus.models.base import NodeLabel
-from cedrus.models.nodes import ArgumentNode, ClaimNode
-from cedrus.models.relations import DialecticalRelationType
+from typing import Literal
+
+from cedrus.backend.graph import ArgumentMap
+from cedrus.backend.models.base import NodeLabel
+from cedrus.backend.models.nodes import ArgumentNode, ClaimNode
+from cedrus.backend.models.relations import DialecticalRelationType
 
 
 def _get_next_indent_str(current_indent_str: str, child_index: int, total_children: int) -> str:
     """Get the indent string for the next level based on the current indent string."""
-    base_indent_str = "".join([
-        "│" if c in ["│", "├"] else " "
-        for c in current_indent_str
-    ])
+    base_indent_str = "".join(["│" if c in ["│", "├"] else " " for c in current_indent_str])
     if base_indent_str:
         base_indent_str = base_indent_str + "    "
     if child_index == total_children - 1:
         return base_indent_str + "└─ "
     else:
         return base_indent_str + "├─ "
-        
+
 
 def _render_node_recursive(
     arg_map: ArgumentMap,
@@ -46,7 +44,7 @@ def _render_node_recursive(
             line += "PRO " if relation_to_successor == "support" else "CON "
     else:
         raise RuntimeError(f"Unknown format (_render_node_recursive): {format}")
-    
+
     line += f"[{node.label}]" if isinstance(node, ClaimNode) else f"<{node.label}>"
     if not label_only:
         if isinstance(node, ClaimNode):
@@ -94,7 +92,9 @@ def _render_node_recursive(
 
     for e, node in enumerate(support_nodes + attack_nodes):
         relation_to_successor = "support" if e < len(support_nodes) else "attack"
-        next_indent_str = _get_next_indent_str(indent_str, e, len(support_nodes) + len(attack_nodes))
+        next_indent_str = _get_next_indent_str(
+            indent_str, e, len(support_nodes) + len(attack_nodes)
+        )
         _render_node_recursive(
             arg_map,
             node,
@@ -108,6 +108,7 @@ def _render_node_recursive(
             format=format,
             extra_tags=extra_tags,
         )
+
 
 def render_argdown(
     arg_map: ArgumentMap,
@@ -145,13 +146,19 @@ def render_argdown(
             to_node = arg_map.get_node(to_label)
             if from_node is not None and to_node is not None:
                 line = "// "
-                line += f"[{from_node.label}]" if isinstance(from_node, ClaimNode) else f"<{from_node.label}>"
+                line += (
+                    f"[{from_node.label}]"
+                    if isinstance(from_node, ClaimNode)
+                    else f"<{from_node.label}>"
+                )
                 relation = arg_map.get_dialectic_relation(from_label, to_label)
                 if relation is not None:
                     line += " +> " if relation.relation_type == "support" else " -> "
                 else:
                     line += " ?? "
-                line += f"[{to_node.label}]" if isinstance(to_node, ClaimNode) else f"<{to_node.label}>"
+                line += (
+                    f"[{to_node.label}]" if isinstance(to_node, ClaimNode) else f"<{to_node.label}>"
+                )
                 extra_lines.append(line)
 
     if extra_lines:
@@ -162,19 +169,15 @@ def render_argdown(
     return "\n".join(lines)
 
 
-def render_argdown_node(
-    arg_map: ArgumentMap,
-    label: NodeLabel,
-    details: bool
-) -> str:
+def render_argdown_node(arg_map: ArgumentMap, label: NodeLabel, details: bool) -> str:
     lines: list[str] = []
     node = arg_map.get_node(label)
     if node is None:
         return f"Node {label} not found."
-    
+
     if isinstance(node, ClaimNode):
         proposition = arg_map.get_proposition(node.proposition_id)
-        content = proposition.content if proposition else "/*No proposition provided.*/"        
+        content = proposition.content if proposition else "/*No proposition provided.*/"
         line = f"[{node.label}]: {content}"
         if node.tags:
             line += " " + " ".join([f"#{tag}" for tag in node.tags])
