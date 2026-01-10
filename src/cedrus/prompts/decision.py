@@ -1,6 +1,7 @@
 """Prompt templates for decision-making tasks."""
 
 from textwrap import dedent
+
 from cedrus.server import mcp
 
 
@@ -8,14 +9,14 @@ from cedrus.server import mcp
     name="deliberate_decision",
     description=dedent("""
         A prompt template for deliberating decision problems and making reasoned choices.
-    """).strip()
+    """).strip(),
 )
 def deliberate_decision(decision_problem: str) -> str:
     """A simple decision prompt template for making deliberate choices.
-    
+
     Args:
         decision_problem: The decision problem cast as a question.
-    
+
     Returns:
         A formatted prompt that guides a structured deliberation process and a clear final answer.
     """
@@ -28,7 +29,7 @@ def deliberate_decision(decision_problem: str) -> str:
         "\n"
         "## Overall process\n"
         "\n"
-        "You will work in five main phases to build and refine a reasoning graph, and then finalize your decision.\n"
+        "You will work in five main phases -- iterating back and forth -- to build and refine a reasoning graph, and then finalize your decision.\n"
         "\n"
         "### Phase I: Orientation and Reflection\n"
         "\n"
@@ -47,13 +48,13 @@ def deliberate_decision(decision_problem: str) -> str:
         "- Start in `sketch` mode (resetting the graph if appropriate). Identify the decision option(s) as key claim(s). "
         "If the decision is not binary, explicitly represent the mutually exclusive decision options.\n"
         "- Capture the overall structure of the argumentation and delineate the space of reasons you want to cover.\n"
-        "- When relevant, add depths by including counterarguments, back-up arguments, or alternative justifications.\n"
+        "- Add depth by including counterarguments, back-up arguments, or alternative justifications as appropriate.\n"
         "- Use clear, precise labels and gists for nodes and propositions; avoid vague wording.\n"
         "- Regularly review and improve your draft as you sketch.\n"
         "\n"
         "### Phase III: Elaborating (`elaborate` mode)\n"
         "\n"
-        "- Once you have a preliminary draft of your reasoning graph, switch to `elaborate` mode to add detailed content.\n"
+        "- Once you have a neat draft of your reasoning graph, switch to `elaborate` mode to add detailed content.\n"
         "- For each argument, spell out how it works by explicitly adding premises and conclusions.\n"
         "- Ensure that (i) the premises of an argument truly _imply_ its conclusion, and (ii) the support and attack "
         "relations between arguments are properly _grounded_ in the internal premise–conclusion structure of the "
@@ -74,7 +75,7 @@ def deliberate_decision(decision_problem: str) -> str:
         "- Iterate (between `review` and `elaborate` mode) until the graph passes all validation checks and meets your own "
         "standards of clarity and completeness."
         "- NOTE: This is typically the most work-intensive phase. So take you time.\n"
-        "\n" 
+        "\n"
         "### Phase V: Finalizing the decision\n"
         "\n"
         "- Once your deliberation is complete, make your final decision based on the reasoning graph.\n"
@@ -94,5 +95,3 @@ def deliberate_decision(decision_problem: str) -> str:
         "dynamically adding further subtasks, as you see fit. \n"
         "- Use the `get_instructions` tool to get further guidance on tools, modes, and best practices.\n"
     )
-
-
