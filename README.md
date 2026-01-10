@@ -36,7 +36,7 @@ It is especially useful for:
 You can run Cedrus directly from GitHub using [`uvx`](https://github.com/astral-sh/uv):
 
 ```bash
-uvx git+https://github.com/debatelab/cedrus
+uvx git+https://github.com/logikon-ai/cedrus-mcp
 ```
 
 This will:
@@ -54,7 +54,7 @@ To use Cedrus as a thinking tool, your MCP‑capable client needs to know two th
 1. **What command to run**
    - Use the same command as above:
      ```bash
-     uvx git+https://github.com/debatelab/cedrus
+     uvx git+https://github.com/logikon-ai/cedrus-mcp
      ```
 
 2. **That this command is an MCP server over stdio**
@@ -68,7 +68,7 @@ The exact UI depends on your client. Look for options like:
 When asked for the command, paste:
 
 ```bash
-uvx git+https://github.com/debatelab/cedrus
+uvx git+https://github.com/logikon-ai/cedrus-mcp
 ```
 
 After that, your client should be able to:
@@ -108,7 +108,7 @@ You can limit the size of the map or turn on extra checks:
 
 ```bash
 CEDRUS_MAX_NODES=300 \
-uvx git+https://github.com/debatelab/cedrus
+uvx git+https://github.com/logikon-ai/cedrus-mcp
 ```
 
 These are optional and safe to ignore when you are just getting started.
@@ -126,7 +126,7 @@ Cedrus is designed so that most of the detailed guidance lives **inside** the se
 Once your client can connect to Cedrus with:
 
 ```bash
-uvx git+https://github.com/debatelab/cedrus
+uvx git+https://github.com/logikon-ai/cedrus-mcp
 ```
 
 let the assistant explore the available tools and use Cedrus as a **structured thinking surface** for its chain‑of‑thought.
