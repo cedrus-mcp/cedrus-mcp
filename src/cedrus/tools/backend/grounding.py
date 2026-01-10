@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from cedrus.graph import ArgumentMap
 from cedrus.models import ClaimNode, NodeLabel, Proposition
