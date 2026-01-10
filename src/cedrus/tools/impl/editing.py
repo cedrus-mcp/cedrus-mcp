@@ -11,7 +11,6 @@ mechanical move with no semantic changes.
 
 from __future__ import annotations
 
-from textwrap import shorten
 from typing import TYPE_CHECKING, Any, Literal
 
 from mcp.server.fastmcp import Context
