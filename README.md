@@ -108,7 +108,6 @@ You can limit the size of the map or turn on extra checks:
 
 ```bash
 CEDRUS_MAX_NODES=300 \
-CEDRUS_ENABLE_AUTO_VALIDATION=true \
 uvx git+https://github.com/debatelab/cedrus
 ```
 
