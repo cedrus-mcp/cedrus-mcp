@@ -44,10 +44,26 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
 instructions="""\
-The Cedrus MCP server equips AI agents with tools to structure their internal thinking. \
-It allows agents to organize heterogeneous and conflicting reasoning as structured \
-argumentation, and provides capabilities to sketch, refine and review such reasoning \
-graphs.\
+The `reasoning-graph` MCP server equips AI agents with tools to structure their internal \
+thinking. It allows you to organize heterogeneous and conflicting reasoning as structured \
+argumentation, and provides capabilities to outline, elaborate, validate, and revise such \
+reasoning graphs.
+
+Depending on your needs, you can operate the `reasoning-graph` MCP server in different \
+**modes**.
+
+The availability, signature and functionality of tools depends on the current mode of operation.
+
+- `sketch` mode: simple tools for basic argument mapping
+- `elaborate` mode: tools for advanced argumentation analysis
+- `review` mode: focus on validation and review tools
+
+> CALLOUT NOTE
+> Take care to study updated tool lists after switching mode.
+
+The server provides conceptual guidance and technical documentation that can be dynamically \
+retrieved via corresponding tools. It also suggests next actions that help AI agents to organize \
+and structure their thinking.\
 """
 
 # Create the MCP server instance
