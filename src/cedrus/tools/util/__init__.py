@@ -6,10 +6,10 @@ implementations in :mod:`cedrus.tools.impl`.
 The intent is that higher-level code imports helpers from here,
 e.g.::
 
-    from cedrus.tools.util import node_creation, node_updates
+    from cedrus.tools.backend import nodes
 
 During the refactor, we keep thin shim modules at the old locations
-(:mod:`cedrus.tools.node_creation`, etc.) so external callers that
+(:mod:`cedrus.tools.backend.nodes`, etc.) so external callers that
 import those paths continue to work.
 """
 

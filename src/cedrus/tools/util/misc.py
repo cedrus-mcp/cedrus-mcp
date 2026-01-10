@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from cedrus.tools.runtime.tool_context import ToolContext
 
 # NOTE: Grounding functions moved to grounding.py
-# NOTE: Review flagging functions moved to review_flagging.py
-# NOTE: update_proposition moved to node_updates.py
+# NOTE: Review flagging functions live in cedrus.tools.backend.relations
+# NOTE: update_proposition lives in cedrus.tools.backend.nodes
 
 
 def ensure_label_is_unique(

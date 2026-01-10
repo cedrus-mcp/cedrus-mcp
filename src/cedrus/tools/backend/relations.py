@@ -1,13 +1,19 @@
-"""Elaborating tools: new_claim, new_argument, new_support, new_attack."""
+"""Relation-level operations for the argument map.
+
+This module groups helpers for creating, grounding, and deleting
+support/attack relations, as well as review flagging utilities
+for relations and nodes.
+"""
+
+from __future__ import annotations
 
 from typing import Literal
 
 from mcp.types import CallToolResult
 
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import (
-    NodeLabel,
-)
+from cedrus.models import NodeLabel
+from cedrus.models.base import PropositionID
 from cedrus.tools.backend.grounding import maybe_ground_relation
 from cedrus.tools.runtime.tool_context import ToolContext
 from cedrus.tools.util import validate_target_premise_idx
@@ -23,16 +29,7 @@ def new_support_relation(
 ) -> CallToolResult:
     """Create a new support relation.
 
-    Creates new support relation between two existing nodes. Optionally grounds the relation
-    according to the specified strategy, e.g. by adding premises or conclusions.
-
-    Args:
-        from_label: The label of the source node.
-        to_label: The label of the target node.
-        target_premise_idx: If specified, the index of the premise to target for grounding, requires to_label to be an ArgumentNode.
-        grounding_strategy: The strategy to use for grounding the relation.
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.relations.new_support_relation`.
     """
 
     if not arg_map.is_node(from_label):
@@ -83,16 +80,7 @@ def new_attack_relation(
 ) -> CallToolResult:
     """Create a new attack relation.
 
-    Creates new attack relation between two existing nodes. Optionally grounds the relation
-    according to the specified strategy, e.g. by adding premises or conclusions.
-
-    Args:
-        from_label: The label of the source node.
-        to_label: The label of the target node.
-        target_premise_idx: If specified, the index of the premise to target for grounding, requires to_label to be an ArgumentNode.
-        grounding_strategy: The strategy to use for grounding the relation.
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.relations.new_attack_relation`.
     """
 
     if not arg_map.is_node(from_label):
@@ -142,14 +130,7 @@ def ground_support_relation(
 ) -> CallToolResult:
     """Ground an existing support relation.
 
-    Grounds an existing support relation according to the specified strategy.
-
-    Args:
-        from_label: The label of the source node.
-        to_label: The label of the target node.
-        strategy: The strategy to use for grounding the relation.
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.relations.ground_support_relation`.
     """
 
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
@@ -183,16 +164,9 @@ def ground_attack_relation(
 ) -> CallToolResult:
     """Ground an existing attack relation.
 
-    Grounds an existing attack relation according to the specified strategy.
-
-    Args:
-        from_label: The label of the source node.
-        to_label: The label of the target node.
-        ctx: The context of the call.
-        strategy: The strategy to use for grounding the relation.
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.relations.ground_attack_relation`.
     """
+
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
         return tc.failure(
             f"No relation exists from '{from_label}' to '{to_label}'.",
@@ -223,13 +197,7 @@ def delete_relation(
 ) -> CallToolResult:
     """Delete an existing dialectical relation.
 
-    Deletes an existing dialectical relation between two nodes.
-
-    Args:
-        from_label: The label of the source node.
-        to_label: The label of the target node.
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.relations.delete_relation`.
     """
     if (rel := arg_map.get_dialectic_relation(from_label, to_label)) is None:
         return tc.failure(
@@ -242,3 +210,84 @@ def delete_relation(
     return tc.success(
         f"✓ {rel.relation_type.capitalize()} relation deleted from '{from_label}' to '{to_label}'."
     ).build()
+
+
+def flag_relations_as_needing_review(
+    ref_node_label: NodeLabel,
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> None:
+    """Flag all relations connected to a node as needing review.
+
+    Direct move of :func:`cedrus.tools.backend.relations.flag_relations_as_needing_review`.
+    """
+
+    supporters = arg_map.get_supporters(ref_node_label)
+    attackers = arg_map.get_attackers(ref_node_label)
+    supported = arg_map.get_supported(ref_node_label)
+    attacked = arg_map.get_attacked(ref_node_label)
+
+    for from_label in supporters + attackers:
+        arg_map.update_relation(
+            from_label,
+            ref_node_label,
+            {"needs_review_flag": True},
+        )
+    for to_label in supported + attacked:
+        arg_map.update_relation(
+            ref_node_label,
+            to_label,
+            {"needs_review_flag": True},
+        )
+
+    total_flagged = len(supporters) + len(attackers) + len(supported) + len(attacked)
+    if total_flagged > 0:
+        tc.issue(
+            "info",
+            f"Flagged {total_flagged} dialectical relation(s) connected to node `{ref_node_label}` as needing review.",
+            priority=1.0,
+        )
+
+
+def flag_nodes_as_needing_review(
+    ref_prop_id: PropositionID,
+    exempt_nodes_flagging: list[NodeLabel],
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> None:
+    """Flag all nodes referencing a proposition as needing review.
+
+    Direct move of :func:`cedrus.tools.backend.relations.flag_nodes_as_needing_review`.
+    """
+
+    nodes_requiring_review: list[NodeLabel] = [
+        node.label
+        for node in arg_map.list_claims()
+        if ref_prop_id == node.proposition_id and node.label not in exempt_nodes_flagging
+    ] + [
+        node.label
+        for node in arg_map.list_arguments()
+        if ref_prop_id in node.premises + [node.conclusion]
+        and node.label not in exempt_nodes_flagging
+    ]
+
+    for node_label in nodes_requiring_review:
+        arg_map.update_node(node_label, {"needs_review_flag": True})
+
+    if nodes_requiring_review:
+        tc.issue(
+            "info",
+            f"Flagged {len(nodes_requiring_review)} node(s) as needing review due to proposition update: {', '.join(nodes_requiring_review)}",
+            priority=1.0,
+        )
+
+
+__all__ = [
+    "new_support_relation",
+    "new_attack_relation",
+    "ground_support_relation",
+    "ground_attack_relation",
+    "delete_relation",
+    "flag_relations_as_needing_review",
+    "flag_nodes_as_needing_review",
+]

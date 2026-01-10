@@ -1,7 +1,7 @@
 """Completeness validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.tools.backend import relation_elaborating
+from cedrus.tools.backend import relations
 from cedrus.tools.runtime.tool_context import ToolContext
 from cedrus.utils.relations import has_grounding
 
@@ -37,7 +37,7 @@ def check_completeness(
                     issues_found += 1
                     if fix:
                         # automatically add the missing support relation
-                        _ = relation_elaborating.new_support_relation(
+                        _ = relations.new_support_relation(
                             from_label=from_label,
                             to_label=to_label,
                             target_premise_idx=None,
@@ -63,7 +63,7 @@ def check_completeness(
                     issues_found += 1
                     if fix:
                         # automatically add the missing attack relation
-                        _ = relation_elaborating.new_attack_relation(
+                        _ = relations.new_attack_relation(
                             from_label=from_label,
                             to_label=to_label,
                             target_premise_idx=None,

@@ -22,12 +22,7 @@ from pydantic import AnyUrl
 
 from cedrus.models import ArgumentNode, ClaimNode, NodeLabel
 from cedrus.models.relations import DialecticalRelationType, GroundingStrategy
-from cedrus.tools.backend import (
-    node_creation,
-    node_deletion,
-    node_updates,
-    relation_elaborating,
-)
+from cedrus.tools.backend import nodes, relations
 from cedrus.tools.runtime import (
     suggestions,
     tool_args,
@@ -80,7 +75,7 @@ async def add_claim_core(
             )
 
         try:
-            node_creation.new_claim(
+            nodes.new_claim(
                 label=label,
                 proposition=proposition,
                 to_label=None,
@@ -146,7 +141,7 @@ async def add_argument_core(
             return tc.build()
 
         try:
-            node_creation.new_argument(
+            nodes.new_argument(
                 label=label,
                 gist=gist,
                 premises=premises,
@@ -251,7 +246,7 @@ async def connect_core(
             if not arg_map.get_dialectic_relation(args.source, args.target):
                 match args.relation_type:
                     case "support":
-                        return relation_elaborating.new_support_relation(
+                        return relations.new_support_relation(
                             from_label=args.source,
                             to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
@@ -260,7 +255,7 @@ async def connect_core(
                             tc=tc,
                         )
                     case "attack":
-                        return relation_elaborating.new_attack_relation(
+                        return relations.new_attack_relation(
                             from_label=args.source,
                             to_label=args.target,
                             target_premise_idx=args.target_premise_idx,
@@ -295,7 +290,7 @@ async def connect_core(
                             "copy_premise",
                         ]:
                             try:
-                                return relation_elaborating.ground_support_relation(
+                                return relations.ground_support_relation(
                                     from_label=args.source,
                                     to_label=args.target,
                                     strategy=try_grounding_strategy,  # type: ignore[arg-type]
@@ -315,7 +310,7 @@ async def connect_core(
                             "negate_premise",
                         ]:
                             try:
-                                return relation_elaborating.ground_attack_relation(
+                                return relations.ground_attack_relation(
                                     from_label=args.source,
                                     to_label=args.target,
                                     strategy=try_grounding_strategy,  # type: ignore[arg-type]
@@ -345,15 +340,6 @@ async def connect_core(
                 f"✗ Failed to create {args.relation_type} relation from `{args.source}` to `{args.target}`: {str(e)}",
                 error=str(e),
             ).build()
-
-        logger.error(
-            "Unhandled case when creating relation from `%s` to `%s`.",
-            args.source,
-            args.target,
-        )
-        raise RuntimeError(
-            f"Internal Error: Unhandled case when creating relation from `{args.source}` to `{args.target}`."
-        )
 
 
 def edit_core(
@@ -398,7 +384,7 @@ def edit_core(
         try:
             match args.field:
                 case "tags":
-                    return node_updates.update_tags(
+                    return nodes.update_tags(
                         label=label,
                         old_value=args.old_value,
                         new_value=args.new_value,
@@ -406,7 +392,7 @@ def edit_core(
                         tc=tc,
                     )
                 case "metadata":
-                    return node_updates.update_metadata(
+                    return nodes.update_metadata(
                         label=label,
                         key=args.key,
                         new_value=args.new_value,
@@ -417,7 +403,7 @@ def edit_core(
             if isinstance(node, ClaimNode):
                 match args.field:
                     case "label" | "proposition":
-                        return node_updates.update_claim(
+                        return nodes.update_claim(
                             label=label,
                             field=args.field,
                             new_value=args.new_value,
@@ -427,7 +413,7 @@ def edit_core(
             elif isinstance(node, ArgumentNode):
                 match args.field:
                     case "label" | "gist" | "conclusion":
-                        return node_updates.update_argument(
+                        return nodes.update_argument(
                             label=label,
                             field=args.field,
                             new_value=args.new_value,
@@ -435,7 +421,7 @@ def edit_core(
                             tc=tc,
                         )
                     case "premises":
-                        return node_updates.update_premises(
+                        return nodes.update_premises(
                             label=label,
                             old_value=args.old_value,
                             new_value=args.new_value,
@@ -539,19 +525,19 @@ def remove_core(
                 node = arg_map.get_node(label)
 
                 if isinstance(node, ClaimNode):
-                    return node_deletion.delete_claim(
+                    return nodes.delete_claim(
                         label=label,
                         arg_map=arg_map,
                         tc=tc,
                     )
                 else:
-                    return node_deletion.delete_argument(
+                    return nodes.delete_argument(
                         label=label,
                         arg_map=arg_map,
                         tc=tc,
                     )
             elif source and target:
-                return relation_elaborating.delete_relation(
+                return relations.delete_relation(
                     from_label=source,
                     to_label=target,
                     arg_map=arg_map,

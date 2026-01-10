@@ -1,23 +1,281 @@
-"""Node update functions for the argument map."""
+"""Node-level operations for the argument map.
 
-import textwrap
+This module groups creation, deletion, and update helpers for
+claim and argument nodes. These functions are used by the MCP
+tool implementations in :mod:`cedrus.tools.impl.editing`.
+"""
+
+from __future__ import annotations
+
 from typing import Any
 
 from mcp.types import CallToolResult
 
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.graph.rendering import render_argdown_node
-from cedrus.models import (
-    ArgumentNode,
-    ClaimNode,
-    NodeLabel,
-    Proposition,
-)
-from cedrus.tools.backend.review_flagging import (
+from cedrus.models import ArgumentNode, ClaimNode, NodeLabel, Proposition
+from cedrus.models.propositions import Proposition as PropositionModel
+from cedrus.models.relations import DialecticalRelationType
+from cedrus.tools.backend.grounding import GroundingStrategy, maybe_ground_relation
+from cedrus.tools.backend.relations import (
     flag_nodes_as_needing_review,
     flag_relations_as_needing_review,
 )
 from cedrus.tools.runtime.tool_context import ToolContext
+from cedrus.tools.util import maybe_create_proposition_from_content
+
+
+def new_claim(
+    label: NodeLabel,
+    proposition: str | None,
+    to_label: NodeLabel | None,
+    from_label: NodeLabel | None,
+    relation_type: DialecticalRelationType,
+    target_premise_idx: int | None,
+    tags: list[str] | None,
+    metadata: dict[str, str] | None,
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> None:
+    """Create a new claim node in the argument map.
+
+    This is a direct move of :func:`cedrus.tools.backend.nodes.new_claim`.
+    """
+
+    import textwrap
+
+    grounding_strategy: GroundingStrategy | None = None
+    if tc.mode != "sketch":
+        if to_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_premise"
+        elif from_label:
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if proposition else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if proposition else "negate_conclusion"
+
+    # Maybe create new proposition node
+    proposition_node = maybe_create_proposition_from_content(
+        label, proposition_content=proposition, arg_map=arg_map, tc=tc
+    )
+
+    # Create the claim node
+    claim_node = ClaimNode(
+        label=label,
+        proposition_id=proposition_node.id,
+        needs_review_flag=any(issue.severity in ["warning", "error"] for issue in tc.issues),
+        tags=tags or [],
+        metadata=metadata or {},
+    )
+
+    # Add claim node to argument map
+    arg_map.add_claim(claim_node)
+    tc.issue(
+        "info",
+        f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.",
+    )
+
+    # Create dialectical relation if specified
+    relation_creation_fn = (
+        arg_map.add_support_relation if relation_type == "support" else arg_map.add_attack_relation
+    )
+    if to_label:
+        relation_creation_fn(
+            from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
+        )
+        tc.issue("info", f"\n  Linked new claim to `{to_label}` via a `{relation_type}` relation.")
+        maybe_ground_relation(
+            label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+        )
+    if from_label:
+        relation_creation_fn(from_label=from_label, to_label=label)
+        tc.issue(
+            "info", f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation."
+        )
+        maybe_ground_relation(
+            from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+        )
+
+    # Refresh claim_node after possible grounding updates
+    refreshed_claim_node = arg_map.get_claim(label)
+    if refreshed_claim_node is None:
+        raise RuntimeError(f"Failed to retrieve claim node `[{label}]` after creation.")
+    claim_node = refreshed_claim_node
+    tc.success(
+        f"✓ Created new claim node `[{label}]`.",
+        result=render_argdown_node(arg_map, label, details=False),
+    )
+
+
+def new_argument(
+    label: NodeLabel,
+    gist: str | None,
+    to_label: NodeLabel | None,
+    from_label: NodeLabel | None,
+    relation_type: DialecticalRelationType,
+    target_premise_idx: int | None,
+    premises: list[str] | None,
+    conclusion: str | None,
+    tags: list[str] | None,
+    metadata: dict[str, str] | None,
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> None:
+    """Create a new argument node in the argument map.
+
+    Direct move of :func:`cedrus.tools.backend.nodes.new_argument`.
+    """
+
+    # Infer grounding strategy from context
+    grounding_strategy: GroundingStrategy | None = None
+    if tc.mode != "sketch":
+        if to_label:
+            # New argument supports/attacks existing node via its conclusion
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if conclusion else "copy_premise"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if conclusion else "negate_premise"
+        elif from_label:
+            # Existing node supports/attacks new argument via one of our premises
+            if relation_type == "support":
+                grounding_strategy = "define_equivalence" if premises else "copy_conclusion"
+            elif relation_type == "attack":
+                grounding_strategy = "define_negation" if premises else "negate_conclusion"
+
+    # Create conclusion proposition if provided
+    conclusion_node: Proposition | None = None
+    if conclusion:
+        conclusion_node = maybe_create_proposition_from_content(
+            label, proposition_content=conclusion, arg_map=arg_map, tc=tc
+        )
+
+    # Create premise propositions if provided
+    premise_nodes: list[Proposition] = []
+    if premises:
+        for premise_content in premises:
+            premise_node = maybe_create_proposition_from_content(
+                label, proposition_content=premise_content, arg_map=arg_map, tc=tc
+            )
+            premise_nodes.append(premise_node)
+
+    # Create the argument node
+    argument_node = ArgumentNode(
+        label=label,
+        gist=gist or "",
+        premises=[p.id for p in premise_nodes],
+        conclusion=conclusion_node.id if conclusion_node else "",
+        needs_review_flag=any(issue.severity in ["warning", "error"] for issue in tc.issues),
+        tags=tags or [],
+        metadata=metadata or {},
+    )
+
+    # Add argument node to argument map
+    arg_map.add_argument(argument_node)
+
+    # Create dialectical relation if specified
+    relation_creation_fn = (
+        arg_map.add_support_relation if relation_type == "support" else arg_map.add_attack_relation
+    )
+    if to_label:
+        relation_creation_fn(
+            from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
+        )
+        tc.issue(
+            "info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation."
+        )
+        if tc.mode == "elaborate":
+            maybe_ground_relation(
+                label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+            )
+    if from_label:
+        relation_creation_fn(from_label=from_label, to_label=label)
+        tc.issue(
+            "info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation."
+        )
+        if tc.mode == "elaborate":
+            maybe_ground_relation(
+                from_label,
+                label,
+                relation_type,
+                target_premise_idx,
+                grounding_strategy,
+                arg_map,
+                tc,
+            )
+
+    # Refresh argument_node after possible grounding updates
+    refreshed_argument_node = arg_map.get_argument(label)
+    if refreshed_argument_node is None:
+        raise RuntimeError(f"Failed to retrieve argument node `<{label}>` after creation.")
+    argument_node = refreshed_argument_node
+    details = bool(premise_nodes or conclusion_node or tc.mode in ["review", "elaborate"])
+    tc.success(
+        f"✓ Created new argument node `<{label}>`.",
+        result=render_argdown_node(arg_map, label, details=details),
+    )
+
+
+def delete_claim(
+    label: NodeLabel,
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> CallToolResult:
+    """Delete a claim node from the argument map.
+
+    Direct move of :func:`cedrus.tools.backend.nodes.delete_claim`.
+    """
+
+    try:
+        claim_node = arg_map.get_claim(label)
+        if not claim_node:
+            return tc.failure(
+                f"✗ Claim node `[{label}]` does not exist.", error="NodeNotFound"
+            ).build()
+
+        ref_prop_ids = [claim_node.proposition_id]
+        ref_prop_ids = [prop_id for prop_id in ref_prop_ids if arg_map.is_proposition(prop_id)]
+
+        arg_map.delete_node(label)
+        for prop_id in ref_prop_ids:
+            arg_map.maybe_remove_unused_proposition(prop_id)
+        return tc.success(f"✓ Deleted claim node `[{label}]`.").build()
+
+    except Exception as e:
+        return tc.failure(f"✗ Failed to delete claim `[{label}]`: {str(e)}", error=str(e)).build()
+
+
+def delete_argument(
+    label: NodeLabel,
+    arg_map: ArgumentMap,
+    tc: ToolContext,
+) -> CallToolResult:
+    """Delete an argument node from the argument map.
+
+    Direct move of :func:`cedrus.tools.backend.nodes.delete_argument`.
+    """
+
+    try:
+        argument_node = arg_map.get_argument(label)
+        if not argument_node:
+            return tc.failure(
+                f"✗ Argument node `<{label}>` does not exist.", error="NodeNotFound"
+            ).build()
+
+        ref_prop_ids = argument_node.premises + [argument_node.conclusion]
+        ref_prop_ids = [prop_id for prop_id in ref_prop_ids if arg_map.is_proposition(prop_id)]
+
+        arg_map.delete_node(label)
+        for prop_id in ref_prop_ids:
+            arg_map.maybe_remove_unused_proposition(prop_id)
+        return tc.success(f"✓ Deleted argument node `<{label}>`.").build()
+
+    except Exception as e:
+        return tc.failure(
+            f"✗ Failed to delete argument `<{label}>`: {str(e)}", error=str(e)
+        ).build()
 
 
 def update_proposition(
@@ -27,14 +285,9 @@ def update_proposition(
     arg_map: ArgumentMap,
     tc: ToolContext,
 ) -> None:
-    """Update a proposition in the argument map and flag all nodes referencing it as needing review.
+    """Update a proposition in the argument map and flag referencing nodes.
 
-    Args:
-        prop_id: ID of the proposition to update
-        updates: Dictionary of updates to apply
-        exempt_nodes_flagging: List of node labels to exempt from review flagging
-        arg_map: The argument map
-        tc: Tool context for logging
+    Direct move of :func:`cedrus.tools.backend.nodes.update_proposition`.
     """
 
     if not updates:
@@ -63,14 +316,10 @@ def update_claim(
 ) -> CallToolResult:
     """Update a claim node in the argument map.
 
-    Args:
-        label: The label of the claim node to update.
-        field: The field to update (e.g., "proposition", "label", "needs_review_flag").
-        new_value: The new value for the specified field.
-
-    Returns:
-        Textual feedback and next step suggestions.
+    Direct move of :func:`cedrus.tools.backend.nodes.update_claim`.
     """
+
+    import textwrap
 
     claim_node = arg_map.get_claim(label)
     if not claim_node:
@@ -181,14 +430,10 @@ def update_argument(
 ) -> CallToolResult:
     """Update an argument node in the argument map.
 
-    Args:
-        label: The label of the argument node to update.
-        field: The field to update (e.g., "gist", "conclusion", "label", "needs_review_flag").
-        new_value: The new value for the specified field.
-
-    Returns:
-        Textual feedback.
+    Direct move of :func:`cedrus.tools.backend.nodes.update_argument`.
     """
+
+    import textwrap
 
     try:
         argument_node = arg_map.get_argument(label)
@@ -273,7 +518,7 @@ def update_argument(
                     tc=tc,
                 )
             if conclusion_prop is None:
-                conclusion_prop = Proposition(content=new_value)
+                conclusion_prop = PropositionModel(content=new_value)
                 arg_map.add_proposition(conclusion_prop)
 
             try:
@@ -357,10 +602,7 @@ def update_metadata(
 ) -> CallToolResult:
     """Update metadata for a node in the argument map.
 
-    Args:
-        label: The label of the node to update.
-        key: The metadata key to update.
-        new_value: The new value for the specified metadata key. If None, the key is removed.
+    Direct move of :func:`cedrus.tools.backend.nodes.update_metadata`.
     """
 
     try:
@@ -413,10 +655,7 @@ def update_tags(
 ) -> CallToolResult:
     """Update tags for a node in the argument map.
 
-    Args:
-        label: The label of the node to update.
-        old_value: The tag to remove (if any).
-        new_value: The tag to add (if any).
+    Direct move of :func:`cedrus.tools.backend.nodes.update_tags`.
     """
 
     try:
@@ -486,13 +725,10 @@ def update_premises(
 ) -> CallToolResult:
     """Update premises for an argument node in the argument map.
 
-    Args:
-        label: The label of the argument node to update.
-        old_value: The content of the premise to remove or replace (if any).
-        new_value: The content of the premise to add (if any). If None, the premise at premise_idx is removed.
-
-    If old_value is None, a new premise is added. If new_value is None, the premise with old_value is removed.
+    Direct move of :func:`cedrus.tools.backend.nodes.update_premises`.
     """
+
+    import textwrap
 
     try:
         if old_value is None and new_value is None:
@@ -534,7 +770,7 @@ def update_premises(
             # Maybe create new proposition node for the new premise
             prop_node = next(arg_map.find_proposition_by_content(new_value), None)
             if not prop_node:
-                prop_node = Proposition(content=new_value)
+                prop_node = PropositionModel(content=new_value)
                 arg_map.add_proposition(prop_node)
             premise_nodes.append(prop_node)
             arg_map.update_node(
@@ -593,3 +829,17 @@ def update_premises(
         return tc.failure(
             f"✗ Failed to update premises for argument `<{label}>`: {str(e)}", error=str(e)
         ).build()
+
+
+__all__ = [
+    "new_claim",
+    "new_argument",
+    "delete_claim",
+    "delete_argument",
+    "update_proposition",
+    "update_claim",
+    "update_argument",
+    "update_metadata",
+    "update_tags",
+    "update_premises",
+]
