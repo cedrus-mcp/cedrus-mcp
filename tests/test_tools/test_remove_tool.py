@@ -2,7 +2,12 @@
 
 import pytest
 from unittest.mock import Mock
-from cedrus.tools.tools import add_claim_sketch, add_argument_sketch, connect_sketch, remove
+from cedrus.tools.entrypoints.sketch import (
+    add_claim as add_claim_sketch,
+    add_argument as add_argument_sketch,
+    connect as connect_sketch,
+    remove,
+)
 from cedrus.server import AppContext
 from cedrus.graph.argument_map import ArgumentMap
 
@@ -11,25 +16,23 @@ from cedrus.graph.argument_map import ArgumentMap
 def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     """Create mock context for tool testing."""
     ctx = Mock()
-    ctx.request_context.lifespan_context = AppContext(
-        arg_map=empty_arg_map,
-        mode="sketch"
-    )
+    ctx.request_context.lifespan_context = AppContext(arg_map=empty_arg_map, mode="sketch")
     return ctx
 
 
 async def test_remove_claim_node(tool_context: Mock) -> None:
     """Test removing a claim node."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
-    
+
     # Add a claim
     await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
     assert arg_map.get_node("C1") is not None
-    
+
     # Remove it
-    result = remove(label="C1", ctx=tool_context)
-    
+    result = await remove(label="C1", ctx=tool_context)
+
     assert not result.isError
+
     with pytest.raises(KeyError):
         arg_map.get_node("C1")
 
@@ -37,18 +40,14 @@ async def test_remove_claim_node(tool_context: Mock) -> None:
 async def test_remove_argument_node(tool_context: Mock) -> None:
     """Test removing an argument node."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
-    
+
     # Add an argument
-    await add_argument_sketch(
-        label="A1",
-        ctx=tool_context,
-        gist="Test"
-    )
+    await add_argument_sketch(label="A1", ctx=tool_context, gist="Test")
     assert arg_map.get_node("A1") is not None
-    
+
     # Remove it
-    result = remove(label="A1", ctx=tool_context)
-    
+    result = await remove(label="A1", ctx=tool_context)
+
     assert not result.isError
     with pytest.raises(KeyError):
         arg_map.get_node("A1")
@@ -57,7 +56,7 @@ async def test_remove_argument_node(tool_context: Mock) -> None:
 async def test_remove_relation(tool_context: Mock) -> None:
     """Test removing a relation between nodes."""
     arg_map = tool_context.request_context.lifespan_context.arg_map
-    
+
     # Add nodes and connect them
     await add_claim_sketch(label="C1", ctx=tool_context, proposition="Claim")
     await add_argument_sketch(label="A1", ctx=tool_context, gist="Arg")
@@ -67,15 +66,12 @@ async def test_remove_relation(tool_context: Mock) -> None:
         relation_type="support",
         ctx=tool_context,
     )
-    
+
     assert arg_map.get_dialectic_relation("A1", "C1") is not None
-    
+
     # Remove the relation
-    result = remove(
-        source="A1", target="C1",
-        ctx=tool_context
-    )
-    
+    result = await remove(source="A1", target="C1", ctx=tool_context)
+
     assert not result.isError
     assert arg_map.get_dialectic_relation("A1", "C1") is None
     # Nodes should still exist
@@ -83,9 +79,9 @@ async def test_remove_relation(tool_context: Mock) -> None:
     assert arg_map.get_node("C1") is not None
 
 
-def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
+async def test_remove_nonexistent_node_fails(tool_context: Mock) -> None:
     """Test removing a non-existent node raises KeyError."""
-    result = remove(label="NONEXISTENT", ctx=tool_context)
+    result = await remove(label="NONEXISTENT", ctx=tool_context)
     # ``structuredContent`` is optional on the result type; assert non-None before indexing
     assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
@@ -95,13 +91,9 @@ async def test_remove_with_both_label_and_relation_prioritizes_label(tool_contex
     """Test that providing both label and relation uses label."""
     # Add a node
     await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
-    
+
     # Call remove with both (should fail)
-    result = remove(
-        label="C1",
-        source="A1", target="C2",
-        ctx=tool_context
-    )
+    result = await remove(label="C1", source="A1", target="C2", ctx=tool_context)
 
     # Should fail
     assert result.structuredContent is not None

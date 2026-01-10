@@ -2,23 +2,23 @@
 """Utility functions for MCP tools."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from cedrus.graph import ArgumentMap
 from cedrus.models import (
-    NodeLabel,
     ArgumentNode,
+    NodeLabel,
     Proposition,
 )
 from cedrus.models.relations import RelationConfig
 
 if TYPE_CHECKING:
-    from cedrus.tools.tool_context import ToolContext
+    from cedrus.tools.runtime.tool_context import ToolContext
 
 # NOTE: Grounding functions moved to grounding.py
 # NOTE: Review flagging functions moved to review_flagging.py
 # NOTE: update_proposition moved to node_updates.py
-
 
 
 def ensure_label_is_unique(
@@ -36,7 +36,8 @@ def ensure_label_is_unique(
     if new_label == label:
         return label
 
-    tc.issue("warning",
+    tc.issue(
+        "warning",
         f"Note: Label '{label}' is already in use. Creating unique label '{new_label}'.",
         priority=1.0,
     )
@@ -59,7 +60,8 @@ def sanitize_relation_args_new_node(
     # Make sure only one relation is created
     if target and source:
         source = None  # Can't have both
-        tc.issue("warning", 
+        tc.issue(
+            "warning",
             "Note: Both 'target' and 'source' were provided. Will ignore 'source'.",
             priority=1.0,
         )
@@ -105,9 +107,6 @@ def validate_target_premise_idx(
     if target_premise_idx <= 0 or target_premise_idx > len(node.premises):
         return False
     return True
-
-
-
 
 
 def maybe_create_proposition_from_content(

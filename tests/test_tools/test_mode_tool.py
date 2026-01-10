@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, AsyncMock
-from cedrus.tools.tools import switch_mode
+from cedrus.tools.entrypoints.sketch import switch_mode
 from cedrus.server import AppContext
 from cedrus.graph.argument_map import ArgumentMap
 
@@ -11,10 +11,7 @@ from cedrus.graph.argument_map import ArgumentMap
 def tool_context(empty_arg_map: ArgumentMap) -> Mock:
     """Create mock context for tool testing."""
     ctx = Mock()
-    ctx.request_context.lifespan_context = AppContext(
-        arg_map=empty_arg_map,
-        mode="sketch"
-    )
+    ctx.request_context.lifespan_context = AppContext(arg_map=empty_arg_map, mode="sketch")
     # Mock FastMCP server for tool add/remove operations
     ctx.fastmcp = Mock()
     ctx.fastmcp.add_tool = Mock()
@@ -28,9 +25,9 @@ def tool_context(empty_arg_map: ArgumentMap) -> Mock:
 async def test_mode_switch_to_elaborate(tool_context: Mock) -> None:
     """Test switching to elaborate mode."""
     assert tool_context.request_context.lifespan_context.mode == "sketch"
-    
+
     result = await switch_mode(mode="elaborate", ctx=tool_context)
-    
+
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "elaborate"
     # Verify tool_list_changed notification was sent
@@ -40,7 +37,7 @@ async def test_mode_switch_to_elaborate(tool_context: Mock) -> None:
 async def test_mode_switch_to_review(tool_context: Mock) -> None:
     """Test switching to review mode."""
     result = await switch_mode(mode="review", ctx=tool_context)
-    
+
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "review"
     tool_context.session.send_tool_list_changed.assert_called_once()
@@ -49,9 +46,9 @@ async def test_mode_switch_to_review(tool_context: Mock) -> None:
 async def test_mode_switch_to_sketch(tool_context: Mock) -> None:
     """Test switching to sketch mode."""
     tool_context.request_context.lifespan_context.mode = "elaborate"
-    
+
     result = await switch_mode(mode="sketch", ctx=tool_context)
-    
+
     assert not result.isError
     assert tool_context.request_context.lifespan_context.mode == "sketch"
     tool_context.session.send_tool_list_changed.assert_called_once()
@@ -62,7 +59,7 @@ async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
     # Pass an intentionally invalid mode; mark as type-ignored since the
     # production function only accepts valid modes at the type level.
     result = await switch_mode(mode="invalid", ctx=tool_context)  # type: ignore[arg-type]
-    
+
     # Check that error is indicated in structured content
     assert result.structuredContent is not None
     assert result.structuredContent["status"] == "failure"
@@ -75,7 +72,7 @@ async def test_mode_invalid_mode_fails(tool_context: Mock) -> None:
 async def test_mode_switch_same_mode_no_tools_updated(tool_context: Mock) -> None:
     """Test that switching to the same mode doesn't trigger tool updates."""
     result = await switch_mode(mode="sketch", ctx=tool_context)
-    
+
     assert not result.isError
     # No tool changes should be made when mode doesn't actually change
     tool_context.fastmcp.add_tool.assert_not_called()

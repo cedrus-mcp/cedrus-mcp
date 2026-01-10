@@ -1,11 +1,13 @@
 """Grounding validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.runtime.tool_context import ToolContext
 from cedrus.utils.relations import is_grounded_relation
 
 
-def check_grounding(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None) -> int:
+def check_grounding(
+    arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None
+) -> int:
     """Checks that all dialectical relations in the argument map are properly grounded.
 
     Args:
@@ -29,11 +31,7 @@ def check_grounding(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, ma
             issues_found += 1
             tc.suggest(
                 "connect",
-                {
-                    "source": from_label,
-                    "target": to_label,
-                    "relation_type": "support"
-                },
+                {"source": from_label, "target": to_label, "relation_type": "support"},
                 f"Ensure that the support relation from {from_label} to {to_label} is grounded in internal premise conclusion structure of adjacent nodes.",
                 "fix",
             )
@@ -47,11 +45,7 @@ def check_grounding(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, ma
             issues_found += 1
             tc.suggest(
                 "connect",
-                {
-                    "source": from_label,
-                    "target": to_label,
-                    "relation_type": "attack"
-                },
+                {"source": from_label, "target": to_label, "relation_type": "attack"},
                 f"Ensure that the attack relation from {from_label} to {to_label} is grounded in internal premise conclusion structure of adjacent nodes.",
                 "fix",
             )

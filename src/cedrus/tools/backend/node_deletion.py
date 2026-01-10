@@ -4,7 +4,7 @@ from mcp.types import CallToolResult
 
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models import NodeLabel
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.runtime.tool_context import ToolContext
 
 
 def delete_claim(
@@ -16,7 +16,7 @@ def delete_claim(
 
     Args:
         label: The label of the claim node to delete.
-        
+
     Returns:
         CallToolResult with success or failure message
     """
@@ -37,9 +37,7 @@ def delete_claim(
         return tc.success(f"✓ Deleted claim node `[{label}]`.").build()
 
     except Exception as e:
-        return tc.failure(
-            f"✗ Failed to delete claim `[{label}]`: {str(e)}", error=str(e)
-        ).build()
+        return tc.failure(f"✗ Failed to delete claim `[{label}]`: {str(e)}", error=str(e)).build()
 
 
 def delete_argument(
@@ -51,7 +49,7 @@ def delete_argument(
 
     Args:
         label: The label of the argument node to delete.
-        
+
     Returns:
         CallToolResult with success or failure message
     """

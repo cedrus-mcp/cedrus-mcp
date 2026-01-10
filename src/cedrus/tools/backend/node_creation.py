@@ -5,15 +5,15 @@ import textwrap
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.graph.rendering import render_argdown_node
 from cedrus.models import (
-    NodeLabel,
-    ClaimNode,
     ArgumentNode,
+    ClaimNode,
+    NodeLabel,
 )
 from cedrus.models.propositions import Proposition
 from cedrus.models.relations import DialecticalRelationType
-from cedrus.tools import utils
-from cedrus.tools.grounding import GroundingStrategy, maybe_ground_relation
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.backend.grounding import GroundingStrategy, maybe_ground_relation
+from cedrus.tools.runtime.tool_context import ToolContext
+from cedrus.tools.util import maybe_create_proposition_from_content
 
 
 def new_claim(
@@ -62,7 +62,9 @@ def new_claim(
                 grounding_strategy = "define_negation" if proposition else "negate_conclusion"
 
     # Maybe create new proposition node
-    proposition_node = utils.maybe_create_proposition_from_content(label, proposition_content=proposition, arg_map=arg_map, tc=tc)
+    proposition_node = maybe_create_proposition_from_content(
+        label, proposition_content=proposition, arg_map=arg_map, tc=tc
+    )
 
     # Create the claim node
     claim_node = ClaimNode(
@@ -75,13 +77,14 @@ def new_claim(
 
     # Add claim node to argument map
     arg_map.add_claim(claim_node)
-    tc.issue("info", f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.")
+    tc.issue(
+        "info",
+        f"✓ Created new claim node `[{label}]` with proposition `{textwrap.shorten(proposition_node.content, width=50)}`.",
+    )
 
     # Create dialectical relation if specified
     relation_creation_fn = (
-        arg_map.add_support_relation
-        if relation_type == "support"
-        else arg_map.add_attack_relation
+        arg_map.add_support_relation if relation_type == "support" else arg_map.add_attack_relation
     )
     if to_label:
         relation_creation_fn(
@@ -93,13 +96,15 @@ def new_claim(
         )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
-        tc.issue("info", f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation.")
+        tc.issue(
+            "info", f"\n  Linked `{from_label}` to new claim via a `{relation_type}` relation."
+        )
         maybe_ground_relation(
             from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
         )
 
     # Refresh claim_node after possible grounding updates
-    refreshed_claim_node = arg_map.get_claim(label) 
+    refreshed_claim_node = arg_map.get_claim(label)
     if refreshed_claim_node is None:
         raise RuntimeError(f"Failed to retrieve claim node `[{label}]` after creation.")
     claim_node = refreshed_claim_node
@@ -164,7 +169,7 @@ def new_argument(
     # Create conclusion proposition if provided
     conclusion_node: Proposition | None = None
     if conclusion:
-        conclusion_node = utils.maybe_create_proposition_from_content(
+        conclusion_node = maybe_create_proposition_from_content(
             label, proposition_content=conclusion, arg_map=arg_map, tc=tc
         )
 
@@ -172,7 +177,7 @@ def new_argument(
     premise_nodes: list[Proposition] = []
     if premises:
         for premise_content in premises:
-            premise_node = utils.maybe_create_proposition_from_content(
+            premise_node = maybe_create_proposition_from_content(
                 label, proposition_content=premise_content, arg_map=arg_map, tc=tc
             )
             premise_nodes.append(premise_node)
@@ -193,25 +198,33 @@ def new_argument(
 
     # Create dialectical relation if specified
     relation_creation_fn = (
-        arg_map.add_support_relation
-        if relation_type == "support"
-        else arg_map.add_attack_relation
+        arg_map.add_support_relation if relation_type == "support" else arg_map.add_attack_relation
     )
     if to_label:
         relation_creation_fn(
             from_label=label, to_label=to_label, target_premise_idx=target_premise_idx
         )
-        tc.issue("info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation.")
+        tc.issue(
+            "info", f"\n  Linked new argument to `{to_label}` via a `{relation_type}` relation."
+        )
         if tc.mode == "elaborate":
             maybe_ground_relation(
                 label, to_label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
             )
     if from_label:
         relation_creation_fn(from_label=from_label, to_label=label)
-        tc.issue("info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation.")
+        tc.issue(
+            "info", f"\n  Linked `{from_label}` to new argument via a `{relation_type}` relation."
+        )
         if tc.mode == "elaborate":
             maybe_ground_relation(
-                from_label, label, relation_type, target_premise_idx, grounding_strategy, arg_map, tc
+                from_label,
+                label,
+                relation_type,
+                target_premise_idx,
+                grounding_strategy,
+                arg_map,
+                tc,
             )
 
     # Refresh argument_node after possible grounding updates

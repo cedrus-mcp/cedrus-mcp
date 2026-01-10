@@ -8,14 +8,16 @@ from mcp.types import CallToolResult
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.graph.rendering import render_argdown_node
 from cedrus.models import (
-    NodeLabel,
-    ClaimNode,
     ArgumentNode,
+    ClaimNode,
+    NodeLabel,
     Proposition,
 )
-from cedrus.tools import utils
-from cedrus.tools.review_flagging import flag_relations_as_needing_review, flag_nodes_as_needing_review
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.backend.review_flagging import (
+    flag_nodes_as_needing_review,
+    flag_relations_as_needing_review,
+)
+from cedrus.tools.runtime.tool_context import ToolContext
 
 
 def update_proposition(
@@ -26,7 +28,7 @@ def update_proposition(
     tc: ToolContext,
 ) -> None:
     """Update a proposition in the argument map and flag all nodes referencing it as needing review.
-    
+
     Args:
         prop_id: ID of the proposition to update
         updates: Dictionary of updates to apply
@@ -43,7 +45,7 @@ def update_proposition(
     if "content" in updates:
         updates["is_dummy"] = False
     arg_map.update_proposition(prop_id, updates)
-        
+
     flag_nodes_as_needing_review(
         ref_prop_id=prop_id,
         exempt_nodes_flagging=exempt_nodes_flagging,
@@ -72,9 +74,7 @@ def update_claim(
 
     claim_node = arg_map.get_claim(label)
     if not claim_node:
-        return tc.failure(
-            f"✗ Claim node `[{label}]` does not exist.", error="NodeNotFound"
-        ).build()
+        return tc.failure(f"✗ Claim node `[{label}]` does not exist.", error="NodeNotFound").build()
 
     if field == "proposition":
         if not isinstance(new_value, str) or not new_value.strip():
@@ -99,7 +99,13 @@ def update_claim(
 
         old_content = proposition.content
         try:
-            update_proposition(proposition.id, {"content": new_value}, exempt_nodes_flagging=[claim_node.label], arg_map=arg_map, tc=tc)
+            update_proposition(
+                proposition.id,
+                {"content": new_value},
+                exempt_nodes_flagging=[claim_node.label],
+                arg_map=arg_map,
+                tc=tc,
+            )
         except Exception as e:
             return tc.failure(
                 f"✗ Failed to update proposition for claim node `[{label}]`: {str(e)}",
@@ -259,7 +265,13 @@ def update_argument(
             conclusion_prop = next(arg_map.find_proposition_by_content(new_value), None)
             if conclusion_prop is None and old_conclusion_prop is not None:
                 conclusion_prop = old_conclusion_prop
-                update_proposition(conclusion_prop.id, {"content": new_value}, exempt_nodes_flagging=[argument_node.label], arg_map=arg_map, tc=tc)
+                update_proposition(
+                    conclusion_prop.id,
+                    {"content": new_value},
+                    exempt_nodes_flagging=[argument_node.label],
+                    arg_map=arg_map,
+                    tc=tc,
+                )
             if conclusion_prop is None:
                 conclusion_prop = Proposition(content=new_value)
                 arg_map.add_proposition(conclusion_prop)
@@ -268,19 +280,20 @@ def update_argument(
                 # reference new proposition
                 arg_map.update_node(argument_node.label, {"conclusion": conclusion_prop.id})
                 # maybe delete old proposition if now unused
-                arg_map.maybe_remove_unused_proposition(old_conclusion_prop.id) if old_conclusion_prop else None
+                arg_map.maybe_remove_unused_proposition(
+                    old_conclusion_prop.id
+                ) if old_conclusion_prop else None
             except Exception as e:
                 return tc.failure(
                     f"✗ Failed to update conclusion for argument node `<{label}>`: {str(e)}",
                     error=str(e),
                 ).build()
-            
+
             flag_relations_as_needing_review(argument_node.label, arg_map, tc)
             return tc.success(
-                f"✓ Updated conclusion of argument node `<{label}>` {('from `' +textwrap.shorten(old_value, width=40) + '`') if old_value else ''} to `{textwrap.shorten(new_value or '', width=40)}`.",
+                f"✓ Updated conclusion of argument node `<{label}>` {('from `' + textwrap.shorten(old_value, width=40) + '`') if old_value else ''} to `{textwrap.shorten(new_value or '', width=40)}`.",
                 result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
-
 
         elif field in ["gist"]:
             if not isinstance(new_value, str) or not new_value.strip():
@@ -296,7 +309,7 @@ def update_argument(
                     f"✗ Failed to update {field} for argument node `<{label}>`: {str(e)}",
                     error=str(e),
                 ).build()
-            
+
             return tc.success(
                 f"✓ Updated {field} of argument node `<{label}>` from `{textwrap.shorten(str(old_value), width=40)}` to `{textwrap.shorten(new_value or '', width=40)}`.",
                 result=render_argdown_node(arg_map, argument_node.label, details=False),
@@ -358,9 +371,7 @@ def update_metadata(
             ).build()
 
         if not arg_map.is_node(label):
-            return tc.failure(
-                f"✗ Node `[{label}]` does not exist.", error="NodeNotFound"
-            ).build()
+            return tc.failure(f"✗ Node `[{label}]` does not exist.", error="NodeNotFound").build()
         node = arg_map.get_node(label)
 
         old_metadata = node.metadata.copy()
@@ -368,8 +379,9 @@ def update_metadata(
         if new_value is None:
             if key in updated_metadata:
                 del updated_metadata[key]
-                tc.issue("info", 
-                    f"Removing metadata key `{key}` from node `[{label}]` (`new_value=None`)."
+                tc.issue(
+                    "info",
+                    f"Removing metadata key `{key}` from node `[{label}]` (`new_value=None`).",
                 )
         else:
             updated_metadata[key] = new_value
@@ -383,7 +395,7 @@ def update_metadata(
 
         return tc.success(
             f"✓ Updated metadata key `{key}` of node `[{label}]`.",
-            result=render_argdown_node(arg_map, node.label, details=True)
+            result=render_argdown_node(arg_map, node.label, details=True),
         ).build()
 
     except Exception as e:
@@ -409,9 +421,7 @@ def update_tags(
 
     try:
         if not arg_map.is_node(label):
-            return tc.failure(
-                f"✗ Node `[{label}]` does not exist.", error="NodeNotFound"
-            ).build()
+            return tc.failure(f"✗ Node `[{label}]` does not exist.", error="NodeNotFound").build()
         node = arg_map.get_node(label)
 
         if old_value is None and new_value is None:
@@ -419,7 +429,7 @@ def update_tags(
                 f"✗ Neither old_value nor new_value provided for updating tags of node `[{label}]`.",
                 error="NoTagValuesProvided",
             ).build()
-        
+
         old_value = old_value.strip() if old_value is not None else None
         new_value = new_value.strip() if new_value is not None else None
 
@@ -436,13 +446,18 @@ def update_tags(
                 updated_tags.remove(old_value)
                 tc.issue("info", f"Removing tag `{old_value}` from node `[{label}]`.")
             else:
-                tc.issue("info", f"Tag `{old_value}` not found in node `[{label}]`; nothing to remove.")
+                tc.issue(
+                    "info", f"Tag `{old_value}` not found in node `[{label}]`; nothing to remove."
+                )
         if new_value is not None:
             if new_value not in updated_tags:
                 updated_tags.add(new_value)
                 tc.issue("info", f"Adding tag `{new_value}` to node `[{label}]`.")
             else:
-                tc.issue("info", f"Tag `{new_value}` already present in node `[{label}]`; nothing to add.")
+                tc.issue(
+                    "info",
+                    f"Tag `{new_value}` already present in node `[{label}]`; nothing to add.",
+                )
 
         try:
             arg_map.update_node(node.label, {"tags": list(updated_tags)})
@@ -453,7 +468,7 @@ def update_tags(
 
         return tc.success(
             f"✓ Updated tags for node `[{label}]`.",
-            result=render_argdown_node(arg_map, node.label, details=True)
+            result=render_argdown_node(arg_map, node.label, details=True),
         ).build()
 
     except Exception as e:
@@ -500,7 +515,6 @@ def update_premises(
             )
         premise_nodes = [p for p in premise_nodes if p is not None]
 
-
         if old_value is not None:
             old_premise = next((p for p in premise_nodes if p and p.content == old_value), None)
             if old_premise is None:
@@ -511,9 +525,7 @@ def update_premises(
         else:
             old_premise = None
 
-
         if old_premise is None:
-
             if new_value is None or new_value.strip() == "":
                 return tc.failure(
                     f"✗ Cannot create a new empty premise in argument `<{label}>`.",
@@ -534,8 +546,7 @@ def update_premises(
                 result=render_argdown_node(arg_map, argument_node.label, details=True),
             ).build()
 
-        else: 
-
+        else:
             # Check for invalid specifications first
             if new_value is not None and new_value.strip() == "":
                 return tc.failure(
@@ -552,7 +563,11 @@ def update_premises(
             if new_value is None:
                 arg_map.update_node(
                     argument_node.label,
-                    {"premises": [p.id for p in premise_nodes if p is not None and p.id != old_premise.id]},
+                    {
+                        "premises": [
+                            p.id for p in premise_nodes if p is not None and p.id != old_premise.id
+                        ]
+                    },
                 )
                 arg_map.maybe_remove_unused_proposition(old_premise.id)
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
@@ -562,7 +577,13 @@ def update_premises(
                 ).build()
 
             if new_value is not None:
-                update_proposition(old_premise.id, {"content": new_value}, exempt_nodes_flagging=[argument_node.label], arg_map=arg_map, tc=tc)
+                update_proposition(
+                    old_premise.id,
+                    {"content": new_value},
+                    exempt_nodes_flagging=[argument_node.label],
+                    arg_map=arg_map,
+                    tc=tc,
+                )
                 flag_relations_as_needing_review(argument_node.label, arg_map, tc)
                 return tc.success(
                     f"✓ Updated premise '{old_premise.content}' of argument `<{label}>` to '{new_value}'.",

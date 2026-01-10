@@ -1,9 +1,10 @@
 """Shared fixtures for validation tests."""
 
 import pytest
+
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.models import ClaimNode, ArgumentNode, Proposition
-from cedrus.tools.tool_context import ToolContext
+from cedrus.models import ArgumentNode, ClaimNode, Proposition
+from cedrus.tools.runtime.tool_context import ToolContext
 
 
 @pytest.fixture

@@ -2,11 +2,13 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from cedrus.tools.tools import (
-    add_claim_sketch,
-    add_claim_elaborate,
-    add_argument_sketch,
-    add_argument_elaborate,
+from cedrus.tools.entrypoints.sketch import (
+    add_claim as add_claim_sketch,
+    add_argument as add_argument_sketch,
+)
+from cedrus.tools.entrypoints.elaborate import (
+    add_claim as add_claim_elaborate,
+    add_argument as add_argument_elaborate,
 )
 from cedrus.server import AppContext
 from cedrus.graph.argument_map import ArgumentMap
@@ -16,10 +18,7 @@ from cedrus.graph.argument_map import ArgumentMap
 def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
     """Create mock context for sketch mode testing."""
     ctx = Mock()
-    ctx.request_context.lifespan_context = AppContext(
-        arg_map=empty_arg_map,
-        mode="sketch"
-    )
+    ctx.request_context.lifespan_context = AppContext(arg_map=empty_arg_map, mode="sketch")
     return ctx
 
 
@@ -27,21 +26,14 @@ def tool_context_sketch(empty_arg_map: ArgumentMap) -> Mock:
 def tool_context_elaborate(empty_arg_map: ArgumentMap) -> Mock:
     """Create mock context for elaborate mode testing."""
     ctx = Mock()
-    ctx.request_context.lifespan_context = AppContext(
-        arg_map=empty_arg_map,
-        mode="elaborate"
-    )
+    ctx.request_context.lifespan_context = AppContext(arg_map=empty_arg_map, mode="elaborate")
     return ctx
 
 
 async def test_add_claim_sketch(tool_context_sketch: Mock) -> None:
     """Test adding a claim in sketch mode."""
-    result = await add_claim_sketch(
-        label="C1",
-        ctx=tool_context_sketch,
-        proposition="Test claim"
-    )
-    
+    result = await add_claim_sketch(label="C1", ctx=tool_context_sketch, proposition="Test claim")
+
     assert not result.isError
     arg_map = tool_context_sketch.request_context.lifespan_context.arg_map
     node = arg_map.get_node("C1")
@@ -55,12 +47,9 @@ async def test_add_claim_sketch(tool_context_sketch: Mock) -> None:
 async def test_add_claim_elaborate(tool_context_elaborate: Mock) -> None:
     """Test adding a claim in elaborate mode with tags."""
     result = await add_claim_elaborate(
-        label="C1",
-        ctx=tool_context_elaborate,
-        proposition="Test claim",
-        tags=["tag1", "tag2"]
+        label="C1", ctx=tool_context_elaborate, proposition="Test claim", tags=["tag1", "tag2"]
     )
-    
+
     assert not result.isError
     arg_map = tool_context_elaborate.request_context.lifespan_context.arg_map
     node = arg_map.get_node("C1")
@@ -70,12 +59,8 @@ async def test_add_claim_elaborate(tool_context_elaborate: Mock) -> None:
 
 async def test_add_argument_sketch(tool_context_sketch: Mock) -> None:
     """Test adding an argument in sketch mode."""
-    result = await add_argument_sketch(
-        label="A1",
-        ctx=tool_context_sketch,
-        gist="Test argument"
-    )
-    
+    result = await add_argument_sketch(label="A1", ctx=tool_context_sketch, gist="Test argument")
+
     assert not result.isError
     arg_map = tool_context_sketch.request_context.lifespan_context.arg_map
     node = arg_map.get_node("A1")
@@ -91,9 +76,9 @@ async def test_add_argument_elaborate(tool_context_elaborate: Mock) -> None:
         gist="Test argument",
         premises=["Premise 1", "Premise 2"],
         conclusion="Conclusion",
-        tags=["tag1"]
+        tags=["tag1"],
     )
-    
+
     assert not result.isError
     arg_map = tool_context_elaborate.request_context.lifespan_context.arg_map
     node = arg_map.get_node("A1")
@@ -107,10 +92,10 @@ async def test_add_argument_elaborate(tool_context_elaborate: Mock) -> None:
 # async def test_add_with_relation(tool_context: Mock) -> None:
 #     """Test adding a node with simultaneous relation creation."""
 #     arg_map = tool_context.request_context.lifespan_context.arg_map
-    
+
 #     # Add first node
 #     await add_claim(label="C1", ctx=tool_context, proposition="Claim 1")
-    
+
 #     # Add second node with relation
 #     result = await add_argument(
 #         label="A1",
@@ -118,7 +103,7 @@ async def test_add_argument_elaborate(tool_context_elaborate: Mock) -> None:
 #         gist="Argument",
 #         relation_options={"target": "C1", "relation_type": "support"}
 #     )
-    
+
 #     assert arg_map.get_dialectic_relation("A1", "C1") is not None
 
 #     # Add third node with relation using alias names
@@ -136,15 +121,13 @@ async def test_add_argument_elaborate(tool_context_elaborate: Mock) -> None:
 async def test_add_empty_label_fails(tool_context_sketch: Mock) -> None:
     """Test that empty label raises ValueError."""
     with pytest.raises(ValueError, match="Label must be a non-empty string"):
-        await add_claim_sketch(
-            label="",
-            ctx=tool_context_sketch,
-            proposition="Test"
-        )
+        await add_claim_sketch(label="", ctx=tool_context_sketch, proposition="Test")
 
 
 @patch("cedrus.resources.graph_views.mcp.get_context")
-async def test_add_duplicate_label_gets_unique(mock_get_context: Mock, tool_context_sketch: Mock) -> None:
+async def test_add_duplicate_label_gets_unique(
+    mock_get_context: Mock, tool_context_sketch: Mock
+) -> None:
     """Test that duplicate labels are made unique."""
     # Mock the context returned by mcp.get_context
     mock_context = Mock()

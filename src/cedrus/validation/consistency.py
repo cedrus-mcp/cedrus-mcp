@@ -1,10 +1,12 @@
 """Consistency validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.runtime.tool_context import ToolContext
 
 
-def check_consistency(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None) -> int:
+def check_consistency(
+    arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None
+) -> int:
     """Check that the proposition graph is consistent, no equivalence class is self-contradictory."""
 
     issues_found = 0

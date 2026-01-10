@@ -6,15 +6,16 @@ from pydantic import BaseModel, Field
 
 from .base import Issue
 
-# Type-safe tool name - this creates a Literal type from actual tool names
+# Type-safe tool name - use the ToolName alias from cedrus.tools with a runtime fallback
 if TYPE_CHECKING:
     from cedrus.tools import ToolName
 else:
-    ToolName = str  # Runtime fallback
+    ToolName = str
 
 
 class NextAction(BaseModel):
     """Next action suggested for a result."""
+
     tool: ToolName
     params: Dict[str, Any]
     reason: str
@@ -22,16 +23,16 @@ class NextAction(BaseModel):
 
     def model_post_init(self, context: Any) -> None:
         """Runtime validation of suggested tool against dynamic tool registry.
-        
+
         Validates that the suggested tool exists in the tool registry.
         Parameter validation is skipped as tools have mode-specific variants
         with different signatures, and we don't have mode context here.
         """
         super().model_post_init(context)
-        
+
         # Validate that suggested tool exists in the dynamic tool registry
         from cedrus.tools.tool_registry import TOOL_REGISTRY  # Import here to avoid circular import
-        
+
         if self.tool not in TOOL_REGISTRY._variants:
             raise ValueError(
                 f"Suggested tool '{self.tool}' is not defined in cedrus.tools. "
@@ -41,6 +42,7 @@ class NextAction(BaseModel):
 
 class ActionableResult(BaseModel):
     """Generic result with next actions"""
+
     status: Literal["success", "error", "warning"]
     message: str
     result: Dict[str, Any]
@@ -53,7 +55,7 @@ def create_result(
     message: str,
     status: Literal["success", "error", "warning"] = "success",
     next_actions: list[NextAction] | None = None,
-    issues: list[Issue] | None = None
+    issues: list[Issue] | None = None,
 ) -> ActionableResult:
     """Factory for creating consistent tool results"""
     return ActionableResult(
@@ -61,5 +63,5 @@ def create_result(
         message=message,
         result=result,
         suggested_actions=next_actions or [],
-        validation_issues=issues or []
+        validation_issues=issues or [],
     )

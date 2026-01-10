@@ -3,7 +3,7 @@
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models import NodeLabel
 from cedrus.models.base import PropositionID
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.runtime.tool_context import ToolContext
 
 
 def flag_relations_as_needing_review(
@@ -12,7 +12,7 @@ def flag_relations_as_needing_review(
     tc: ToolContext,
 ) -> None:
     """Flag all relations connected to a node as needing review.
-    
+
     Args:
         ref_node_label: Label of the reference node
         arg_map: The argument map
@@ -38,7 +38,8 @@ def flag_relations_as_needing_review(
 
     total_flagged = len(supporters) + len(attackers) + len(supported) + len(attacked)
     if total_flagged > 0:
-        tc.issue("info", 
+        tc.issue(
+            "info",
             f"Flagged {total_flagged} dialectical relation(s) connected to node `{ref_node_label}` as needing review.",
             priority=1.0,
         )
@@ -51,7 +52,7 @@ def flag_nodes_as_needing_review(
     tc: ToolContext,
 ) -> None:
     """Flag all nodes referencing a proposition as needing review.
-    
+
     Args:
         ref_prop_id: ID of the proposition that was modified
         exempt_nodes_flagging: List of node labels to exempt from flagging
@@ -65,14 +66,16 @@ def flag_nodes_as_needing_review(
     ] + [
         node.label
         for node in arg_map.list_arguments()
-        if ref_prop_id in node.premises + [node.conclusion] and node.label not in exempt_nodes_flagging
+        if ref_prop_id in node.premises + [node.conclusion]
+        and node.label not in exempt_nodes_flagging
     ]
 
     for node_label in nodes_requiring_review:
         arg_map.update_node(node_label, {"needs_review_flag": True})
 
     if nodes_requiring_review:
-        tc.issue("info", 
+        tc.issue(
+            "info",
             f"Flagged {len(nodes_requiring_review)} node(s) as needing review due to proposition update: {', '.join(nodes_requiring_review)}",
             priority=1.0,
         )

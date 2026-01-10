@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 from cedrus.config.settings import settings
 from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models.base import Mode
+from cedrus.tools import TOOL_ORDER, TOOL_REGISTRY
 
 
 @dataclass
@@ -31,7 +32,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     # except FileNotFoundError:
     #     arg_map = ArgumentMap()
     #     print("Created new argument map")
-    # 
+    #
     # try:
     #     yield AppContext(arg_map=arg_map, mode="sketch")
     # finally:
@@ -43,7 +44,8 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
     yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
-instructions="""\
+
+instructions = """\
 The `reasoning-graph` MCP server equips AI agents with tools to structure their internal \
 thinking. It allows you to organize heterogeneous and conflicting reasoning as structured \
 argumentation, and provides capabilities to outline, elaborate, validate, and revise such \
@@ -78,17 +80,17 @@ mcp = FastMCP(
 # Register tools for initial mode (sketch)
 def _register_initial_tools() -> None:
     """Register tools available in the initial mode (sketch).
-    
+
     Called once at server startup to populate the MCP server with tools
     appropriate for the default mode. As users switch modes, tools are
     dynamically added/removed via the tool registry system.
-    
+
     Flow:
         1. Import TOOL_REGISTRY and TOOL_ORDER (triggers tool variant registration)
         2. Iterate through tools in TOOL_ORDER
         3. For each tool available in initial mode, register it with MCP server
         4. Log the number of tools registered
-    
+
     Initial Mode:
         Default mode is "sketch" for rapid prototyping:
         - add_claim (simplified)
@@ -96,31 +98,27 @@ def _register_initial_tools() -> None:
         - connect (no grounding)
         - remove
         - Shared tools (instructions, inspect_graph, etc.)
-    
+
     Tool Ordering:
         Tools are registered in the order defined by TOOL_ORDER to ensure
         consistent presentation to clients. This order groups tools logically:
         creation → modification → connection → inspection → utilities.
-    
+
     Notes:
         - This function must be called AFTER the tool registry is populated
           (which happens on import of cedrus.tools.tools)
         - Subsequent mode changes use _update_tools_for_mode() in tools.py
         - The MCP server's tool list is modified in-place via add_tool()
-    
+
     See Also:
-        - cedrus.tools.tools._update_tools_for_mode(): Dynamic tool swapping
-        - cedrus.tools.tools.TOOL_ORDER: Canonical tool ordering
+        - cedrus.tools.impl.meta.update_tools_for_mode_core(): Dynamic tool swapping
+        - cedrus.tools.TOOL_ORDER: Canonical tool ordering
         - cedrus.tools.tool_registry.ToolRegistry: Registry infrastructure
     """
-    from cedrus.tools.tool_registry import TOOL_REGISTRY
-    from cedrus.tools.tools import TOOL_ORDER
-    from cedrus.models.base import Mode
-    
     # Get initial mode and available tools
     initial_mode: Mode = "sketch"
     available_tools = TOOL_REGISTRY.get_tool_names_for_mode(initial_mode)
-    
+
     # Register tools in canonical order
     for tool_name in TOOL_ORDER:
         if tool_name in available_tools:
@@ -130,12 +128,13 @@ def _register_initial_tools() -> None:
                     variant.fn,
                     name=variant.name,
                     description=variant.description,
-                    **variant.metadata
+                    **variant.metadata,
                 )
-    
+
     print(f"Registered {len(available_tools)} tools for '{initial_mode}' mode")
 
 
 # This will be called when tools module is imported
 # (which happens when the tool_registry is initialized)
 _register_initial_tools()
+# (which happens when the tool_registry is initialized)

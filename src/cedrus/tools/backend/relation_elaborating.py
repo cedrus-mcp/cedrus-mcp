@@ -8,17 +8,16 @@ from cedrus.graph.argument_map import ArgumentMap
 from cedrus.models import (
     NodeLabel,
 )
-from cedrus.tools.tool_context import ToolContext
-from cedrus.tools import utils
-from cedrus.tools.grounding import maybe_ground_relation
+from cedrus.tools.backend.grounding import maybe_ground_relation
+from cedrus.tools.runtime.tool_context import ToolContext
+from cedrus.tools.util import validate_target_premise_idx
 
 
 def new_support_relation(
     from_label: NodeLabel,
     to_label: NodeLabel,
     target_premise_idx: int | None,
-    grounding_strategy: Literal["define_equivalence", "copy_premise", "copy_conclusion"]
-    | None,
+    grounding_strategy: Literal["define_equivalence", "copy_premise", "copy_conclusion"] | None,
     arg_map: ArgumentMap,
     tc: ToolContext,
 ) -> CallToolResult:
@@ -52,7 +51,7 @@ def new_support_relation(
             error="RelationAlreadyExists",
         ).build()
 
-    if target_premise_idx is not None and not utils.validate_target_premise_idx(
+    if target_premise_idx is not None and not validate_target_premise_idx(
         to_label, target_premise_idx, arg_map
     ):
         tc.issue(
@@ -83,7 +82,7 @@ def new_attack_relation(
     tc: ToolContext,
 ) -> CallToolResult:
     """Create a new attack relation.
-    
+
     Creates new attack relation between two existing nodes. Optionally grounds the relation
     according to the specified strategy, e.g. by adding premises or conclusions.
 
@@ -93,7 +92,7 @@ def new_attack_relation(
         target_premise_idx: If specified, the index of the premise to target for grounding, requires to_label to be an ArgumentNode.
         grounding_strategy: The strategy to use for grounding the relation.
     Returns:
-        Textual feedback and next step suggestions.    
+        Textual feedback and next step suggestions.
     """
 
     if not arg_map.is_node(from_label):
@@ -112,7 +111,7 @@ def new_attack_relation(
             error="RelationAlreadyExists",
         ).build()
 
-    if target_premise_idx is not None and not utils.validate_target_premise_idx(
+    if target_premise_idx is not None and not validate_target_premise_idx(
         to_label, target_premise_idx, arg_map
     ):
         tc.issue(
@@ -133,6 +132,7 @@ def new_attack_relation(
 
     return tc.build()
 
+
 def ground_support_relation(
     from_label: NodeLabel,
     to_label: NodeLabel,
@@ -141,9 +141,9 @@ def ground_support_relation(
     tc: ToolContext,
 ) -> CallToolResult:
     """Ground an existing support relation.
-    
+
     Grounds an existing support relation according to the specified strategy.
-    
+
     Args:
         from_label: The label of the source node.
         to_label: The label of the target node.
@@ -167,7 +167,9 @@ def ground_support_relation(
         from_label, to_label, "support", rel.target_premise_idx, strategy, arg_map, tc
     )
     if success:
-        tc.success(f"✓ Support relation from '{from_label}' to '{to_label}' grounded using strategy '{strategy}'.")
+        tc.success(
+            f"✓ Support relation from '{from_label}' to '{to_label}' grounded using strategy '{strategy}'."
+        )
 
     return tc.build()
 
@@ -180,9 +182,9 @@ def ground_attack_relation(
     tc: ToolContext,
 ) -> CallToolResult:
     """Ground an existing attack relation.
-    
+
     Grounds an existing attack relation according to the specified strategy.
-    
+
     Args:
         from_label: The label of the source node.
         to_label: The label of the target node.
@@ -206,7 +208,9 @@ def ground_attack_relation(
         from_label, to_label, "attack", rel.target_premise_idx, strategy, arg_map, tc
     )
     if success:
-        tc.success(f"✓ Attack relation from '{from_label}' to '{to_label}' grounded using strategy '{strategy}'.")
+        tc.success(
+            f"✓ Attack relation from '{from_label}' to '{to_label}' grounded using strategy '{strategy}'."
+        )
 
     return tc.build()
 
@@ -218,7 +222,7 @@ def delete_relation(
     tc: ToolContext,
 ) -> CallToolResult:
     """Delete an existing dialectical relation.
-    
+
     Deletes an existing dialectical relation between two nodes.
 
     Args:
@@ -235,5 +239,6 @@ def delete_relation(
 
     arg_map.delete_relation(from_label, to_label)
 
-    return tc.success(f"✓ {rel.relation_type.capitalize()} relation deleted from '{from_label}' to '{to_label}'.").build()
-
+    return tc.success(
+        f"✓ {rel.relation_type.capitalize()} relation deleted from '{from_label}' to '{to_label}'."
+    ).build()

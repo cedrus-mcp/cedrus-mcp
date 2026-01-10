@@ -1,12 +1,14 @@
 """Completeness validation checks."""
 
 from cedrus.graph.argument_map import ArgumentMap
-from cedrus.tools import relation_elaborating
-from cedrus.tools.tool_context import ToolContext
+from cedrus.tools.backend import relation_elaborating
+from cedrus.tools.runtime.tool_context import ToolContext
 from cedrus.utils.relations import has_grounding
 
 
-def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None) -> int:
+def check_completeness(
+    arg_map: ArgumentMap, tc: ToolContext, fix: bool = False, max_issues: int | None = None
+) -> int:
     """Check that every dialectical relation that can be derived from the internal structure of nodes is present in the argument map.
 
     Args:
@@ -49,11 +51,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                         tc.issue("warning", message, label=to_label)
                         tc.suggest(
                             "connect",
-                            {
-                                "source": from_label,
-                                "target": to_label,
-                                "relation_type": "support"
-                            },
+                            {"source": from_label, "target": to_label, "relation_type": "support"},
                             f"Add a support relation from {from_label} to {to_label} that reflects the internal premise-conclusion structure.",
                             "fix",
                         )
@@ -79,11 +77,7 @@ def check_completeness(arg_map: ArgumentMap, tc: ToolContext, fix: bool = False,
                         tc.issue("warning", message, label=to_label)
                         tc.suggest(
                             "connect",
-                            {
-                                "source": from_label,
-                                "target": to_label,
-                                "relation_type": "attack"
-                            },
+                            {"source": from_label, "target": to_label, "relation_type": "attack"},
                             f"Add an attack relation from {from_label} to {to_label} that reflects the internal premise-conclusion structure.",
                             "fix",
                         )
