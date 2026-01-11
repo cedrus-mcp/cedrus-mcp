@@ -170,6 +170,27 @@ def test_render_nested_json_detailed() -> None:
     assert arg_record["type"] == "argument"
     assert arg_record["label"] == "A1"
     assert arg_record["gist"] == "Argument gist"
+    # Premises and conclusion are only included when show_pcs=True
+    assert "premises" not in arg_record
+    assert "conclusion" not in arg_record
+
+
+def test_render_nested_json_detailed_with_pcs() -> None:
+    """Premises and conclusion are included when show_pcs is True."""
+    arg_map = _build_sample_map_for_nested()
+
+    result = render_nested_json(arg_map, detailed=True, show_pcs=True)
+
+    data = json.loads(result)
+    assert isinstance(data, list)
+    assert len(data) == 1
+
+    claim_record = data[0]
+    supported_by = claim_record["supported_by"]
+    assert isinstance(supported_by, list)
+    assert len(supported_by) == 1
+
+    arg_record = supported_by[0]
     assert arg_record["premises"] == ["Premise 1", "Premise 2"]
     assert arg_record["conclusion"] == "Conclusion text"
 

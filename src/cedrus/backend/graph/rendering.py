@@ -291,6 +291,7 @@ def _build_nested_node_record(
     nodes_visited: set[NodeLabel],
     detailed: bool,
     extra_tags: bool,
+    show_pcs: bool,
 ) -> dict[str, Any]:
     record: dict[str, Any] = {
         "type": "claim" if isinstance(node, ClaimNode) else "argument",
@@ -305,15 +306,18 @@ def _build_nested_node_record(
             )
         elif isinstance(node, ArgumentNode):
             record["gist"] = node.gist
-            premises: list[str] = []
-            for premise_id in node.premises:
-                premise = arg_map.get_proposition(premise_id)
-                premises.append(premise.content if premise else "/*No premise proposition found.*/")
-            record["premises"] = premises
-            conclusion = arg_map.get_proposition(node.conclusion)
-            record["conclusion"] = (
-                conclusion.content if conclusion else "/*No conclusion proposition found.*/"
-            )
+            if show_pcs:
+                premises: list[str] = []
+                for premise_id in node.premises:
+                    premise = arg_map.get_proposition(premise_id)
+                    premises.append(
+                        premise.content if premise else "/*No premise proposition found.*/"
+                    )
+                record["premises"] = premises
+                conclusion = arg_map.get_proposition(node.conclusion)
+                record["conclusion"] = (
+                    conclusion.content if conclusion else "/*No conclusion proposition found.*/"
+                )
         tags = _get_extra_tags(node, extra_tags=extra_tags)
         if tags:
             record["tags"] = tags
@@ -355,6 +359,7 @@ def _build_nested_node_record(
                 nodes_visited=nodes_visited | {supporter_node.label},
                 detailed=detailed,
                 extra_tags=extra_tags,
+                show_pcs=show_pcs,
             )
         )
     if supported_by_records:
@@ -370,6 +375,7 @@ def _build_nested_node_record(
                 nodes_visited=nodes_visited | {attacker_node.label},
                 detailed=detailed,
                 extra_tags=extra_tags,
+                show_pcs=show_pcs,
             )
         )
     if attacked_by_records:
@@ -406,6 +412,7 @@ def render_nested_json(
     subset: list[NodeLabel] | None = None,
     detailed: bool = True,
     extra_tags: bool = False,
+    show_pcs: bool = False,
     indent: int = 2,
 ) -> str:
     subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
@@ -421,6 +428,7 @@ def render_nested_json(
                 nodes_visited={root.label},
                 detailed=detailed,
                 extra_tags=extra_tags,
+                show_pcs=show_pcs,
             )
         )
 
@@ -432,6 +440,7 @@ def render_nested_yaml(
     subset: list[NodeLabel] | None = None,
     detailed: bool = True,
     extra_tags: bool = False,
+    show_pcs: bool = False,
 ) -> str:
     subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
     roots = [arg_map.get_node(label) for label in arg_map.list_roots(subset)]
@@ -446,6 +455,7 @@ def render_nested_yaml(
                 nodes_visited={root.label},
                 detailed=detailed,
                 extra_tags=extra_tags,
+                show_pcs=show_pcs,
             )
         )
 

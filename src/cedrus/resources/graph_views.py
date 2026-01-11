@@ -52,6 +52,7 @@ async def graph_details_resource(
             app_ctx.arg_map,
             detailed=True,
             extra_tags=app_ctx.mode in ["elaborate", "review"],
+            show_pcs=app_ctx.mode in ["elaborate", "review"],
         )
         return f"```json\n{rendering}\n```"
 
@@ -60,6 +61,7 @@ async def graph_details_resource(
             app_ctx.arg_map,
             detailed=True,
             extra_tags=app_ctx.mode in ["elaborate", "review"],
+            show_pcs=app_ctx.mode in ["elaborate", "review"],
         )
         return f"```yaml\n{rendering}\n```"
 
