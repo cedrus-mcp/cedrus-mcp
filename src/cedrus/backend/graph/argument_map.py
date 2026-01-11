@@ -338,9 +338,12 @@ class ArgumentMap:
             if self.argument_graph.nodes[n]["_type"] == "argument"
         ]
 
-    def list_roots(self) -> List[NodeLabel]:
-        """Get all root nodes (nodes with no incoming edges)."""
-        return [n for n in self.argument_graph.nodes() if self.argument_graph.out_degree(n) == 0]
+    def list_roots(self, subset: List[NodeLabel] | None = None) -> List[NodeLabel]:
+        """Get all root nodes (nodes with no outgoing edges)."""
+        subset = list(self.argument_graph.nodes()) if subset is None else subset
+        return [
+            n for n in subset if not any(m in subset for m in self.argument_graph.successors(n))
+        ]
 
     def list_support_relations(self) -> List[tuple[NodeLabel, NodeLabel]]:
         """Get all support relations."""
