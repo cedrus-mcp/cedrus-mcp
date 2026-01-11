@@ -184,8 +184,14 @@ def test_render_nested_json_thin() -> None:
     assert len(data) == 1
 
     claim_record = data[0]
-    assert set(claim_record.keys()) == {"type", "label", "supported_by", "attacked_by"}
-    assert claim_record["supported_by"]
+    # In thin mode, nested records should still include relations for this sample
+    assert claim_record["type"] == "claim"
+    assert claim_record["label"] == "C1"
+    assert "supported_by" in claim_record
+    assert isinstance(claim_record["supported_by"], list)
+    assert len(claim_record["supported_by"]) == 1
+
+    # attacked_by is optional and only present when non-empty
 
 
 def test_render_nested_yaml_roundtrip() -> None:

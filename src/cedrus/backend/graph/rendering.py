@@ -131,7 +131,7 @@ def render_argdown(
     lines: list[str] = []
 
     # get root nodes
-    roots = [arg_map.get_node(label) for label in arg_map.list_roots()]
+    roots = [arg_map.get_node(label) for label in arg_map.list_roots(subset)]
 
     for root in roots:
         # Render this node and all its descendants recursively
@@ -357,7 +357,8 @@ def _build_nested_node_record(
                 extra_tags=extra_tags,
             )
         )
-    record["supported_by"] = supported_by_records
+    if supported_by_records:
+        record["supported_by"] = supported_by_records
 
     attacked_by_records: list[dict[str, Any]] = []
     for attacker_node in attackers:
@@ -371,32 +372,33 @@ def _build_nested_node_record(
                 extra_tags=extra_tags,
             )
         )
-    record["attacked_by"] = attacked_by_records
+    if attacked_by_records:
+        record["attacked_by"] = attacked_by_records
 
     return record
 
 
-def _list_root_claims(
-    arg_map: ArgumentMap, subset: list[NodeLabel] | None = None
-) -> list[ClaimNode]:
-    subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
+# def _list_root_claims(
+#     arg_map: ArgumentMap, subset: list[NodeLabel] | None = None
+# ) -> list[ClaimNode]:
+#     subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
 
-    if subset_set is None:
-        root_labels = arg_map.list_roots()
-    else:
-        root_labels = []
-        for label in subset_set:
-            supported = [v for v in arg_map.get_supported(label) if v in subset_set]
-            attacked = [v for v in arg_map.get_attacked(label) if v in subset_set]
-            if not supported and not attacked:
-                root_labels.append(label)
+#     if subset_set is None:
+#         root_labels = arg_map.list_roots()
+#     else:
+#         root_labels = []
+#         for label in subset_set:
+#             supported = [v for v in arg_map.get_supported(label) if v in subset_set]
+#             attacked = [v for v in arg_map.get_attacked(label) if v in subset_set]
+#             if not supported and not attacked:
+#                 root_labels.append(label)
 
-    root_claims: list[ClaimNode] = []
-    for label in root_labels:
-        node = arg_map.get_claim(label)
-        if node is not None:
-            root_claims.append(node)
-    return root_claims
+#     root_claims: list[ClaimNode] = []
+#     for label in root_labels:
+#         node = arg_map.get_claim(label)
+#         if node is not None:
+#             root_claims.append(node)
+#     return root_claims
 
 
 def render_nested_json(
@@ -407,7 +409,7 @@ def render_nested_json(
     indent: int = 2,
 ) -> str:
     subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
-    roots = _list_root_claims(arg_map, subset=subset)
+    roots = [arg_map.get_node(label) for label in arg_map.list_roots(subset)]
     records: list[dict[str, Any]] = []
 
     for root in roots:
@@ -432,7 +434,7 @@ def render_nested_yaml(
     extra_tags: bool = False,
 ) -> str:
     subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
-    roots = _list_root_claims(arg_map, subset=subset)
+    roots = [arg_map.get_node(label) for label in arg_map.list_roots(subset)]
     records: list[dict[str, Any]] = []
 
     for root in roots:
