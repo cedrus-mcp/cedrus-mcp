@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models.base import Format
 from cedrus.server import AppContext
 from cedrus.tools.entrypoints.sketch import (
     add_argument as add_argument_sketch,
@@ -68,7 +69,9 @@ async def test_inspect_graph_tree_format(tool_context: Mock) -> None:
 
 async def test_inspect_graph_invalid_format(tool_context: Mock) -> None:
     """Test inspect_graph with invalid format."""
-    result = await inspect_graph(ctx=tool_context, format="invalid")
+    from typing import cast
+
+    result = await inspect_graph(ctx=tool_context, format=cast(Format, "invalid"))
 
     # Should return failure
     assert result.structuredContent is not None

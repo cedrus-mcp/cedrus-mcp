@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from cedrus.backend.graph.argument_map import ArgumentMap
+from cedrus.backend.models.base import Format
 from cedrus.server import AppContext
 from cedrus.tools.entrypoints.sketch import (
     add_argument as add_argument_sketch,
@@ -197,6 +198,32 @@ async def test_inspect_neighborhood_with_attacks(tool_context: Mock) -> None:
     result = await inspect_neighborhood(ctx=tool_context, label="C1", k=1)
 
     assert not result.isError
+
+
+async def test_inspect_neighborhood_formats(tool_context: Mock) -> None:
+    """Test inspect_neighborhood with all supported formats."""
+    await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
+
+    for fmt in ["argdown", "tree", "json-nested", "yaml-nested"]:
+        result = await inspect_neighborhood(ctx=tool_context, label="C1", k=1, format=fmt)  # type: ignore[arg-type]
+        assert not result.isError
+
+
+async def test_inspect_neighborhood_invalid_format(tool_context: Mock) -> None:
+    """Test inspect_neighborhood with invalid format."""
+    from typing import cast
+
+    await add_claim_sketch(label="C1", ctx=tool_context, proposition="Test")
+
+    result = await inspect_neighborhood(
+        ctx=tool_context,
+        label="C1",
+        k=1,
+        format=cast(Format, "invalid"),
+    )
+
+    assert result.structuredContent is not None
+    assert result.structuredContent["status"] == "failure"
 
 
 async def test_inspect_neighborhood_embeds_resource(tool_context: Mock) -> None:

@@ -1,7 +1,14 @@
-"""Unit tests for argdown rendering."""
+"""Unit tests for rendering helpers."""
+
+import json
 
 from cedrus.backend.graph.argument_map import ArgumentMap
-from cedrus.backend.graph.rendering import render_argdown, render_argdown_node
+from cedrus.backend.graph.rendering import (
+    render_argdown,
+    render_argdown_node,
+    render_nested_json,
+    render_nested_yaml,
+)
 from cedrus.backend.models import ArgumentNode, ClaimNode, Proposition
 
 
@@ -113,3 +120,81 @@ def test_render_graph_with_relations() -> None:
     # Should show both nodes
     assert "C1" in result
     assert "A1" in result
+
+
+def _build_sample_map_for_nested() -> ArgumentMap:
+    arg_map = ArgumentMap()
+
+    prop_claim = Proposition(content="Claim text")
+    prop_p1 = Proposition(content="Premise 1")
+    prop_p2 = Proposition(content="Premise 2")
+    prop_conc = Proposition(content="Conclusion text")
+
+    for prop in [prop_claim, prop_p1, prop_p2, prop_conc]:
+        arg_map.add_proposition(prop)
+
+    claim = ClaimNode(label="C1", proposition_id=prop_claim.id)
+    arg = ArgumentNode(
+        label="A1",
+        gist="Argument gist",
+        premises=[prop_p1.id, prop_p2.id],
+        conclusion=prop_conc.id,
+    )
+
+    arg_map.add_claim(claim)
+    arg_map.add_argument(arg)
+    arg_map.add_support_relation(from_label="A1", to_label="C1")
+
+    return arg_map
+
+
+def test_render_nested_json_detailed() -> None:
+    arg_map = _build_sample_map_for_nested()
+
+    result = render_nested_json(arg_map, detailed=True)
+
+    data = json.loads(result)
+    assert isinstance(data, list)
+    assert len(data) == 1
+
+    claim_record = data[0]
+    assert claim_record["type"] == "claim"
+    assert claim_record["label"] == "C1"
+    assert claim_record["proposition"] == "Claim text"
+
+    supported_by = claim_record["supported_by"]
+    assert isinstance(supported_by, list)
+    assert len(supported_by) == 1
+
+    arg_record = supported_by[0]
+    assert arg_record["type"] == "argument"
+    assert arg_record["label"] == "A1"
+    assert arg_record["gist"] == "Argument gist"
+    assert arg_record["premises"] == ["Premise 1", "Premise 2"]
+    assert arg_record["conclusion"] == "Conclusion text"
+
+
+def test_render_nested_json_thin() -> None:
+    arg_map = _build_sample_map_for_nested()
+
+    result = render_nested_json(arg_map, detailed=False)
+    data = json.loads(result)
+
+    assert isinstance(data, list)
+    assert len(data) == 1
+
+    claim_record = data[0]
+    assert set(claim_record.keys()) == {"type", "label", "supported_by", "attacked_by"}
+    assert claim_record["supported_by"]
+
+
+def test_render_nested_yaml_roundtrip() -> None:
+    arg_map = _build_sample_map_for_nested()
+
+    yaml_text = render_nested_yaml(arg_map, detailed=True)
+
+    import yaml as _yaml  # type: ignore[import-untyped]
+
+    data = _yaml.safe_load(yaml_text)
+    assert isinstance(data, list)
+    assert data[0]["type"] == "claim"

@@ -9,6 +9,7 @@ from cedrus.resources.graph_views import (
     graph_details_resource,
     graph_thin_resource,
     neighborhood_details_resource,
+    neighborhood_details_view,
 )
 from cedrus.server import AppContext, mcp
 
@@ -33,6 +34,26 @@ async def test_graph_thin_resource_format(mock_context: Mock) -> None:
 
 
 @pytest.mark.asyncio
+async def test_graph_thin_resource_json_nested(mock_context: Mock) -> None:
+    """Test thin graph resource returns JSON nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await graph_thin_resource(format="json-nested")
+
+        assert result.startswith("```json")
+        assert result.endswith("```")
+
+
+@pytest.mark.asyncio
+async def test_graph_thin_resource_yaml_nested(mock_context: Mock) -> None:
+    """Test thin graph resource returns YAML nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await graph_thin_resource(format="yaml-nested")
+
+        assert result.startswith("```yaml")
+        assert result.endswith("```")
+
+
+@pytest.mark.asyncio
 async def test_graph_details_resource_format(mock_context: Mock) -> None:
     """Test graph details resource returns correct format."""
     with patch.object(mcp, "get_context", return_value=mock_context):
@@ -40,6 +61,26 @@ async def test_graph_details_resource_format(mock_context: Mock) -> None:
 
         assert isinstance(result, str)
         assert "```argdown" in result
+
+
+@pytest.mark.asyncio
+async def test_graph_details_resource_json_nested(mock_context: Mock) -> None:
+    """Test graph details resource returns JSON nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await graph_details_resource(format="json-nested")
+
+        assert isinstance(result, str)
+        assert "```json" in result
+
+
+@pytest.mark.asyncio
+async def test_graph_details_resource_yaml_nested(mock_context: Mock) -> None:
+    """Test graph details resource returns YAML nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await graph_details_resource(format="yaml-nested")
+
+        assert isinstance(result, str)
+        assert "```yaml" in result
 
 
 @pytest.mark.asyncio
@@ -84,3 +125,33 @@ async def test_neighborhood_resource_k2(mock_context: Mock) -> None:
 
         assert isinstance(result, str)
         assert "```argdown" in result
+
+
+@pytest.mark.asyncio
+async def test_neighborhood_resource_tree(mock_context: Mock) -> None:
+    """Test neighborhood view tree format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await neighborhood_details_view(label="C1", k=1, format="tree")
+
+        assert isinstance(result, str)
+        assert "```argdown" in result
+
+
+@pytest.mark.asyncio
+async def test_neighborhood_resource_json_nested(mock_context: Mock) -> None:
+    """Test neighborhood view JSON nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await neighborhood_details_view(label="C1", k=1, format="json-nested")
+
+        assert isinstance(result, str)
+        assert "```json" in result
+
+
+@pytest.mark.asyncio
+async def test_neighborhood_resource_yaml_nested(mock_context: Mock) -> None:
+    """Test neighborhood view YAML nested format."""
+    with patch.object(mcp, "get_context", return_value=mock_context):
+        result = await neighborhood_details_view(label="C1", k=1, format="yaml-nested")
+
+        assert isinstance(result, str)
+        assert "```yaml" in result

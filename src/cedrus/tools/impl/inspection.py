@@ -12,7 +12,7 @@ validate equivalence.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.utilities.logging import get_logger
@@ -21,6 +21,7 @@ from mcp.types import CallToolResult
 from pydantic import AnyUrl
 
 from cedrus.backend.models import NodeLabel
+from cedrus.backend.models.base import Format
 from cedrus.tools.runtime import tool_context
 
 if TYPE_CHECKING:
@@ -34,7 +35,7 @@ async def inspect_graph_core(
     *,
     ctx: Context[ServerSession, AppContext],
     verbose: bool = False,
-    format: Literal["argdown", "tree"] = "argdown",
+    format: Format = "argdown",
 ) -> CallToolResult:
     """Show an overview representation of the current argumentation graph.
 
@@ -46,9 +47,9 @@ async def inspect_graph_core(
     mode = ctx.request_context.lifespan_context.mode
 
     with tool_context.tool_context(arg_map, mode) as tc:
-        if format not in ["argdown", "tree"]:
+        if format not in ["argdown", "tree", "json-nested", "yaml-nested"]:
             return tc.failure(
-                f"Invalid format '{format}'. Supported formats are 'argdown' and 'tree'.",
+                f"Invalid format '{format}'. Supported formats are 'argdown', 'tree', 'json-nested' and 'yaml-nested'.",
                 error="InvalidFormat",
             ).build()
 
@@ -56,13 +57,22 @@ async def inspect_graph_core(
         try:
             import cedrus.resources
 
-            if verbose:
-                text = await cedrus.resources.graph_views.graph_details_resource(format=format)
-                uri = AnyUrl(f"argmap://graph/details/{format}")
-            else:
-                text = await cedrus.resources.graph_views.graph_thin_resource(format=format)
-                uri = AnyUrl(f"argmap://graph/thin/{format}")
-            tc.embed_resource(uri=uri, text=text)
+            if format in ["argdown", "tree"]:
+                if verbose:
+                    text = await cedrus.resources.graph_views.graph_details_resource(format=format)
+                    uri = AnyUrl(f"argmap://graph/details/{format}")
+                else:
+                    text = await cedrus.resources.graph_views.graph_thin_resource(format=format)
+                    uri = AnyUrl(f"argmap://graph/thin/{format}")
+                tc.embed_resource(uri=uri, text=text)
+            elif format in ["json-nested", "yaml-nested"]:
+                if verbose:
+                    text = await cedrus.resources.graph_views.graph_details_resource(format=format)
+                    uri = AnyUrl(f"argmap://graph/details/{format}")
+                else:
+                    text = await cedrus.resources.graph_views.graph_thin_resource(format=format)
+                    uri = AnyUrl(f"argmap://graph/thin/{format}")
+                tc.embed_resource(uri=uri, text=text)
         except Exception as e:  # pragma: no cover - defensive logging
             logger.error(f"Error showing graph representation: {str(e)}")
             return tc.failure(
@@ -88,10 +98,11 @@ async def inspect_neighborhood_core(
     ctx: Context[ServerSession, AppContext],
     label: NodeLabel,
     k: int = 2,
+    format: Format = "argdown",
 ) -> CallToolResult:
     """Show detailed information about the k-neighborhood of a node.
 
-    Direct port of :func:`cedrus.tools.tools.inspect_neighborhood`.
+    Direct port of :func:`cedrus.tools.tools.inspect_neighborhood` with added format support.
     """
 
     arg_map = ctx.request_context.lifespan_context.arg_map
@@ -109,12 +120,21 @@ async def inspect_neighborhood_core(
                 f"Invalid neighborhood radius k={k}. Must be a positive integer.",
                 error="InvalidKValue",
             ).build()
+        if format not in ["argdown", "tree", "json-nested", "yaml-nested"]:
+            return tc.failure(
+                f"Invalid format '{format}'. Supported formats are 'argdown', 'tree', 'json-nested' and 'yaml-nested'.",
+                error="InvalidFormat",
+            ).build()
 
         try:
             import cedrus.resources
 
             uri = f"argmap://neighborhood/{label}/{k}"
-            text = await cedrus.resources.graph_views.neighborhood_details_resource(label, k)
+            text = await cedrus.resources.graph_views.neighborhood_details_view(
+                label=label,
+                k=k,
+                format=format,
+            )
             tc.embed_resource(uri=AnyUrl(uri), text=text)
         except Exception as e:  # pragma: no cover - defensive logging
             logger.error(f"Error showing neighborhood of node '{label}': {str(e)}")

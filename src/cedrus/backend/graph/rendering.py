@@ -1,12 +1,26 @@
-"""Render argumen map as argdown"""
+"""Render argument maps in multiple textual formats."""
 
 import json
-from typing import Literal
+from typing import Any, Literal
+
+import yaml  # type: ignore[import-untyped]
 
 from cedrus.backend.graph import ArgumentMap
 from cedrus.backend.models.base import NodeLabel
 from cedrus.backend.models.nodes import ArgumentNode, ClaimNode
 from cedrus.backend.models.relations import DialecticalRelationType
+
+
+def _get_extra_tags(node: ClaimNode | ArgumentNode, extra_tags: bool) -> list[str]:
+    tags = list(node.tags)
+    if extra_tags:
+        if node.needs_review_flag:
+            tags.append("review-required")
+        if node.misses_justification_flag:
+            tags.append("missing-justification")
+        if node.misses_critique_flag:
+            tags.append("missing-critique")
+    return tags
 
 
 def _get_next_indent_str(current_indent_str: str, child_index: int, total_children: int) -> str:
@@ -54,10 +68,7 @@ def _render_node_recursive(
         elif isinstance(node, ArgumentNode):
             if node.gist:
                 line += f": {node.gist}"
-        tags = node.tags.copy()
-        if extra_tags:
-            if node.needs_review_flag:
-                tags.append("review-required")
+        tags = _get_extra_tags(node, extra_tags=extra_tags)
         if tags:
             line += " " + " ".join([f"#{tag}" for tag in tags])
         if node.metadata:
@@ -179,13 +190,19 @@ def render_argdown_node(arg_map: ArgumentMap, label: NodeLabel, details: bool) -
         proposition = arg_map.get_proposition(node.proposition_id)
         content = proposition.content if proposition else "/*No proposition provided.*/"
         line = f"[{node.label}]: {content}"
-        if node.tags:
-            line += " " + " ".join([f"#{tag}" for tag in node.tags])
+        tags = _get_extra_tags(node, extra_tags=details)
+        if tags:
+            line += " " + " ".join([f"#{tag}" for tag in tags])
         if details and node.metadata:
             line += " " + json.dumps(node.metadata)
     elif isinstance(node, ArgumentNode):
         gist = node.gist if node.gist else "/*No gist provided.*/"
         line = f"<{node.label}>: {gist}"
+        tags = _get_extra_tags(node, extra_tags=details)
+        if tags:
+            line += " " + " ".join([f"#{tag}" for tag in tags])
+        if details and node.metadata:
+            line += " " + json.dumps(node.metadata)
     else:
         raise RuntimeError(f"Unknown node type for label {label}: {type(node)}")
     lines.append(line)
@@ -265,3 +282,170 @@ def render_argdown_node(arg_map: ArgumentMap, label: NodeLabel, details: bool) -
             lines.append("This node is marked as needing review.")
 
     return "\n".join(lines)
+
+
+def _build_nested_node_record(
+    arg_map: ArgumentMap,
+    node: ClaimNode | ArgumentNode,
+    subset: set[NodeLabel] | None,
+    nodes_visited: set[NodeLabel],
+    detailed: bool,
+    extra_tags: bool,
+) -> dict[str, Any]:
+    record: dict[str, Any] = {
+        "type": "claim" if isinstance(node, ClaimNode) else "argument",
+        "label": node.label,
+    }
+
+    if detailed:
+        if isinstance(node, ClaimNode):
+            proposition = arg_map.get_proposition(node.proposition_id)
+            record["proposition"] = (
+                proposition.content if proposition else "/*No proposition provided.*/"
+            )
+        elif isinstance(node, ArgumentNode):
+            record["gist"] = node.gist
+            premises: list[str] = []
+            for premise_id in node.premises:
+                premise = arg_map.get_proposition(premise_id)
+                premises.append(premise.content if premise else "/*No premise proposition found.*/")
+            record["premises"] = premises
+            conclusion = arg_map.get_proposition(node.conclusion)
+            record["conclusion"] = (
+                conclusion.content if conclusion else "/*No conclusion proposition found.*/"
+            )
+        tags = _get_extra_tags(node, extra_tags=extra_tags)
+        if tags:
+            record["tags"] = tags
+        if node.metadata:
+            record["metadata"] = node.metadata
+
+    supporters: list[ArgumentNode] = []
+    redundant_edges = arg_map.redundant_edges(subset=list(subset) if subset is not None else None)
+    for supporter_label in arg_map.get_supporters(node.label):
+        if subset is not None and supporter_label not in subset:
+            continue
+        if supporter_label in nodes_visited:
+            continue
+        if (supporter_label, node.label) in redundant_edges:
+            continue
+        supporter_node = arg_map.get_node(supporter_label)
+        if isinstance(supporter_node, ArgumentNode):
+            supporters.append(supporter_node)
+
+    attackers: list[ArgumentNode] = []
+    for attacker_label in arg_map.get_attackers(node.label):
+        if subset is not None and attacker_label not in subset:
+            continue
+        if attacker_label in nodes_visited:
+            continue
+        if (attacker_label, node.label) in redundant_edges:
+            continue
+        attacker_node = arg_map.get_node(attacker_label)
+        if isinstance(attacker_node, ArgumentNode):
+            attackers.append(attacker_node)
+
+    supported_by_records: list[dict[str, Any]] = []
+    for supporter_node in supporters:
+        supported_by_records.append(
+            _build_nested_node_record(
+                arg_map=arg_map,
+                node=supporter_node,
+                subset=subset,
+                nodes_visited=nodes_visited | {supporter_node.label},
+                detailed=detailed,
+                extra_tags=extra_tags,
+            )
+        )
+    record["supported_by"] = supported_by_records
+
+    attacked_by_records: list[dict[str, Any]] = []
+    for attacker_node in attackers:
+        attacked_by_records.append(
+            _build_nested_node_record(
+                arg_map=arg_map,
+                node=attacker_node,
+                subset=subset,
+                nodes_visited=nodes_visited | {attacker_node.label},
+                detailed=detailed,
+                extra_tags=extra_tags,
+            )
+        )
+    record["attacked_by"] = attacked_by_records
+
+    return record
+
+
+def _list_root_claims(
+    arg_map: ArgumentMap, subset: list[NodeLabel] | None = None
+) -> list[ClaimNode]:
+    subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
+
+    if subset_set is None:
+        root_labels = arg_map.list_roots()
+    else:
+        root_labels = []
+        for label in subset_set:
+            supported = [v for v in arg_map.get_supported(label) if v in subset_set]
+            attacked = [v for v in arg_map.get_attacked(label) if v in subset_set]
+            if not supported and not attacked:
+                root_labels.append(label)
+
+    root_claims: list[ClaimNode] = []
+    for label in root_labels:
+        node = arg_map.get_claim(label)
+        if node is not None:
+            root_claims.append(node)
+    return root_claims
+
+
+def render_nested_json(
+    arg_map: ArgumentMap,
+    subset: list[NodeLabel] | None = None,
+    detailed: bool = True,
+    extra_tags: bool = False,
+    indent: int = 2,
+) -> str:
+    subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
+    roots = _list_root_claims(arg_map, subset=subset)
+    records: list[dict[str, Any]] = []
+
+    for root in roots:
+        records.append(
+            _build_nested_node_record(
+                arg_map=arg_map,
+                node=root,
+                subset=subset_set,
+                nodes_visited={root.label},
+                detailed=detailed,
+                extra_tags=extra_tags,
+            )
+        )
+
+    return json.dumps(records, indent=indent)
+
+
+def render_nested_yaml(
+    arg_map: ArgumentMap,
+    subset: list[NodeLabel] | None = None,
+    detailed: bool = True,
+    extra_tags: bool = False,
+) -> str:
+    subset_set: set[NodeLabel] | None = set(subset) if subset is not None else None
+    roots = _list_root_claims(arg_map, subset=subset)
+    records: list[dict[str, Any]] = []
+
+    for root in roots:
+        records.append(
+            _build_nested_node_record(
+                arg_map=arg_map,
+                node=root,
+                subset=subset_set,
+                nodes_visited={root.label},
+                detailed=detailed,
+                extra_tags=extra_tags,
+            )
+        )
+
+    # yaml.safe_dump returns a string-like object; cast explicitly for type checkers
+    return str(yaml.safe_dump(records, sort_keys=False))

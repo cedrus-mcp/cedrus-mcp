@@ -16,7 +16,7 @@ from mcp.server.session import ServerSession
 from mcp.types import CallToolResult
 
 from cedrus.backend.models import NodeLabel
-from cedrus.backend.models.base import Mode
+from cedrus.backend.models.base import Format, Mode
 from cedrus.backend.models.relations import DialecticalRelationType, GroundingStrategy
 from cedrus.tools.impl import editing, guidance, inspection, meta, validation
 from cedrus.tools.tool_registry import TOOL_REGISTRY, ToolVariant
@@ -114,9 +114,9 @@ async def inspect_graph(
     *,
     ctx: Context[ServerSession, AppContext],
     verbose: bool = False,
-    format: str = "argdown",
+    format: Format = "argdown",
 ) -> CallToolResult:
-    return await inspection.inspect_graph_core(ctx=ctx, verbose=verbose, format=format)  # type: ignore[arg-type]
+    return await inspection.inspect_graph_core(ctx=ctx, verbose=verbose, format=format)
 
 
 async def inspect_neighborhood(
@@ -124,8 +124,14 @@ async def inspect_neighborhood(
     ctx: Context[ServerSession, AppContext],
     label: NodeLabel,
     k: int = 2,
+    format: Format = "argdown",
 ) -> CallToolResult:
-    return await inspection.inspect_neighborhood_core(ctx=ctx, label=label, k=k)
+    return await inspection.inspect_neighborhood_core(
+        ctx=ctx,
+        label=label,
+        k=k,
+        format=format,
+    )
 
 
 async def inspect_node(
