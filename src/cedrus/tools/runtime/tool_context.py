@@ -234,6 +234,9 @@ class ToolContext:
         if self._result_data is not None:
             structured_content["result"] = self._result_data
             plain_content.append(f"RESULT:\n\n{self._result_data}")
+        else:
+            if self._message:
+                plain_content.append(f"MESSAGE:\n\n{self._message}")
 
         if self.resources:
             structured_content["embedded_resources"] = [r.model_dump() for r in self.resources]
