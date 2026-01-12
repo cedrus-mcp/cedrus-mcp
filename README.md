@@ -8,12 +8,7 @@
 
 Cedrus runs as a Model Context Protocol (MCP) server and gives AI agents tools and resources to <strong>externalize and structure their chain‑of‑thought reasoning</strong> as a <code>reasoning-graph</code>.
 
-You can think of Cedrus as a text-based argument mapping tool tailored to AI agents:
-- The assistant turns its internal thoughts into **claims** (things that might be true or false).
-- It adds **arguments** (reasons for or against those claims).
-- It connects them with **supports** or **attacks**.
-
-Cedrus keeps track of this evolving argument map and offers tools to sketch it, refine it, and review it as the agent's deliberation unfolds.
+You can think of Cedrus as a text-based argument mapping tool tailored to AI agents. Cedrus helps agents to keep track of their evolving deliberation, offering tools to sketch, refine, and review complex and heterogenous argumentation.
 
 
 
