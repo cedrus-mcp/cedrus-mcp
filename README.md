@@ -1,10 +1,6 @@
 <h1 align="center">🌳 Cedrus MCP Server</h1>
 
 <p align="center">
-  • MCP server 
-</p>
-
-<p align="center">
   A <strong>thinking tool</strong> for scaffolding AI reasoning.
 </p>
 
