@@ -35,12 +35,12 @@ It is especially useful for:
 You can run Cedrus directly from GitHub using [`uvx`](https://github.com/astral-sh/uv):
 
 ```bash
-uvx git+https://github.com/logikon-ai/cedrus-mcp
+uvx git+https://github.com/logikon-ai/cedrus-mcp --http
 ```
 
 This will:
 - Download and run the Cedrus MCP server.
-- Use **standard input/output (stdio)** to talk to your MCP client.
+- Use **streamable-http** to talk to your MCP client.
 
 Usually you do **not** run this by hand; instead your MCP‑aware app (editor / assistant / tool host) runs this command under the hood when it needs Cedrus.
 
@@ -51,7 +51,7 @@ Usually you do **not** run this by hand; instead your MCP‑aware app (editor / 
 To use Cedrus as a thinking tool, your MCP‑capable client needs to know two things:
 
 1. **What command to run**
-   - Use the same command as above:
+   - Use the same command as above (without `--http`):
      ```bash
      uvx git+https://github.com/logikon-ai/cedrus-mcp
      ```
