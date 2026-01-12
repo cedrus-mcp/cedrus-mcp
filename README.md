@@ -82,22 +82,22 @@ You do **not** need to know the underlying Python or MCP details to do this.
 
 ## How Cedrus shapes chain‑of‑thought
 
-Once connected, a typical pattern looks like this:
+Once connected, Cedrus reshapes the assistant’s internal chain‑of‑thought into a recurring process:
 
-1. The assistant starts in a **sketching** mode
-   - It turns key thoughts into claims.
-   - It adds quick arguments for and against.
+1. The assistant begins in a **sketching** phase  
+   - It turns key internal thoughts into candidate claims.  
+   - It attaches quick arguments for and against those claims.
 
-2. As the conversation goes deeper, the assistant **elaborates**
-   - It breaks big claims into smaller ones.
-   - It makes relations explicit (which reasons support or attack which points).
+2. As the chain‑of‑thought deepens, the assistant **elaborates**  
+   - It decomposes broad claims into more precise, smaller ones.  
+   - It makes relations explicit: which reasons support or attack which points.
 
-3. At any time, you can switch into a more **critical / review** mode
-   - Ask for an overview of the map.
-   - Look for contradictions, missing links, or weakly supported claims.
-   - Ask Cedrus to highlight where more work is needed.
+3. The assistant can then shift into a **critical / review** phase  
+   - It surveys the emerging argument structure.  
+   - It searches for contradictions, missing links, or weakly supported claims.  
+   - It asks Cedrus to surface areas where more reasoning work is needed.
 
-All of this happens through MCP tools that your client can show as buttons, menus, or commands. You and the assistant share the same structured argument map instead of a hidden chain‑of‑thought.
+All of this remains part of the assistant’s chain‑of‑thought, but Cedrus organizes it as an explicit argument graph instead of a single, opaque text stream.
 
 
 
@@ -120,7 +120,7 @@ Cedrus is designed so that most of the detailed guidance lives **inside** the se
 
 - There are tools that explain what other tools do.
 - There are tools that describe the current mode (sketch, elaborate, review) and suggest next steps.
-- There are tools for summaries and node details, so you can explore the map without reading raw data.
+- There are tools for summaries and node details, so your agent can easily explore the map.
 
 Once your client can connect to Cedrus with:
 
