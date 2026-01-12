@@ -14,18 +14,20 @@ You can think of Cedrus as a text-based argument mapping tool tailored to AI age
 
 ## Why use Cedrus?
 
-Most assistants already "think" internally, but that reasoning is:
+Most assistants already "think" internally, but that reasoning may be:
 - **Invisible** – you only see the final answer.
-- **Linear** – a long paragraph, not a structured map.
+- **Linear** – a very long paragraph, not a structured map.
+- **Inconclusive** – the path from reasoning to answer is unclear.
 - **Hard to critique** – you cannot easily see where a mistake enters.
 
 Cedrus helps by:
 - Turning chain‑of‑thought into a **graph of reasons**.
 - Making it easier for AI assistants to **spot gaps, conflicts, and dangling assumptions**.
-- Giving the assistant (and potentially the user) a **shared structure** to inspect, revise, and build on.
+- Giving the assistant (and potentially the user) a **concrete structure** to inspect, revise, and build on.
 
 It is especially useful for:
-- Debates, policy analysis, and complex decisions.
+- AI agents that (regularly) face complex internal decisions.
+- AI assistants that support debates, policy making, or strategic planning.
 - Explanations where you want to see the **shape of the reasons**, not just the conclusion.
 
 
