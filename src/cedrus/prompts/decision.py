@@ -31,12 +31,12 @@ def deliberate_decision(decision_problem: str) -> str:
 
             ## Overall process (SCRUM)
 
-            - **Reflect (Backlog & Definition of Done)**: Clarify the decision, success criteria, and what a “good enough” deliberation looks like. Identify major work items (topics, options, uncertainties) for your reasoning backlog.
+            - **Reflect (Backlog & Definition of Done)**: Before building the reasoning graph, clarify the decision problem, success criteria, and what a “good enough” deliberation looks like. Identify major work items (topics, options, uncertainties) for your reasoning backlog.
             - **Sprint (Focused build cycles)**: In short, focused mini-sprints, expand and update the reasoning graph on a subset of the backlog: add claims, arguments, objections, and counterarguments that seem most important right now.
             - **Iterate (Review, refine, reprioritize)**: Frequently step back to inspect the current graph, test its quality, and reprioritize what to improve next. Expect to loop between reflection, sketching, and refinement multiple times before making a decision.
             - **Finalize (Decision & Communication)**: When your reasoning graph meets your “definition of done”, extract the key insights, make a clear choice.
 
-            ## 1. Initial reflection and orientation
+            ## 1. Prior reflection and orientation
 
             - Clarify the **decision problem** in your own words. If needed, restate it so that options, constraints, and key uncertainties are explicit.
             - Identify the **main decision options** you might consider. When appropriate, formulate them as clear, mutually exclusive claims in your reasoning graph.
@@ -49,7 +49,7 @@ def deliberate_decision(decision_problem: str) -> str:
             - Identify **known pitfalls and biases** that are relevant to this decision (e.g., wishful thinking, status quo bias, overconfidence) and note how you intend to guard against them.
             - Optionally create a **reasoning backlog**: a rough list of topics/angles to cover (e.g., “short-term costs”, “long-term upside”, “stakeholder impacts”, “key uncertainties”, “alternatives”).
 
-            Treat this step as setting up your **deliberation backlog** and your criteria for when the reasoning is good enough to inform a choice. You can revisit and adjust these as you learn more.
+            Treat this step as setting up your **deliberation backlog** and your criteria for when the reasoning is good enough to inform a choice -- prior to building the actual reasoning graph. You can revisit and adjust these as you learn more.
 
             ## 2. Sketching a first draft
 
