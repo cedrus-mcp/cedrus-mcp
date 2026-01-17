@@ -3,7 +3,7 @@ name = "cedrus"
 version = "0.1.0"
 description = "CEDRUS - Agent-centric MCP server for informal argument mapping"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
 ]
 scripts = { "cedrus" = "cedrus.__main__:main" }
 readme = "README.md"
