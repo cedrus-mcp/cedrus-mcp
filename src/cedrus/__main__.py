@@ -60,7 +60,7 @@ def main() -> None:
     try:
         mcp.run(transport=transport)
     except KeyboardInterrupt:
-        logger.info("🛑 Server stopped by user.")
+        logger.info("\n🛑 Server stopped by user.")
         sys.exit(0)
 
 
