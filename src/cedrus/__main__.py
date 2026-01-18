@@ -56,11 +56,11 @@ def main() -> None:
     if args.http:
         transport = "streamable-http"
 
-    logger.info(f"Starting CEDRUS MCP server with {transport} transport ...")
+    logger.info(f"🚀 Starting CEDRUS MCP server with {transport} transport ...")
     try:
         mcp.run(transport=transport)
     except KeyboardInterrupt:
-        logger.info("\nServer stopped by user.")
+        logger.info("🛑 Server stopped by user.")
         sys.exit(0)
 
 
