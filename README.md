@@ -6,6 +6,10 @@
 
 ---
 
+> [!WARNING]
+>
+> This MCP server is a prototype. It's currently being tested and evaluated, and may be subject to major revisions.
+
 Cedrus runs as a Model Context Protocol (MCP) server and gives AI agents tools and resources to <strong>externalize and structure their chain‑of‑thought reasoning</strong> as a <code>reasoning-graph</code>.
 
 You can think of Cedrus as a text-based argument mapping tool tailored to AI agents. Cedrus helps agents to keep track of their evolving deliberation, offering tools to sketch, refine, and review complex and heterogenous argumentation.
