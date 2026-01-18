@@ -5,11 +5,14 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.utilities.logging import get_logger
 
 from cedrus.backend.graph.argument_map import ArgumentMap
 from cedrus.backend.models.base import Mode
 from cedrus.config import settings
 from cedrus.tools import TOOL_ORDER, TOOL_REGISTRY
+
+logger = get_logger("cedrus.backend.graph")  # Creates 'FastMCP.cedrus' logger
 
 
 @dataclass
@@ -28,19 +31,19 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     # # Load argument map on startup
     # try:
     #     arg_map = load_graph(data_file)
-    #     print(f"Loaded argument map from {data_file}")
+    #     logger.debug(f"Loaded argument map from {data_file}")
     # except FileNotFoundError:
     #     arg_map = ArgumentMap()
-    #     print("Created new argument map")
+    #     logger.debug("Created new argument map")
     #
     # try:
     #     yield AppContext(arg_map=arg_map, mode="sketch")
     # finally:
     #     # Save on shutdown
     #     save_graph(arg_map, data_file)
-    #     print(f"Saved argument map to {data_file}")
+    #     logger.debug(f"Saved argument map to {data_file}")
 
-    print(f"Settings: {settings}")
+    logger.debug(f"Settings: {settings}")
 
     yield AppContext(arg_map=ArgumentMap(), mode="sketch")
 
@@ -131,7 +134,7 @@ def _register_initial_tools() -> None:
                     **variant.metadata,
                 )
 
-    print(f"Registered {len(available_tools)} tools for '{initial_mode}' mode")
+    logger.debug(f"Registered {len(available_tools)} tools for '{initial_mode}' mode")
 
 
 # This will be called when tools module is imported

@@ -7,10 +7,10 @@ FastMCP server with the specified transport.
 Usage:
     # Run with stdio transport (default, for MCP clients):
     python -m cedrus
-    
+
     # Run with HTTP transport (for debugging/testing):
     python -m cedrus --http
-    
+
     # Using uv:
     uv run python -m cedrus
 
@@ -18,10 +18,9 @@ The server provides tools for creating and managing informal argument maps,
 including claims, arguments, and dialectical relations between them.
 """
 
+import argparse
 import sys
 from typing import Literal
-
-import argparse
 
 from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
 
@@ -33,15 +32,12 @@ logger = get_logger("cedrus")  # Creates 'FastMCP.cedrus' logger
 
 # === Register Tools/Resources/Prompts ===
 # Import at module level to ensure decorators execute before mcp.run()
-import cedrus.tools  # noqa: F401
 import cedrus.prompts  # noqa: F401
 import cedrus.resources  # noqa: F401
-
-
-
-
+import cedrus.tools  # noqa: F401
 
 # === Entry Point ===
+
 
 def main() -> None:
     """Run the CEDRUS MCP server."""
@@ -59,13 +55,13 @@ def main() -> None:
     if args.http:
         transport = "streamable-http"
 
-    print(f"Starting CEDRUS MCP server with {transport} transport ...")
+    logger.info(f"Starting CEDRUS MCP server with {transport} transport ...")
     try:
         mcp.run(transport=transport)
     except KeyboardInterrupt:
-        print("\nServer stopped by user.")
+        logger.info("\nServer stopped by user.")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
-
