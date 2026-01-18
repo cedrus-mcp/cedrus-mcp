@@ -8,7 +8,7 @@
 
 > [!WARNING]
 >
-> This MCP server is a prototype. It's currently being tested and evaluated, and may be subject to major revisions.
+> This MCP server is in early development. It's currently being tested and evaluated, and may be subject to major revisions or breaking changes.
 
 Cedrus runs as a Model Context Protocol (MCP) server and gives AI agents tools and resources to <strong>externalize and structure their chain‑of‑thought reasoning</strong> as a <code>reasoning-graph</code>.
 
