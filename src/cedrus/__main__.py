@@ -24,17 +24,18 @@ from typing import Literal
 
 from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
 
-from cedrus.server import mcp
-
-configure_logging(level="INFO")
-logger = get_logger("cedrus")  # Creates 'FastMCP.cedrus' logger
-
-
 # === Register Tools/Resources/Prompts ===
 # Import at module level to ensure decorators execute before mcp.run()
 import cedrus.prompts  # noqa: F401
 import cedrus.resources  # noqa: F401
 import cedrus.tools  # noqa: F401
+from cedrus.server import mcp
+
+# === Logging ===
+
+configure_logging(level="INFO")
+logger = get_logger("cedrus")  # Creates 'FastMCP.cedrus' logger
+
 
 # === Entry Point ===
 
