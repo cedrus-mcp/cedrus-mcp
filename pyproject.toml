@@ -1,6 +1,6 @@
 [project]
 name = "cedrus"
-version = "0.1.0"
+version = "0.2.0dev"
 description = "CEDRUS - Agent-centric MCP server for informal argument mapping"
 authors = [
     {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
