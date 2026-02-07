@@ -136,11 +136,9 @@ uvx git+https://github.com/logikon-ai/cedrus-mcp
 
 let the assistant explore the available tools and use Cedrus as a **structured thinking surface** for its chain‑of‑thought.
 
-## Evaluation (with MASLab)
+## Evaluation (cedrus `v0.1.0`)
 
 See: https://github.com/cedrus-mcp/MASLab
-
-&#x274C;
 
 ### AIME-2024 / devstral-small-2 (N=30)
 
