@@ -1,143 +1,313 @@
-"""CEDRUS MCP server instance with lifecycle management."""
+"""The MCP server: seven tools, two resources, and one map per session.
 
+Built on `mcp.server.MCPServer` (SDK v2). The tool descriptions in this file are the
+only instructions most models will ever read, so they are written for a small one:
+short, concrete, and about the map rather than about the server.
+"""
+
+from __future__ import annotations
+
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.utilities.logging import get_logger
+from mcp.server import MCPServer
+from mcp.server.mcpserver.context import Context
+from mcp.server.mcpserver.exceptions import ResourceError, ToolError
 
-from cedrus.backend.graph.argument_map import ArgumentMap
-from cedrus.backend.models.base import Mode
-from cedrus.config import settings
-from cedrus.tools import TOOL_ORDER, TOOL_REGISTRY
+from cedrus import tools
+from cedrus.export import save, to_json
+from cedrus.model import MapError
+from cedrus.render import DEFAULT_MAX_CHARS, render
+from cedrus.result import Session, error
 
-logger = get_logger("cedrus.backend.graph")  # Creates 'FastMCP.cedrus' logger
+INSTRUCTIONS = """\
+Build an argument map step by step.
+
+1. Add the central claim with add_claim.
+2. Respond to it with add_argument, choosing supports, attacks or undercuts.
+3. Respond to claims and arguments already in the map the same way.
+4. Call show() to see the whole map.
+
+The server gives every claim and argument a permanent ID (C1, C2, … and A1, A2, …), so \
+you can always refer back to one. Fix mistakes with edit, link, unlink or delete.\
+"""
 
 
 @dataclass
-class AppContext:
-    """Application state containing the argument map."""
+class Settings:
+    """What the operator chose on the command line. One set for the whole server."""
 
-    arg_map: ArgumentMap
-    mode: Mode
+    max_chars: int = DEFAULT_MAX_CHARS
+    hints: bool = False
+    save_file: Path | None = None
+    save_dir: Path | None = None
+
+
+@dataclass
+class App:
+    """What the lifespan yields: the settings, and one map per MCP session.
+
+    In SDK v2 the lifespan is entered **once for the whole server** and is shared by
+    every session, so it cannot hold the map itself. It holds the registry instead, and
+    a handler creates its own session's map on first use — which is what the v2 notes
+    mean by "anything that acquired a per-connection resource there belongs in the
+    handler body now".
+    """
+
+    settings: Settings = field(default_factory=Settings)
+    sessions: dict[str, Session] = field(default_factory=dict)
+
+
+#: One id for this process, used when there is no MCP session id to key on (stdio).
+#: A uuid rather than a fixed word, so two stdio servers sharing a --save-dir cannot
+#: overwrite each other's file.
+STDIO_SESSION_ID = uuid.uuid4().hex
+
+_app = App()
 
 
 @asynccontextmanager
-async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
-    """Manage application lifecycle - load and save argument map."""
-    # data_file = settings.data_file
-    #
-    # # Load argument map on startup
-    # try:
-    #     arg_map = load_graph(data_file)
-    #     logger.debug(f"Loaded argument map from {data_file}")
-    # except FileNotFoundError:
-    #     arg_map = ArgumentMap()
-    #     logger.debug("Created new argument map")
-    #
-    # try:
-    #     yield AppContext(arg_map=arg_map, mode="sketch")
-    # finally:
-    #     # Save on shutdown
-    #     save_graph(arg_map, data_file)
-    #     logger.debug(f"Saved argument map to {data_file}")
-
-    logger.debug(f"Settings: {settings}")
-
-    yield AppContext(arg_map=ArgumentMap(), mode="sketch")
+async def lifespan(server: MCPServer) -> AsyncIterator[App]:
+    """Server-wide state. Entered once, shared by every session."""
+    yield _app
 
 
-instructions = """\
-The `reasoning-graph` MCP server equips AI agents with tools to structure their internal \
-thinking. It allows you to organize heterogeneous and conflicting reasoning as structured \
-argumentation, and provides capabilities to outline, elaborate, validate, and revise such \
-reasoning graphs.
-
-Depending on your needs, you can operate the `reasoning-graph` MCP server in different \
-**modes**.
-
-The availability, signature and functionality of tools depends on the current mode of operation.
-
-- `sketch` mode: simple tools for basic argument mapping
-- `elaborate` mode: tools for advanced argumentation analysis
-- `review` mode: focus on validation and review tools
-
-> CALLOUT NOTE
-> Take care to study updated tool lists after switching mode.
-
-The server provides conceptual guidance and technical documentation that can be dynamically \
-retrieved via corresponding tools. It also suggests next actions that help AI agents to organize \
-and structure their thinking.\
-"""
-
-# Create the MCP server instance
-mcp = FastMCP(
-    "reasoning-graph",
-    instructions=instructions,
-    lifespan=app_lifespan,
-    stateless_http=False,
+mcp: MCPServer = MCPServer(
+    "cedrus",
+    instructions=INSTRUCTIONS,
+    version="2.0.0dev",
+    lifespan=lifespan,
 )
 
 
-# Register tools for initial mode (sketch)
-def _register_initial_tools() -> None:
-    """Register tools available in the initial mode (sketch).
+def configure(settings: Settings) -> None:
+    """Apply the command-line settings before the server starts."""
+    _app.settings = settings
 
-    Called once at server startup to populate the MCP server with tools
-    appropriate for the default mode. As users switch modes, tools are
-    dynamically added/removed via the tool registry system.
 
-    Flow:
-        1. Import TOOL_REGISTRY and TOOL_ORDER (triggers tool variant registration)
-        2. Iterate through tools in TOOL_ORDER
-        3. For each tool available in initial mode, register it with MCP server
-        4. Log the number of tools registered
+# ------------------------------------------------------------------- sessions
 
-    Initial Mode:
-        Default mode is "sketch" for rapid prototyping:
-        - add_claim (simplified)
-        - add_argument (simplified)
-        - connect (no grounding)
-        - remove
-        - Shared tools (instructions, inspect_graph, etc.)
 
-    Tool Ordering:
-        Tools are registered in the order defined by TOOL_ORDER to ensure
-        consistent presentation to clients. This order groups tools logically:
-        creation → modification → connection → inspection → utilities.
+def _session(ctx: Context) -> Session:
+    """The map for this MCP session, created on first use."""
+    app = _app_of(ctx)
+    key = _session_key(ctx)
+    session = app.sessions.get(key)
+    if session is None:
+        session = Session(session_id=key, hints=app.settings.hints)
+        app.sessions[key] = session
+    return session
 
-    Notes:
-        - This function must be called AFTER the tool registry is populated
-          (which happens on import of cedrus.tools.tools)
-        - Subsequent mode changes use _update_tools_for_mode() in tools.py
-        - The MCP server's tool list is modified in-place via add_tool()
 
-    See Also:
-        - cedrus.tools.impl.meta.update_tools_for_mode_core(): Dynamic tool swapping
-        - cedrus.tools.TOOL_ORDER: Canonical tool ordering
-        - cedrus.tools.tool_registry.ToolRegistry: Registry infrastructure
+def _app_of(ctx: Context) -> App:
+    """The lifespan value, falling back to the module's own for direct calls in tests."""
+    app = ctx.request_context.lifespan_context
+    return app if isinstance(app, App) else _app
+
+
+def _session_key(ctx: Context) -> str:
+    """What tells one MCP session from another.
+
+    Streamable HTTP carries the session id in the `mcp-session-id` header, which the
+    transport has already matched against a live session before a handler sees it.
+    stdio carries no headers and serves exactly one session per process.
     """
-    # Get initial mode and available tools
-    initial_mode: Mode = "sketch"
-    available_tools = TOOL_REGISTRY.get_tool_names_for_mode(initial_mode)
-
-    # Register tools in canonical order
-    for tool_name in TOOL_ORDER:
-        if tool_name in available_tools:
-            variant = TOOL_REGISTRY.get_variant_for_mode(tool_name, initial_mode)
-            if variant:
-                mcp.add_tool(
-                    variant.fn,
-                    name=variant.name,
-                    description=variant.description,
-                    **variant.metadata,
-                )
-
-    logger.debug(f"Registered {len(available_tools)} tools for '{initial_mode}' mode")
+    headers = ctx.headers
+    if headers is None:
+        return STDIO_SESSION_ID
+    session_id = headers.get("mcp-session-id")
+    if session_id:
+        return session_id
+    raise ToolError(
+        "this request carries no MCP session id, so there is no session to hold a map. "
+        "Run the server with a session (the default) rather than in stateless HTTP mode."
+    )
 
 
-# This will be called when tools module is imported
-# (which happens when the tool_registry is initialized)
-_register_initial_tools()
-# (which happens when the tool_registry is initialized)
+def _save_path(session: Session) -> Path | None:
+    if _app.settings.save_file is not None:
+        return _app.settings.save_file
+    if _app.settings.save_dir is not None:
+        return _app.settings.save_dir / f"{session.session_id}.json"
+    return None
+
+
+def _changed(session: Session) -> None:
+    """Called after every successful change: keep the files beside the agent current."""
+    path = _save_path(session)
+    if path is not None:
+        save(session.amap, path, session.session_id)
+
+
+def _run(session: Session, call: Any) -> str:
+    """Turn a refused change into a tool error, leaving the map untouched."""
+    try:
+        result = call()
+    except MapError as exc:
+        raise ToolError(error(str(exc), session)) from None
+    _changed(session)
+    return str(result)
+
+
+# ---------------------------------------------------------------------- tools
+
+
+@mcp.tool()
+def show(ctx: Context) -> str:
+    """Show the whole argument map: its claims, its arguments and all relations.
+
+    Call this whenever you need to see the current map. Its output replaces any
+    earlier show output, so you only ever need the latest one.
+    """
+    session = _session(ctx)
+    return tools.show(session, _app.settings.max_chars)
+
+
+@mcp.tool()
+def add_claim(label: str, text: str, ctx: Context) -> str:
+    """Add a claim: the statement being debated, or a general principle arguments rely on.
+
+    Add a claim first; arguments need something to respond to. A claim that responds to
+    nothing is a root claim. To make a claim support or attack something, use link
+    afterwards.
+
+    Args:
+        label: A short title of a few words, e.g. "Legalisation of soft drugs".
+        text: The claim written out as one statement.
+
+    Returns:
+        The new ID (C1, C2, …) and the state of the map.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.add_claim(session, label, text))
+
+
+@mcp.tool()
+def add_argument(target: str, relation: str, label: str, text: str, ctx: Context) -> str:
+    """Add a new argument that responds to a claim or argument already in the map.
+
+    Args:
+        target: The ID the argument responds to, e.g. "C1" or "A7".
+        relation: How it responds to the target. One of:
+            "supports" - the argument gives a reason for the target;
+            "attacks" - the argument gives a reason against the target;
+            "undercuts" - the argument says the target's reasons do not lead to its
+            conclusion, without denying that those reasons are true. The target of an
+            undercut must be an argument, not a claim.
+        label: A short title of a few words, e.g. "Tax revenue".
+        text: The argument written out in full.
+
+    Returns:
+        The new ID (A1, A2, …) and the state of the map.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.add_argument(session, target, relation, label, text))
+
+
+@mcp.tool()
+def link(source: str, relation: str, target: str, ctx: Context) -> str:
+    """Relate two claims or arguments that are already in the map.
+
+    Use this when one argument responds to more than one thing, or when a claim
+    supports or attacks something. If the two are already related, this changes the
+    relation to the new type.
+
+    Args:
+        source: The ID that does the supporting, attacking or undercutting.
+        relation: "supports", "attacks" or "undercuts".
+        target: The ID being responded to.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.link(session, source, relation, target))
+
+
+@mcp.tool()
+def unlink(source: str, target: str, ctx: Context) -> str:
+    """Remove the relation that goes from source to target.
+
+    An argument must keep at least one target, so its last relation cannot be removed.
+    A claim may lose all of its relations. To move an argument, link it to its new
+    target first and unlink the old one afterwards.
+
+    Args:
+        source: The ID the relation starts at.
+        target: The ID the relation points to.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.unlink(session, source, target))
+
+
+@mcp.tool()
+def edit(id: str, ctx: Context, label: str = "", text: str = "") -> str:
+    """Change the label and/or the text of a claim or an argument.
+
+    The ID and every relation stay as they are.
+
+    Args:
+        id: The ID to change, e.g. "A7".
+        label: A new short title. Leave empty to keep the current one.
+        text: A new full text. Leave empty to keep the current one.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.edit(session, id, label, text))
+
+
+@mcp.tool()
+def delete(id: str, ctx: Context, with_replies: bool = False) -> str:
+    """Delete a claim or an argument, together with its relations.
+
+    The ID is never given to a new item. If some arguments respond only to this one,
+    the deletion is refused and they are named, because they would be left with nothing
+    to respond to.
+
+    Args:
+        id: The ID to delete, e.g. "A7".
+        with_replies: Set to true to delete those arguments as well.
+    """
+    session = _session(ctx)
+    return _run(session, lambda: tools.delete(session, id, with_replies))
+
+
+# ------------------------------------------------------------------ resources
+
+
+@mcp.resource(
+    "map://current",
+    name="Current argument map",
+    description="The full rendering of this session's map, with no size limit.",
+    mime_type="text/plain",
+)
+def current_map_text() -> str:
+    return render(_only_session().amap, max_chars=None)
+
+
+@mcp.resource(
+    "map://current.json",
+    name="Current argument map (JSON)",
+    description="This session's map as JSON, for the environment running the agent.",
+    mime_type="application/json",
+)
+def current_map_json() -> str:
+    session = _only_session()
+    return to_json(session.amap, session.session_id)
+
+
+def _only_session() -> Session:
+    """The session these resources describe.
+
+    The SDK does not inject a Context into a static resource, so this is unambiguous
+    only while the server holds one session, which is the stdio case the resources are
+    meant for. With several sessions, read the files written by --save-dir instead.
+    """
+    if not _app.sessions:
+        return Session()
+    if len(_app.sessions) > 1:
+        raise ResourceError(
+            "this server is holding several sessions, so map://current is ambiguous; "
+            "use --save-dir and read the file for the session you want"
+        )
+    return next(iter(_app.sessions.values()))

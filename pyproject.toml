@@ -1,33 +1,19 @@
 [project]
 name = "cedrus"
-version = "0.2.0dev"
-description = "CEDRUS - Agent-centric MCP server for informal argument mapping"
+version = "2.0.0dev"
+description = "CEDRUS - a minimal argument-mapping MCP server for small language models"
 authors = [
     {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
 ]
 scripts = { "cedrus" = "cedrus.__main__:main" }
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
-    "mcp>=1.2.0",
-    "networkx>=3.0",
+    "mcp>=2.2",
     "pydantic>=2.0",
-    "matplotlib>=3.7",
-    "pydantic-settings>=2.12.0",
-    "graphviz>=0.20",
-    "Unidecode>=1.3.0",
     "rapidfuzz>=3.0",
-    "pyyaml>=6.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-asyncio>=0.21",
-    "pytest-cov>=4.0",
-    "black>=23.0",
-    "ruff>=0.1",
-    "mypy>=1.0",
 ]
 
 [build-system]
@@ -41,10 +27,6 @@ packages = ["src/cedrus"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
-[tool.black]
-line-length = 100
-target-version = ["py311"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -56,8 +38,7 @@ strict = true
 [dependency-groups]
 dev = [
     "mypy>=1.19.0",
-    "pyright>=1.1.408",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
-    "types-networkx>=3.6.0.20251127",
+    "ruff>=0.1",
 ]

@@ -1,0 +1,171 @@
+ARGUMENT MAP: Legalisation of soft drugs
+1 claim, 17 arguments, 19 relations.
+Relation types:
+  supports   X gives a reason for Y
+  attacks    X gives a reason against Y
+  undercuts  X gives a reason why another argument fails to
+             establish its conclusion, without denying the truth of the 
+             argument's premises.
+"X → R Y" means X R Y. "Y ← R X" is the same relation, listed under Y. #pro/#con shows which side of the root claim an argument is on. It is not the relation type: a #con argument can support another #con  argument.
+
+Order: top-down, depth-first. Each argument comes right after the one it responds to. IDs are permanent labels; their numbers reflect order of creation; they say nothing about position.
+"under X" names the argument's place in the outline. A4 is the only argument with more than one target: it also attacks A2 and supports A1.
+Unchallenged arguments (nothing supports, attacks or undercuts them):
+  A4, A6, A8, A9, A10, A11, A13, A14, A16, A19
+Deleted IDs (not reused): 
+  A17, A18
+
+## Outline
+
+- C1 Legalisation of Soft Drugs
+  - A1 Minimize destructive activity #con — attacks C1
+  - A2 No harm, no ban #pro — supports C1
+    - A3 Law must protect #con — attacks A2
+      - A4 Soft drugs are harmful #con — supports A3 (also attacks A2, supports A1)
+  - A5 Lifestyle decision #pro — supports C1
+    - A6 Moral leadership #con — attacks A5
+  - A7 Alcohol and tobacco analogy #pro — supports C1
+    - A8 Tobacco and alcohol more dangerous #pro — supports A7
+    - A9 Major differences #con — attacks A7
+    - A10 Poor reason #con — undercuts A7
+  - A11 Listen to society #pro — supports C1
+  - A12 Argument from addiction #con — attacks C1
+    - A13 Soft drugs are addictive #con — supports A12
+    - A14 Addiction no reason to ban #pro — undercuts A12
+  - A15 Slippery slope #con — attacks C1
+    - A16 Coffee houses #pro — attacks A15
+  - A19 Tax revenue #pro — supports C1
+
+## Part 1: Claims
+
+C1 Legalisation of Soft Drugs:
+Soft drugs should be legal.
+
+## Part 2: Arguments (full text)
+
+A1 Minimize destructive activity #con:
+Our aim is to minimise drug use since it is a destructive, dangerous and anti-social activity. Legalising soft drugs will inevitably mean that there is an increase in drug use. Therefore, we should not legalise soft drugs, even if an alarming number of people already use them.
+
+A2 No harm, no ban #pro:
+The role of legislation is to protect society from harm, but not to protect people from themselves. We do not legislate against fatty foods or lack of exercise, both of which have serious health implications. The individual's freedom is paramount unless serious harm is done by a particular act. Taking soft drugs does not harm anybody else and has only minimal negative effects on the person taking them -- it is a 'victimless crime'. As such, it should not be a crime at all.
+
+A3 Law must protect #con:
+It is right that governments should legislate in a way that overrides personal freedom to protect people from themselves as well as from each other. That is why bare-knuckle boxing is banned and seatbelts are compulsory in some countries (e.g. Britain). These are ways in which personal freedom is overridden by legislation designed to protect personal safety.
+
+A4 Soft drugs are harmful #con:
+Soft drugs are harmful: cannabis smoke (as well as the tobacco with which it is often mixed) is carcinogenic, and prolonged cannabis smoking has been shown to cause brain damage and significant loss of motivation and short-term memory. Amphetamines interfere with the nervous system in a potentially damaging way. Drug-takers also put others at risk by taking mind-altering substances that can lead to unpredictable and dangerous behaviour.
+
+A5 Lifestyle decision #pro:
+Individuals should be left to choose their own lifestyle and priorities. If that includes using drugs for pleasure and relaxation then that is a perfectly valid decision.
+
+A6 Moral leadership #con:
+The government should provide moral leadership as well as legislating to protect the health of the individual and the safety of others. The drug-using lifestyle is a shallow, hedonistic, apathetic, inward-looking, uncreative form of escapism. Governments should legislate and speak out against drugs to discourage young people from this lifestyle and encourage them to engage in healthier and more creative pastimes.
+
+A7 Alcohol and tobacco analogy #pro:
+The law is currently inconsistent. Cannabis and speed have comparable physical and mental effects to those of alcohol and tobacco, which are legal drugs. If anything, alcohol and tobacco have more seriously damaging effects. If alcohol and tobacco are legal then soft drugs should be too.
+
+A8 Tobacco and alcohol more dangerous #pro:
+Tobacco-related diseases kill millions each year, and alcohol is responsible for deaths on the road, civil disorder and domestic violence on a huge scale. Cannabis and speed make people 'spaced out' or hyperactive respectively for short periods in social situations and are relatively harmless.
+
+A9 Major differences #con:
+The effects of soft drugs may be 'comparable' with those of alcohol and tobacco but there are important differences. Cannabis and speed are mind-altering in a way that alcohol and tobacco are not.
+
+A10 Poor reason #con:
+In any case, the fact that harmful and dangerous substances (tobacco and alcohol) are already, regrettably, socially entrenched is not a good reason to allow two more such substances to become more widely used and socially acceptable.
+
+A11 Listen to society #pro:
+Speed and cannabis are widely used, not just by stereotypical 'drug users', but by a large minority of middle class and professional people. The current law makes criminals of many otherwise 'respectable' citizens. The government should listen to society.
+
+A12 Argument from addiction #con:
+We should be concerned about any addictive substance. While it would be impractical to ban many psychologically addictive things (like coffee or shopping), in the case of soft drugs they are already banned and there is no reason to reverse that situation.
+
+A13 Soft drugs are addictive #con:
+It is hard to draw an exact line between physical and psychological addiction - they are two sides of the same coin. Recent research has demonstrated that cannabis is highly addictive - in the US in particular, many self-help groups for cannabis addicts have recently been formed, with rapidly growing membership. Whether we call that addiction 'psychological' or 'physical' is immaterial.
+
+A14 Addiction no reason to ban #pro:
+Soft drugs are not physically addictive and even if they were that would not be a reason for them to be illegal -- caffeine, alcohol and nicotine are physically addictive and still legal. And being psychologically addictive is even less of a reason to ban something. Many things, such as shopping, sex, jogging or gambling may be psychologically addictive, and many people are innately susceptible to psychological addiction. We cannot ban all things that a minority might come to depend upon -- we should instead provide counselling for addicts.
+
+A15 Slippery slope #con:
+Soft drugs are dangerous because they start people down the 'slippery slope' to using ever-harder drugs. The same dealer will try to push harder drugs onto his clients who use soft drugs, by cutting cannabis or speed with cocaine or heroin or offering free samples to get them hooked. Legalisation of soft drugs would, ironically, provide a whole market for hard drug pushers, who would be able to undercut the prices of duty-inflated market goods.
+
+A16 Coffee houses #pro:
+Legalising soft drugs, and allowing them to be sold in licensed premises, perhaps like the 'coffee houses' in Amsterdam that sell cannabis, will separate them from the criminal underworld associated with drug dealing. The 'slippery slope' would then no longer exist. People could purchase soft drugs without having to come into contact with dealers who might cut their drugs with harder drugs or try to get them onto harder drugs in other ways. (In any case, only a tiny minority of cannabis users ever go on to use harder drugs.)
+
+A19 Tax revenue #pro:
+Finally, the government could use the sale of soft drugs as a source of revenue through excise duty, as is already done with alcohol and tobacco.
+
+## Part 3: Dialectical structure (all relations, listed in both directions)
+
+C1 Legalisation of Soft Drugs | central claim | depth 0
+  ← attacks    A1 Minimize destructive activity
+  ← supports   A2 No harm, no ban
+  ← supports   A5 Lifestyle decision
+  ← supports   A7 Alcohol and tobacco analogy
+  ← supports   A11 Listen to society
+  ← attacks    A12 Argument from addiction
+  ← attacks    A15 Slippery slope
+  ← supports   A19 Tax revenue
+
+A1 Minimize destructive activity #con | depth 1 | under C1
+  → attacks    C1 Legalisation of Soft Drugs
+  ← supports   A4 Soft drugs are harmful
+
+A2 No harm, no ban #pro | depth 1 | under C1
+  → supports   C1 Legalisation of Soft Drugs
+  ← attacks    A3 Law must protect
+  ← attacks    A4 Soft drugs are harmful
+
+A3 Law must protect #con | depth 2 | under A2
+  → attacks    A2 No harm, no ban
+  ← supports   A4 Soft drugs are harmful
+
+A4 Soft drugs are harmful #con | depth 3 | under A3 | unchallenged
+  → supports   A3 Law must protect
+  → attacks    A2 No harm, no ban
+  → supports   A1 Minimize destructive activity
+
+A5 Lifestyle decision #pro | depth 1 | under C1
+  → supports   C1 Legalisation of Soft Drugs
+  ← attacks    A6 Moral leadership
+
+A6 Moral leadership #con | depth 2 | under A5 | unchallenged
+  → attacks    A5 Lifestyle decision
+
+A7 Alcohol and tobacco analogy #pro | depth 1 | under C1
+  → supports   C1 Legalisation of Soft Drugs
+  ← supports   A8 Tobacco and alcohol more dangerous
+  ← attacks    A9 Major differences
+  ← undercuts  A10 Poor reason
+
+A8 Tobacco and alcohol more dangerous #pro | depth 2 | under A7 | unchallenged
+  → supports   A7 Alcohol and tobacco analogy
+
+A9 Major differences #con | depth 2 | under A7 | unchallenged
+  → attacks    A7 Alcohol and tobacco analogy
+
+A10 Poor reason #con | depth 2 | under A7 | unchallenged
+  → undercuts  A7 Alcohol and tobacco analogy
+
+A11 Listen to society #pro | depth 1 | under C1 | unchallenged
+  → supports   C1 Legalisation of Soft Drugs
+
+A12 Argument from addiction #con | depth 1 | under C1
+  → attacks    C1 Legalisation of Soft Drugs
+  ← supports   A13 Soft drugs are addictive
+  ← undercuts  A14 Addiction no reason to ban
+
+A13 Soft drugs are addictive #con | depth 2 | under A12 | unchallenged
+  → supports   A12 Argument from addiction
+
+A14 Addiction no reason to ban #pro | depth 2 | under A12 | unchallenged
+  → undercuts  A12 Argument from addiction
+
+A15 Slippery slope #con | depth 1 | under C1
+  → attacks    C1 Legalisation of Soft Drugs
+  ← attacks    A16 Coffee houses
+
+A16 Coffee houses #pro | depth 2 | under A15 | unchallenged
+  → attacks    A15 Slippery slope
+
+A19 Tax revenue #pro | depth 1 | under C1 | unchallenged
+  → supports   C1 Legalisation of Soft Drugs

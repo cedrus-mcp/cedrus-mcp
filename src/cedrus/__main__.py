@@ -1,66 +1,99 @@
-"""CEDRUS MCP server entry point.
+"""Entry point.
 
-This module serves as the main entry point for running the CEDRUS MCP server.
-It imports and registers all tools, resources, and prompts, then starts the
-FastMCP server with the specified transport.
-
-Usage:
-    # Run with stdio transport (default, for MCP clients):
-    python -m cedrus
-
-    # Run with HTTP transport (for debugging/testing):
-    python -m cedrus --http
-
-    # Using uv:
-    uv run python -m cedrus
-
-The server provides tools for creating and managing informal argument maps,
-including claims, arguments, and dialectical relations between them.
+cedrus                                  # stdio, for an MCP client
+cedrus --save-file /tmp/map.json        # stdio, and keep the map on disk
+cedrus --http --save-dir /tmp/maps      # streamable HTTP, one file per session
 """
 
+from __future__ import annotations
+
 import argparse
+import os
 import sys
-from typing import Literal
+from pathlib import Path
 
-from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
-
-# === Register Tools/Resources/Prompts ===
-# Import at module level to ensure decorators execute before mcp.run()
-import cedrus.prompts  # noqa: F401
-import cedrus.resources  # noqa: F401
-import cedrus.tools  # noqa: F401
-from cedrus.server import mcp
-
-# === Logging ===
-
-configure_logging(level="INFO")
-logger = get_logger("cedrus")  # Creates 'FastMCP.cedrus' logger
+from cedrus.render import DEFAULT_MAX_CHARS
+from cedrus.server import Settings, configure, mcp
 
 
-# === Entry Point ===
-
-
-def main() -> None:
-    """Run the CEDRUS MCP server."""
-    # Determine transport from command line or default to stdio
-
-    parser = argparse.ArgumentParser(description="CEDRUS MCP server")
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="cedrus", description="CEDRUS argument-mapping MCP server"
+    )
     parser.add_argument(
         "--http",
         action="store_true",
-        help="Use HTTP transport instead of stdio",
+        help="serve over streamable HTTP instead of stdio",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="address to bind when serving over HTTP (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        metavar="N",
+        help="port to bind when serving over HTTP (default: 8000)",
+    )
+    parser.add_argument(
+        "--hints",
+        action="store_true",
+        help="add one short Hint line to tool results",
+    )
+    parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=DEFAULT_MAX_CHARS,
+        metavar="N",
+        help=f"size limit for show() output (default: {DEFAULT_MAX_CHARS})",
+    )
+    parser.add_argument(
+        "--save-file",
+        type=Path,
+        metavar="PATH",
+        help="write the map to PATH (JSON) and to the matching .txt after every change; "
+        "for stdio, which serves one session (env: CEDRUS_SAVE_FILE)",
+    )
+    parser.add_argument(
+        "--save-dir",
+        type=Path,
+        metavar="DIR",
+        help="write DIR/<session-id>.json and .txt after every change; "
+        "for HTTP, which serves several sessions (env: CEDRUS_SAVE_DIR)",
+    )
+    return parser
 
-    transport: Literal["stdio", "sse", "streamable-http"] = "stdio"
-    if args.http:
-        transport = "streamable-http"
 
-    logger.info(f"🚀 Starting CEDRUS MCP server with {transport} transport ...")
+def settings_from(args: argparse.Namespace, environ: dict[str, str] | None = None) -> Settings:
+    """Command line first, environment second, defaults last."""
+    env = environ if environ is not None else dict(os.environ)
+    save_file = args.save_file or _path(env.get("CEDRUS_SAVE_FILE"))
+    save_dir = args.save_dir or _path(env.get("CEDRUS_SAVE_DIR"))
+    if args.max_chars < 1:
+        raise SystemExit("--max-chars must be a positive number of characters")
+    return Settings(
+        max_chars=args.max_chars,
+        hints=args.hints,
+        save_file=save_file,
+        save_dir=save_dir,
+    )
+
+
+def _path(value: str | None) -> Path | None:
+    return Path(value) if value else None
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    configure(settings_from(args))
     try:
-        mcp.run(transport=transport)
+        if args.http:
+            mcp.run(transport="streamable-http", host=args.host, port=args.port)
+        else:
+            mcp.run(transport="stdio")
     except KeyboardInterrupt:
-        logger.info("\n🛑 Server stopped by user.")
         sys.exit(0)
 
 
