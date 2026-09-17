@@ -7,6 +7,8 @@ authors = [
 ]
 scripts = { "cedrus" = "cedrus.__main__:main" }
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=2.2",

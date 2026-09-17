@@ -194,3 +194,7 @@ functions, and `server.py` is the only file that imports the MCP SDK.
 `tests/golden/soft_drugs.txt` is the expected rendering of the example map;
 [tests/golden/README.md](tests/golden/README.md) says how it differs from the hand-written
 design target and how to regenerate it.
+
+## Licence
+
+GNU Affero General Public License v3.0 or later. See [LICENSE](LICENSE).
