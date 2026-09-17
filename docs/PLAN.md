@@ -7,7 +7,7 @@ Cedrus v1 (in `cedrus-mcp/src/cedrus/`) has problems that hurt small open-weight
 - **Next-step suggestions are noisy.** There are up to 8 per call, they contain placeholders that small models copy literally, and some name tools the current mode does not have.
 - **Undercuts are not supported.**
 
-v2 starts over on an **empty `v2` branch** of the same repository (`cedrus-mcp/`), created with `git checkout --orphan v2` followed by removing every file. `main` keeps v1, and nothing is shared between the two branches; v1 files can still be read with `git show main:<path>`. The package keeps the name `cedrus` and the command stays `cedrus`, at version 2.0.0dev.
+v2 starts over on an **empty `v2` branch** of the same repository (`cedrus-mcp/`), created with `git checkout --orphan v2` followed by removing every file. Nothing is shared between the two branches. v1 is tagged **`v1-final`**, so its files can be read with `git show v1-final:<path>` — which keeps working after v2 replaces the tree on `main`. The package keeps the name `cedrus` and the command stays `cedrus`, at version 2.0.0dev.
 
 v2 has a small, fixed set of tools built around one text view of the map, shown in `ARGUMENT_MAP_RENDERING.md` (next to this file, in `docs/`).
 
@@ -240,13 +240,13 @@ cedrus-mcp/               # same repository, branch v2, starting from an empty t
     test_parse.py  test_tools.py   test_main.py    test_e2e_stdio.py
 ```
 
-### Patterns to look up on `main` (read with `git show main:<path>`, then write fresh code)
+### Patterns to look up in v1 (read with `git show v1-final:<path>`, then write fresh code)
 - **One map per session:** v1 used the lifespan (`src/cedrus/server.py:27`). That no longer holds in SDK v2 — see §9. v2 has no mode switching, so the shared-tool-list bug cannot occur.
 - **Tool tests with a mocked context:** `tests/test_tools/test_add_tool.py:23-50`.
 - **Real end-to-end test over stdio:** `tests/integration/test_true_e2e.py` (`stdio_client` + `ClientSession`).
 - **"Did you mean" with rapidfuzz:** `most_similar_labels` in `src/cedrus/backend/graph/argument_map.py`.
 - **Depth-first walk that tracks visited nodes:** `_render_node_recursive` in `src/cedrus/backend/graph/rendering.py:37`. v2 walks primary-target children instead of edge types.
-- **Project settings worth carrying over:** the `pyproject.toml` on `main` (hatchling, Python ≥3.11, pytest with `asyncio_mode = "auto"`), minus v1's dependencies on networkx, matplotlib and graphviz.
+- **Project settings worth carrying over:** v1's `pyproject.toml` (hatchling, Python ≥3.11, pytest with `asyncio_mode = "auto"`), minus its dependencies on networkx, matplotlib and graphviz. The AGPL `LICENSE` comes over unchanged.
 
 networkx is not needed. The graph is small, and cycle checks are a plain depth-first search.
 
