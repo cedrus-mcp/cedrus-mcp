@@ -6,13 +6,24 @@ The agent sees one text view of an argument map and seven tools that change it. 
 list never changes, every parameter is a flat string, and the server works out everything
 that can be worked out — IDs, sides, depth, placement — so the model never has to.
 
-This is the `v2` branch, a rewrite from an empty tree. Version 1 lives on `main`.
-The design is written up in [docs/PLAN.md](docs/PLAN.md), and the view it aims at in
+Version 2 is a rewrite from an empty tree and shares no code with version 1, which is
+tagged [`v1-final`](../../tree/v1-final). The design is written up in
+[docs/PLAN.md](docs/PLAN.md), and the view it aims at in
 [docs/ARGUMENT_MAP_RENDERING.md](docs/ARGUMENT_MAP_RENDERING.md).
 
 ## Running it
 
-From a checkout of this branch:
+Straight from GitHub, without a checkout:
+
+```bash
+uvx git+https://github.com/cedrus-mcp/cedrus-mcp
+uvx git+https://github.com/cedrus-mcp/cedrus-mcp --save-dir /tmp/maps   # flags pass through
+```
+
+This follows the default branch, so pin a tag — `…/cedrus-mcp@<tag>` — wherever a run has
+to stay reproducible.
+
+From a checkout:
 
 ```bash
 uv run cedrus                                  # stdio, for an MCP client
@@ -59,12 +70,17 @@ npx @modelcontextprotocol/inspector@latest --cli \
   --method tools/list
 ```
 
-In an MCP client's config, the same thing:
+In an MCP client's config, either form works:
 
 ```json
 {
   "mcpServers": {
     "cedrus": {
+      "command": "uvx",
+      "args": ["git+https://github.com/cedrus-mcp/cedrus-mcp",
+               "--save-dir", "/tmp/maps"]
+    },
+    "cedrus-local": {
       "command": "uv",
       "args": ["run", "--directory", "/path/to/cedrus-mcp", "cedrus",
                "--save-file", "/tmp/m.json"]
