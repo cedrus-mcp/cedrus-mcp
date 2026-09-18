@@ -1,6 +1,6 @@
 [project]
 name = "cedrus-mcp"
-version = "2.0.0"
+version = "2.0.1"
 description = "Reasoning scaffolding that supercharges your small AI: an argument-mapping MCP server"
 authors = [
     {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
@@ -34,7 +34,7 @@ build-backend = "hatchling.build"
 packages = ["src/cedrus"]
 
 [tool.hatch.build.targets.sdist]
-exclude = ["alias", "opencode.jsonc", ".github"]
+exclude = ["alias", "opencode.jsonc", ".github", "server.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

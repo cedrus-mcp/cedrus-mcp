@@ -231,7 +231,7 @@ built from `alias/`, that ships no code and only depends on `cedrus-mcp`. Pushin
 runs `.github/workflows/release.yml`, which does the rest:
 
 ```bash
-# cedrus-mcp: bump `version` in pyproject.toml and commit, then
+# cedrus-mcp: bump `version` in pyproject.toml and both versions in server.json, commit, then
 git tag vX.Y.Z && git push origin vX.Y.Z
 
 # the alias, only when it should require a newer cedrus-mcp:
@@ -240,7 +240,13 @@ git tag alias-vX.Y.Z && git push origin alias-vX.Y.Z
 ```
 
 The workflow refuses a tag that does not match the version in the corresponding
-`pyproject.toml`. For `cedrus-mcp`, it runs the tests before building and uploading.
+`pyproject.toml`, or in `server.json` for `cedrus-mcp`. For `cedrus-mcp`, it runs the tests
+before building and uploading, and after the upload it lists the release in the
+[MCP registry](https://registry.modelcontextprotocol.io) as
+`io.github.cedrus-mcp/cedrus-mcp`, described by `server.json`. The registry takes the
+`io.github.cedrus-mcp` namespace on the word of GitHub's OIDC token, and trusts that the
+PyPI package is ours because the README (the package's PyPI description) carries the line
+`<!-- mcp-name: io.github.cedrus-mcp/cedrus-mcp -->`. Don't remove it.
 
 **There are no tokens.** Both projects use PyPI trusted publishing: pypi.org trusts this
 repository's `release.yml` through the GitHub environment `pypi` for `cedrus-mcp` and

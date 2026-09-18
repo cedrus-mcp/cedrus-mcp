@@ -1,6 +1,7 @@
 # Tag vX.Y.Z to publish cedrus-mcp; tag alias-vX.Y.Z to publish the `cedrus` alias in alias/.
 # PyPI trusts this workflow for cedrus-mcp through the `pypi` environment and for cedrus
 # through `pypi-alias`; a pending publisher has to be unique per repo, workflow and environment.
+# After the PyPI upload, cedrus-mcp is listed in the MCP registry from server.json.
 name: release
 
 on:
@@ -19,9 +20,23 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Check the tag matches the version
         run: test "v$(uv version --short)" = "${GITHUB_REF_NAME}"
+      - name: Check server.json matches the version
+        run: |
+          test "$(jq -r .version server.json)" = "$(uv version --short)"
+          test "$(jq -r '.packages[0].version' server.json)" = "$(uv version --short)"
       - run: uv run pytest
       - run: uv build
       - run: uv publish
+      - name: Publish to the MCP registry
+        run: |
+          curl -fsSL https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          # The registry reads the README of this exact version from PyPI, which can lag the upload.
+          for attempt in 1 2 3 4 5; do
+            ./mcp-publisher publish && exit 0
+            sleep 30
+          done
+          exit 1
 
   alias:
     if: startsWith(github.ref_name, 'alias-v')

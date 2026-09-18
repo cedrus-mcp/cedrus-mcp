@@ -1,5 +1,7 @@
 # CEDRUS
 
+<!-- mcp-name: io.github.cedrus-mcp/cedrus-mcp -->
+
 **Reasoning scaffolding that supercharges your small AI.**
 
 CEDRUS gives a local model an argument map to think in: the model lays out claims and the
