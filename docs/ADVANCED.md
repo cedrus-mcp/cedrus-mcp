@@ -223,3 +223,32 @@ functions, and `server.py` is the only file that imports the MCP SDK.
 `tests/golden/soft_drugs.txt` is the expected rendering of the example map;
 [tests/golden/README.md](https://github.com/cedrus-mcp/cedrus-mcp/blob/main/tests/golden/README.md) says how it differs from the hand-written
 design target and how to regenerate it.
+
+### Releasing
+
+The server is published to PyPI as `cedrus-mcp`, and `cedrus` is a thin alias for it,
+built from `alias/`, that ships no code and only depends on `cedrus-mcp`. Pushing a tag
+runs `.github/workflows/release.yml`, which does the rest:
+
+```bash
+# cedrus-mcp: bump `version` in pyproject.toml and commit, then
+git tag vX.Y.Z && git push origin vX.Y.Z
+
+# the alias, only when it should require a newer cedrus-mcp:
+# bump alias/pyproject.toml and its dependency, commit, then
+git tag alias-vX.Y.Z && git push origin alias-vX.Y.Z
+```
+
+The workflow refuses a tag that does not match the version in the corresponding
+`pyproject.toml`. For `cedrus-mcp`, it runs the tests before building and uploading.
+
+**There are no tokens.** Both projects use PyPI trusted publishing: pypi.org trusts this
+repository's `release.yml` through the GitHub environment `pypi` for `cedrus-mcp` and
+`pypi-alias` for `cedrus`. PyPI allows only one project per repository, workflow and
+environment, which is why the two need different environments. The owners of the PyPI
+projects manage this under Manage → Publishing on pypi.org.
+
+**A version number cannot be reused.** Once a file is uploaded, PyPI keeps its version
+number even if the release is deleted, so a mistake means releasing the next version. To
+check a build before tagging, run `uv build` and `uvx twine@latest check dist/*`. Use
+`@latest`, since an older cached twine rejects the metadata version that hatchling writes.
