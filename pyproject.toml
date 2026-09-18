@@ -1,7 +1,7 @@
 [project]
 name = "cedrus-mcp"
 version = "2.0.0"
-description = "CEDRUS - a minimal argument-mapping MCP server for small language models"
+description = "Reasoning scaffolding that supercharges your small AI: an argument-mapping MCP server"
 authors = [
     {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
 ]
