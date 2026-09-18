@@ -96,6 +96,16 @@ def text_path_for(json_path: Path) -> Path:
     return json_path.with_name(json_path.name + ".txt")
 
 
+def archive_path_for(json_path: Path) -> Path:
+    """`/tmp/m.json` → the first free one of `/tmp/m.1.json`, `/tmp/m.2.json`, …"""
+    n = 1
+    while True:
+        candidate = json_path.with_name(f"{json_path.stem}.{n}{json_path.suffix}")
+        if not candidate.exists():
+            return candidate
+        n += 1
+
+
 def save(amap: ArgMap, json_path: Path, session_id: str | None = None) -> None:
     """Write the map beside the agent, as JSON and as the full rendering.
 

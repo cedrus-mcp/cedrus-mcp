@@ -1,4 +1,4 @@
-"""The seven tools, called directly on a Session (§2 and §8 of the plan)."""
+"""The eight tools, called directly on a Session (§2 and §8 of the plan)."""
 
 import pytest
 from fixtures.soft_drugs import soft_drugs_map
@@ -250,7 +250,7 @@ def test_results_report_how_far_the_map_moved_since_the_last_show() -> None:
     assert "The map changed once since your last show()." in text
 
 
-def test_the_tool_list_is_the_seven_of_the_plan() -> None:
+def test_the_tool_list_is_the_eight_of_the_plan() -> None:
     assert tools.TOOL_NAMES == (
         "show",
         "add_claim",
@@ -259,4 +259,17 @@ def test_the_tool_list_is_the_seven_of_the_plan() -> None:
         "unlink",
         "edit",
         "delete",
+        "new_map",
     )
+
+
+def test_new_map_starts_again_from_nothing() -> None:
+    session = loaded()
+    tools.show(session, max_chars=24000)
+
+    text = tools.new_map(session)
+    assert text == "OK: Started a new, empty map.\nMap v0: 0 claims, 0 arguments, 0 relations."
+    assert session.last_shown is None
+
+    added = tools.add_claim(session, "Fresh", "A new statement.")
+    assert first_line(added).startswith('OK: Added C1 "Fresh".')
