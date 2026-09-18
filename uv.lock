@@ -104,8 +104,8 @@ wheels = [
 ]
 
 [[package]]
-name = "cedrus"
-version = "2.0.0.dev0"
+name = "cedrus-mcp"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "mcp" },

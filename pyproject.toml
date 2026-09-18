@@ -1,11 +1,11 @@
 [project]
-name = "cedrus"
-version = "2.0.0dev"
+name = "cedrus-mcp"
+version = "2.0.0"
 description = "CEDRUS - a minimal argument-mapping MCP server for small language models"
 authors = [
     {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
 ]
-scripts = { "cedrus" = "cedrus.__main__:main" }
+scripts = { "cedrus" = "cedrus.__main__:main", "cedrus-mcp" = "cedrus.__main__:main" }
 readme = "README.md"
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -15,6 +15,16 @@ dependencies = [
     "pydantic>=2.0",
     "rapidfuzz>=3.0",
 ]
+keywords = ["mcp", "argument-mapping", "argumentation", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/cedrus-mcp/cedrus-mcp"
+Issues = "https://github.com/cedrus-mcp/cedrus-mcp/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -22,6 +32,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cedrus"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["alias", "opencode.jsonc", ".github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

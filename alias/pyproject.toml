@@ -1,0 +1,25 @@
+[project]
+name = "cedrus"
+version = "2.0.0"
+description = "Alias for cedrus-mcp, the CEDRUS argument-mapping MCP server"
+authors = [
+    {name = "Gregor Betz", email = "3662782+ggbetz@users.noreply.github.com"}
+]
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = ["cedrus-mcp>=2.0.0"]
+# The module comes from cedrus-mcp; declaring the command here lets `uvx cedrus` find it.
+scripts = { "cedrus" = "cedrus.__main__:main" }
+
+[project.urls]
+Homepage = "https://github.com/cedrus-mcp/cedrus-mcp"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# The wheel ships no code of its own.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true

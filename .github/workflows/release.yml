@@ -1,0 +1,38 @@
+# Tag vX.Y.Z to publish cedrus-mcp; tag alias-vX.Y.Z to publish the `cedrus` alias in alias/.
+# PyPI trusts this workflow for cedrus-mcp through the `pypi` environment and for cedrus
+# through `pypi-alias`; a pending publisher has to be unique per repo, workflow and environment.
+name: release
+
+on:
+  push:
+    tags: ["v*", "alias-v*"]
+
+jobs:
+  cedrus-mcp:
+    if: startsWith(github.ref_name, 'v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Check the tag matches the version
+        run: test "v$(uv version --short)" = "${GITHUB_REF_NAME}"
+      - run: uv run pytest
+      - run: uv build
+      - run: uv publish
+
+  alias:
+    if: startsWith(github.ref_name, 'alias-v')
+    runs-on: ubuntu-latest
+    environment: pypi-alias
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Check the tag matches the version
+        run: test "alias-v$(uv version --short --directory alias)" = "${GITHUB_REF_NAME}"
+      - run: uv build alias --out-dir dist
+      - run: uv publish

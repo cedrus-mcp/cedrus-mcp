@@ -7,21 +7,28 @@ list never changes, every parameter is a flat string, and the server works out e
 that can be worked out — IDs, sides, depth, placement — so the model never has to.
 
 Version 2 is a rewrite from an empty tree and shares no code with version 1, which is
-tagged [`v1-final`](../../tree/v1-final). The design is written up in
-[docs/PLAN.md](docs/PLAN.md), and the view it aims at in
-[docs/ARGUMENT_MAP_RENDERING.md](docs/ARGUMENT_MAP_RENDERING.md).
+tagged [`v1-final`](https://github.com/cedrus-mcp/cedrus-mcp/tree/v1-final). The design is written up in
+[docs/PLAN.md](https://github.com/cedrus-mcp/cedrus-mcp/blob/main/docs/PLAN.md), and the view it aims at in
+[docs/ARGUMENT_MAP_RENDERING.md](https://github.com/cedrus-mcp/cedrus-mcp/blob/main/docs/ARGUMENT_MAP_RENDERING.md).
 
 ## Running it
 
-Straight from GitHub, without a checkout:
+From PyPI, without a checkout:
+
+```bash
+uvx cedrus-mcp
+uvx cedrus-mcp --save-dir /tmp/maps          # flags pass through
+uvx cedrus-mcp@2.0.0                         # pin a release where a run must be reproducible
+```
+
+`pip install cedrus-mcp` installs the same server as the `cedrus` command.
+
+Unreleased code runs straight from GitHub; this follows the default branch, so pin a tag —
+`…/cedrus-mcp@<tag>` — wherever a run has to stay reproducible:
 
 ```bash
 uvx git+https://github.com/cedrus-mcp/cedrus-mcp
-uvx git+https://github.com/cedrus-mcp/cedrus-mcp --save-dir /tmp/maps   # flags pass through
 ```
-
-This follows the default branch, so pin a tag — `…/cedrus-mcp@<tag>` — wherever a run has
-to stay reproducible.
 
 From a checkout:
 
@@ -80,8 +87,7 @@ In an MCP client's config, either form works:
   "mcpServers": {
     "cedrus": {
       "command": "uvx",
-      "args": ["git+https://github.com/cedrus-mcp/cedrus-mcp",
-               "--save-dir", "/tmp/maps"]
+      "args": ["cedrus-mcp", "--save-dir", "/tmp/maps"]
     },
     "cedrus-local": {
       "command": "uv",
@@ -212,9 +218,9 @@ The layout follows the map from data to protocol: `model.py` holds the map and i
 functions, and `server.py` is the only file that imports the MCP SDK.
 
 `tests/golden/soft_drugs.txt` is the expected rendering of the example map;
-[tests/golden/README.md](tests/golden/README.md) says how it differs from the hand-written
+[tests/golden/README.md](https://github.com/cedrus-mcp/cedrus-mcp/blob/main/tests/golden/README.md) says how it differs from the hand-written
 design target and how to regenerate it.
 
 ## Licence
 
-GNU Affero General Public License v3.0 or later. See [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 or later. See [LICENSE](https://github.com/cedrus-mcp/cedrus-mcp/blob/main/LICENSE).
