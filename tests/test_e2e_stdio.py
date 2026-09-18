@@ -11,7 +11,7 @@ from mcp.client.stdio import stdio_client
 
 REPO = Path(__file__).resolve().parent.parent
 
-TOOL_NAMES = ["show", "add_claim", "add_argument", "link", "unlink", "edit", "delete"]
+TOOL_NAMES = ["show", "add_claim", "add_argument", "link", "unlink", "edit", "delete", "new_map"]
 
 
 def text_of(result: Any) -> str:
@@ -36,7 +36,7 @@ async def connected(save_file: Path | None = None) -> AsyncIterator[tuple[Client
         yield client, info
 
 
-async def test_the_server_introduces_itself_with_seven_tools() -> None:
+async def test_the_server_introduces_itself_with_eight_tools() -> None:
     async with connected() as (client, info):
         assert info.server_info.name == "cedrus"
         assert info.instructions is not None
@@ -158,3 +158,23 @@ async def test_the_saved_file_keeps_up_with_every_change(tmp_path: Path) -> None
         saved_text = saved.with_suffix(".txt").read_text()
         assert saved_text.startswith("ARGUMENT MAP: Root")
         assert "## Part 3" in saved_text
+
+
+async def test_new_map_archives_the_old_one_beside_the_live_file(tmp_path: Path) -> None:
+    saved = tmp_path / "map.json"
+    async with connected(saved) as (client, _):
+        await client.call_tool("add_claim", {"label": "First", "text": "One statement."})
+        result = await client.call_tool("new_map", {})
+        assert text_of(result).startswith("OK: Started a new, empty map.")
+
+        assert json.loads(saved.read_text())["claims"] == []
+        assert json.loads((tmp_path / "map.1.json").read_text())["claims"][0]["label"] == "First"
+        assert (tmp_path / "map.1.txt").read_text().startswith("ARGUMENT MAP: First")
+
+        # An empty map is not worth keeping.
+        await client.call_tool("new_map", {})
+        assert not (tmp_path / "map.2.json").exists()
+
+        await client.call_tool("add_claim", {"label": "Second", "text": "Another one."})
+        await client.call_tool("new_map", {})
+        assert json.loads((tmp_path / "map.2.json").read_text())["claims"][0]["label"] == "Second"

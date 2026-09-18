@@ -6,7 +6,14 @@ from pathlib import Path
 import pytest
 from fixtures.soft_drugs import soft_drugs_map
 
-from cedrus.export import from_json, save, text_path_for, to_dict, to_json
+from cedrus.export import (
+    archive_path_for,
+    from_json,
+    save,
+    text_path_for,
+    to_dict,
+    to_json,
+)
 from cedrus.model import ArgMap
 from cedrus.render import render
 
@@ -130,3 +137,14 @@ def test_an_overwritten_file_is_never_seen_half_written(tmp_path: Path) -> None:
 )
 def test_text_path_sits_next_to_the_json(tmp_path: Path, given: str, expected: str) -> None:
     assert text_path_for(tmp_path / given) == tmp_path / expected
+
+
+def test_the_first_archive_is_number_one(tmp_path: Path) -> None:
+    assert archive_path_for(tmp_path / "map.json") == tmp_path / "map.1.json"
+    assert archive_path_for(tmp_path / "map") == tmp_path / "map.1"
+
+
+def test_an_archive_takes_the_first_free_number(tmp_path: Path) -> None:
+    (tmp_path / "map.1.json").write_text("{}")
+    (tmp_path / "map.2.json").write_text("{}")
+    assert archive_path_for(tmp_path / "map.json") == tmp_path / "map.3.json"

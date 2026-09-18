@@ -63,7 +63,7 @@ This document covers the tool layer, the rendering and access for the environmen
 
 ---
 
-## 2. The tools (seven, fixed for the whole session)
+## 2. The tools (eight, fixed for the whole session)
 
 ### Shared input handling
 - **IDs are matched loosely.** Case, brackets and a trailing label are ignored: `a7`, `[A7]` and `A7 Alcohol and tobacco analogy` all resolve to `A7`.
@@ -105,6 +105,11 @@ This document covers the tool layer, the rendering and access for the environmen
 
 **`delete(id, with_replies=false)`**
 > Delete a claim or argument together with its relations. The ID is never reused. If some arguments respond only to this item, deletion is refused and they are listed, unless `with_replies=true`, in which case they are deleted too.
+
+**`new_map()`**
+> Start a new, empty argument map, e.g. to map a different issue. Only call this when you are done with the current map: it is cleared. IDs start again at C1 and A1.
+
+With saving on, the server first writes the old map to the first free `<name>.<n>.json`/`.txt` beside the live file. The result never mentions this.
 
 ### Rules for results (`result.py`)
 Every result is plain text. On error, the result has `isError=true` and nothing in the map is changed.
@@ -224,7 +229,7 @@ cedrus-mcp/               # same repository, branch v2, starting from an empty t
     __main__.py           # stdio by default; --http, --hints, --max-chars, --save-file, --save-dir
     server.py             # MCPServer; the lifespan holds one Session (map, last_shown) per MCP
                           # session, keyed by the mcp-session-id header (see §9);
-                          # registers 7 tools + 2 resources; calls the file writer after each change
+                          # registers 8 tools + 2 resources; calls the file writer after each change
     model.py              # ArgMap: items, relations, counters, deleted_ids, version; changes + rule checks; raises MapError(msg)
     derive.py             # roots, primary target, depth, children, sides, unchallenged, multi-target notes
     render.py             # show() text + size-limit steps
@@ -259,7 +264,7 @@ networkx is not needed. The graph is small, and cycle checks are a plain depth-f
 3. `render.py`, with the soft-drugs golden test and the size-limit steps.
 4. `export.py`, with a JSON round trip and atomic writes.
 5. `parse.py` and `result.py`: loose matching, "did you mean" and the message formats.
-6. `tools.py` and `server.py` with the 7 tools, 2 resources and the file writer, plus `test_tools.py` (mocked context).
+6. `tools.py` and `server.py` with the 8 tools, 2 resources and the file writer, plus `test_tools.py` (mocked context).
 7. `__main__.py`, `test_e2e_stdio.py`, and a README covering the tools, a sample session, context pruning and access for the environment.
 
 ---
@@ -283,7 +288,7 @@ networkx is not needed. The graph is small, and cycle checks are a plain depth-f
   - **Size-limit test:** a map built to be too large goes through the shortening steps in order.
   - **Export tests:** a JSON round trip gives back an equal map, and `--save-file` has written the latest version after each change.
 - **End-to-end test over stdio:**
-  - The tool list has 7 tools and does not change.
+  - The tool list has 8 tools and does not change.
   - Reading `map://current.json` returns the same map as the saved file.
 - **Manual check:** run `npx @modelcontextprotocol/inspector uv run cedrus --save-file /tmp/m.json`, build a 3-argument map, and watch the file update after each change.
 

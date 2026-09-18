@@ -1,4 +1,4 @@
-"""The seven tools, as plain functions over a `Session`.
+"""The eight tools, as plain functions over a `Session`.
 
 Each one parses what the model wrote, asks the map to change, and describes the result.
 Nothing here imports the MCP SDK, so the whole tool layer is testable on its own;
@@ -8,7 +8,7 @@ Nothing here imports the MCP SDK, so the whole tool layer is testable on its own
 from __future__ import annotations
 
 from cedrus.derive import derive
-from cedrus.model import MapError
+from cedrus.model import ArgMap, MapError
 from cedrus.parse import (
     clean_label,
     clean_text,
@@ -19,7 +19,7 @@ from cedrus.parse import (
 from cedrus.render import render
 from cedrus.result import Session, ok
 
-TOOL_NAMES = ("show", "add_claim", "add_argument", "link", "unlink", "edit", "delete")
+TOOL_NAMES = ("show", "add_claim", "add_argument", "link", "unlink", "edit", "delete", "new_map")
 
 
 def show(session: Session, max_chars: int | None) -> str:
@@ -127,6 +127,13 @@ def delete(session: Session, item_id: str, with_replies: bool = False) -> str:
         headline = f'Deleted {resolved} "{label}", and with it {others}.'
     headline += " Deleted IDs are never given to a new item."
     return ok(headline, session)
+
+
+def new_map(session: Session) -> str:
+    """Replace the map with an empty one. Keeping the old one is the server's business."""
+    session.amap = ArgMap()
+    session.last_shown = None
+    return ok("Started a new, empty map.", session)
 
 
 # --------------------------------------------------------------------- pieces

@@ -1,4 +1,4 @@
-"""The MCP server: seven tools, two resources, and one map per session.
+"""The MCP server: eight tools, two resources, and one map per session.
 
 Built on `mcp.server.MCPServer` (SDK v2). The tool descriptions in this file are the
 only instructions most models will ever read, so they are written for a small one:
@@ -19,7 +19,7 @@ from mcp.server.mcpserver.context import Context
 from mcp.server.mcpserver.exceptions import ResourceError, ToolError
 
 from cedrus import tools
-from cedrus.export import save, to_json
+from cedrus.export import archive_path_for, save, to_json
 from cedrus.model import MapError
 from cedrus.render import DEFAULT_MAX_CHARS, render
 from cedrus.result import Session, error
@@ -33,7 +33,8 @@ Build an argument map step by step.
 4. Call show() to see the whole map.
 
 The server gives every claim and argument a permanent ID (C1, C2, … and A1, A2, …), so \
-you can always refer back to one. Fix mistakes with edit, link, unlink or delete.\
+you can always refer back to one. Fix mistakes with edit, link, unlink or delete. \
+To map another issue, call new_map(): it starts an empty map, and IDs begin again at C1.\
 """
 
 
@@ -141,6 +142,13 @@ def _changed(session: Session) -> None:
     path = _save_path(session)
     if path is not None:
         save(session.amap, path, session.session_id)
+
+
+def _archive(session: Session) -> None:
+    """Keep a map that is about to be replaced, next to its live file, if maps are saved."""
+    path = _save_path(session)
+    if path is not None and session.amap.items:
+        save(session.amap, archive_path_for(path), session.session_id)
 
 
 def _run(session: Session, call: Any) -> str:
@@ -270,6 +278,18 @@ def delete(id: str, ctx: Context, with_replies: bool = False) -> str:
     """
     session = _session(ctx)
     return _run(session, lambda: tools.delete(session, id, with_replies))
+
+
+@mcp.tool()
+def new_map(ctx: Context) -> str:
+    """Start a new, empty argument map, e.g. to map a different issue.
+
+    Only call this when you are done with the current map: it is cleared. IDs start
+    again at C1 and A1, so IDs from the old map no longer apply.
+    """
+    session = _session(ctx)
+    _archive(session)
+    return _run(session, lambda: tools.new_map(session))
 
 
 # ------------------------------------------------------------------ resources

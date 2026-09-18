@@ -2,7 +2,7 @@
 
 A minimal argument-mapping MCP server, built for small language models.
 
-The agent sees one text view of an argument map and seven tools that change it. The tool
+The agent sees one text view of an argument map and eight tools that change it. The tool
 list never changes, every parameter is a flat string, and the server works out everything
 that can be worked out — IDs, sides, depth, placement — so the model never has to.
 
@@ -51,6 +51,9 @@ uv run --directory /path/to/cedrus-mcp cedrus
 `CEDRUS_SAVE_FILE` and `CEDRUS_SAVE_DIR` do the same as the two save flags; a flag wins
 over the environment.
 
+When saving is on, `new_map()` first keeps the old map beside the live file, as
+`<name>.1.json` and `<name>.1.txt`, then `.2`, and so on. The agent is not told.
+
 To try it by hand. The inspector's **web** mode forwards everything after the command
 unchanged, so the server's own flags work there:
 
@@ -89,7 +92,7 @@ In an MCP client's config, either form works:
 }
 ```
 
-## The seven tools
+## The eight tools
 
 | Tool | What it does |
 |---|---|
@@ -100,6 +103,7 @@ In an MCP client's config, either form works:
 | `unlink(source, target)` | Remove one relation. |
 | `edit(id, label, text)` | Change a label and/or a text. |
 | `delete(id, with_replies)` | Delete an item and its relations. |
+| `new_map()` | Start over with an empty map, e.g. for another issue. |
 
 `relation` is `supports`, `attacks` or `undercuts`. An undercut says the target's reasons
 do not lead to its conclusion without denying that they are true, so its target must be an
@@ -204,7 +208,7 @@ uv run ruff check src tests
 
 The layout follows the map from data to protocol: `model.py` holds the map and its rules,
 `derive.py` computes everything not stored, `render.py` writes the view, `parse.py` and
-`result.py` handle what the model types and reads, `tools.py` is the seven tools as plain
+`result.py` handle what the model types and reads, `tools.py` is the eight tools as plain
 functions, and `server.py` is the only file that imports the MCP SDK.
 
 `tests/golden/soft_drugs.txt` is the expected rendering of the example map;
