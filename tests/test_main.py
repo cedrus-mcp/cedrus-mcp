@@ -37,6 +37,13 @@ def test_flags_are_read() -> None:
     assert s.save_file == Path("/tmp/m.json")
 
 
+def test_a_tilde_in_a_save_path_is_expanded() -> None:
+    home = Path.home()
+    assert settings(["--save-dir", "~/maps"]).save_dir == home / "maps"
+    assert settings(["--save-file", "~/m.json"]).save_file == home / "m.json"
+    assert settings([], {"CEDRUS_SAVE_DIR": "~/maps"}).save_dir == home / "maps"
+
+
 def test_the_environment_supplies_the_save_paths() -> None:
     s = settings([], {"CEDRUS_SAVE_FILE": "/tmp/m.json", "CEDRUS_SAVE_DIR": "/tmp/maps"})
     assert s.save_file == Path("/tmp/m.json")

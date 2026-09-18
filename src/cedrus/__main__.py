@@ -51,14 +51,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--save-file",
-        type=Path,
+        type=_user_path,
         metavar="PATH",
         help="write the map to PATH (JSON) and to the matching .txt after every change; "
         "for stdio, which serves one session (env: CEDRUS_SAVE_FILE)",
     )
     parser.add_argument(
         "--save-dir",
-        type=Path,
+        type=_user_path,
         metavar="DIR",
         help="write DIR/<session-id>.json and .txt after every change; "
         "for HTTP, which serves several sessions (env: CEDRUS_SAVE_DIR)",
@@ -82,7 +82,12 @@ def settings_from(args: argparse.Namespace, environ: dict[str, str] | None = Non
 
 
 def _path(value: str | None) -> Path | None:
-    return Path(value) if value else None
+    return _user_path(value) if value else None
+
+
+def _user_path(value: str) -> Path:
+    """A path with `~` expanded: MCP clients start the server without a shell to do it."""
+    return Path(value).expanduser()
 
 
 def main() -> None:
