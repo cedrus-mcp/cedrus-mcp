@@ -1,0 +1,16 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "cedrus": {
+            "type": "local",
+            "command": [
+                "uvx",
+                "git+https://github.com/cedrus-mcp/cedrus-mcp"
+            ],
+            "environment": {
+                "CEDRUS_SAVE_DIR": "/tmp/maps"
+            },
+            "enabled": true
+        }
+    }
+}
